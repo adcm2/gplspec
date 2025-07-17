@@ -1,0 +1,13 @@
+#ifndef GENERAL_MODELS_CORE_H
+#define GENERAL_MODELS_CORE_H
+
+// Header files
+#include "SimpleModels"
+#include "src/GeneralModels/Earth_Density_Models_3D.h"
+#include "src/GeneralModels/Density_Model_Constructors.h"
+#include "src/GeneralModels/Density_Model_Return.h"
+#include "src/GeneralModels/Perturbation_Models.h"
+#include "src/GeneralModels/Earth_General_Models_1D.h"
+#include "src/GeneralModels/Earth_General_Models_3D.h"
+#include "src/GeneralModels/Gravity_Tools.h"
+#endif

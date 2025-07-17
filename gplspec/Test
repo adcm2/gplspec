@@ -1,0 +1,11 @@
+#ifndef GRAVITATIONAL_FIELD_TEST_H
+#define GRAVITATIONAL_FIELD_TEST_H
+
+// Header files
+#include "GeneralModels"
+#include "SimpleModels"
+// #include "src/Gravity_Tools.h"
+#include "src/Pseudospectral_Matrix_Wrapper3D.h"
+#include "src/Radial_Tools.h"
+#include "src/testtools.h"
+#endif

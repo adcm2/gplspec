@@ -1,0 +1,6 @@
+#ifndef GRAVITATIONAL_FIELD_TIMER_H
+#define GRAVITATIONAL_FIELD_TIMER_H
+
+// Header files
+#include "src/Timer_Class.h"
+#endif

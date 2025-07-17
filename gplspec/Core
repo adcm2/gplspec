@@ -1,0 +1,10 @@
+#ifndef GRAVITATIONAL_FIELD_CORE_H
+#define GRAVITATIONAL_FIELD_CORE_H
+
+// Header files
+#include "src/Mapping_Tools.h"
+#include "src/Pseudospectral_Matrix_Wrapper.h"
+#include "src/SphericalGeometryPreconditioner.h"
+#include "src/Spherical_Integrator.h"
+#include "src/Timer_Class.h"
+#endif

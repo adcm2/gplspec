@@ -1,0 +1,8 @@
+#ifndef SIMPLE_MODELS_CORE_H
+#define SIMPLE_MODELS_CORE_H
+
+// Header files
+#include "src/SimpleModels/Simple_Model_Class_Definition.h"
+#include "src/SimpleModels/Simple_Model_Constructor_Definitions.h"
+#include "src/SimpleModels/Simple_Model_Return_Definitions.h"
+#endif

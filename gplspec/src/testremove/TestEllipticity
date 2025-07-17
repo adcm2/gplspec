@@ -1,0 +1,8 @@
+#ifndef GRAVITATIONAL_FIELD_TESTELLIP_H
+#define GRAVITATIONAL_FIELD_TESTELLIP_H
+
+// Header files
+
+#include "src/ellipticitytools.h"
+#include "src/testtools.h"
+#endif
