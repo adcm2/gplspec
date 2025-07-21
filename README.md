@@ -14,3 +14,5 @@ Benchmarks and the example of Phobos are included in the examples folder. These 
 2. Run ./build/bin/clean_bench_1
 3. cd work
 4. python3 CleanBench1Plot.py &
+
+Tomography models are provided within the package, adapted from the compilation by Shule Ye, available at https://github.com/shuleyu/seismic-tomography-models.
