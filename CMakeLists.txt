@@ -33,7 +33,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # add in Eigen3
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 
-set(CMAKE_MODULE_PATH "/usr/local/include/eigen/cmake/;${CMAKE_MODULE_PATH}")
+# set(CMAKE_MODULE_PATH "/usr/local/include/eigen/cmake/;${CMAKE_MODULE_PATH}")
 find_package(FFTW)
 
 
