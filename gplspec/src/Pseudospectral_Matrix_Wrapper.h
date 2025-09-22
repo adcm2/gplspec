@@ -172,8 +172,8 @@ class MatrixReplacement : public Eigen::EigenBase<MatrixReplacement<MRScalar>> {
       // std::cout << "Define grid\n";
       _lMax = grid.MaxDegree();
       _nMax = grid.MaxUpperIndex();
-      _size0 = GSHTrans::GSHIndices<GSHTrans::All>(_lMax, _lMax, 0).size();
-      _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(_lMax, _lMax, 1).size();
+      _size0 = GSHTrans::GSHIndices<GSHTrans::All>(_lMax, _lMax, 0).Size();
+      _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(_lMax, _lMax, 1).Size();
       _sizespatial = grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();
    }
    const Grid gridused() const { return *_grid; }

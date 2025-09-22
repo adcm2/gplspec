@@ -59,8 +59,8 @@ FindBoundaryPerturbationForce(
    int npoly = q.N() - 1;
    int matlen = nelem * npoly + 1;   // size of matrix
 
-   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
    auto rphys = [&vec_noderadii](int idxelem, double x) {
       return ((vec_noderadii[idxelem + 1] - vec_noderadii[idxelem]) * x +
               (vec_noderadii[idxelem + 1] + vec_noderadii[idxelem])) *
@@ -237,8 +237,8 @@ AdvectiveBoundaryPerturbation(
    int npoly = q.N() - 1;
    int matlen = nelem * npoly + 1;   // size of matrix
 
-   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
    auto rphys = [&vec_noderadii](int idxelem, double x) {
       return ((vec_noderadii[idxelem + 1] - vec_noderadii[idxelem]) * x +
               (vec_noderadii[idxelem + 1] + vec_noderadii[idxelem])) *
@@ -934,8 +934,6 @@ EarthModel<FLOAT, INTEGRAL>::EarthModel(
    //    }
    // }
 };
-
-
 
 // full constructor
 

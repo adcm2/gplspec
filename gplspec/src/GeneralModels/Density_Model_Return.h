@@ -223,10 +223,10 @@ Density3D::Volume() const {
    // size of vector to contain all coefficients in spherical harmonic transform
    auto coefficientnumberall = GSHTrans::GSHIndices<GSHTrans::All>(
                                    _grid.MaxDegree(), _grid.MaxDegree(), 0)
-                                   .size();
+                                   .Size();
    auto coefficientnumberpos = GSHTrans::GSHIndices<GSHTrans::NonNegative>(
                                    _grid.MaxDegree(), _grid.MaxDegree(), 0)
-                                   .size();
+                                   .Size();
    double volret = 0.0;
    for (int idxelem = 0; idxelem < tot_elem; ++idxelem) {
       double voltemp = 0.0;
@@ -260,7 +260,7 @@ Density3D::Mass() const {
    // size of vector to contain all coefficients in spherical harmonic transform
    int lMax = _grid.MaxDegree();
    auto coefficientnumberpos =
-       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).size();
+       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
    double massret = 0.0;
    for (int idxelem = 0; idxelem < tot_elem; ++idxelem) {
       double masstemp = 0.0;
@@ -392,14 +392,14 @@ Density3D::RotateSliceToEquator(
       // fill out matrix
       for (int m = -l; m < l + 1; ++m) {
          auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
-         auto dl = wigtemp(l);
+         auto dl = wigtemp[l];
          int colidx = 0;
          for (int mp = -l; mp < l + 1; ++mp) {
             std::complex<double> i1(0.0, 1.0);
             auto tmpmult =
                 multval * exp(i1 * (static_cast<double>(m) * gamma +
                                     static_cast<double>(mp) * alpha));
-            mat_tmp(rowidx, colidx) = dl(mp) * tmpmult;
+            mat_tmp(rowidx, colidx) = dl[mp] * tmpmult;
             ++colidx;
          }
          ++rowidx;
@@ -916,14 +916,14 @@ Density3D::ReferentialOutputRotated(
       // fill out matrix
       for (int m = -l; m < l + 1; ++m) {
          auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
-         auto dl = wigtemp(l);
+         auto dl = wigtemp[l];
          int colidx = 0;
          for (int mp = -l; mp < l + 1; ++mp) {
             std::complex<double> i1(0.0, 1.0);
             auto tmpmult =
                 multval * exp(i1 * (static_cast<double>(m) * gamma +
                                     static_cast<double>(mp) * alpha));
-            mat_tmp(rowidx, colidx) = dl(mp) * tmpmult;
+            mat_tmp(rowidx, colidx) = dl[mp] * tmpmult;
             ++colidx;
          }
          ++rowidx;
@@ -946,10 +946,10 @@ Density3D::ReferentialOutputRotated(
    // get vec_hlm
    auto coefficientnumber = GSHTrans::GSHIndices<GSHTrans::NonNegative>(
                                 _grid.MaxDegree(), _grid.MaxDegree(), 0)
-                                .size();
+                                .Size();
    auto coefficientnumberall = GSHTrans::GSHIndices<GSHTrans::All>(
                                    _grid.MaxDegree(), _grid.MaxDegree(), 0)
-                                   .size();
+                                   .Size();
    auto lMax = _grid.MaxDegree();
    // int npoly = _q.N() - 1;
    auto vec_hlm = std::vector<std::vector<std::vector<std::complex<double>>>>(
@@ -1155,14 +1155,14 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
       // fill out matrix
       for (int m = -l; m < l + 1; ++m) {
          auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
-         auto dl = wigtemp(l);
+         auto dl = wigtemp[l];
          int colidx = 0;
          for (int mp = -l; mp < l + 1; ++mp) {
             std::complex<double> i1(0.0, 1.0);
             auto tmpmult =
                 multval * exp(i1 * (static_cast<double>(m) * gamma +
                                     static_cast<double>(mp) * alpha));
-            mat_tmp(rowidx, colidx) = dl(mp) * tmpmult;
+            mat_tmp(rowidx, colidx) = dl[mp] * tmpmult;
             ++colidx;
          }
          ++rowidx;
@@ -1185,10 +1185,10 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
    // get vec_hlm
    auto coefficientnumber = GSHTrans::GSHIndices<GSHTrans::NonNegative>(
                                 _grid.MaxDegree(), _grid.MaxDegree(), 0)
-                                .size();
+                                .Size();
    auto coefficientnumberall = GSHTrans::GSHIndices<GSHTrans::All>(
                                    _grid.MaxDegree(), _grid.MaxDegree(), 0)
-                                   .size();
+                                   .Size();
    auto lMax = _grid.MaxDegree();
    // int npoly = _q.N() - 1;
    auto vec_hlm = std::vector<std::vector<std::vector<std::complex<double>>>>(
@@ -1429,14 +1429,14 @@ Density3D::PhysicalOutputRotated(
       // fill out matrix
       for (int m = -l; m < l + 1; ++m) {
          auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
-         auto dl = wigtemp(l);
+         auto dl = wigtemp[l];
          int colidx = 0;
          for (int mp = -l; mp < l + 1; ++mp) {
             std::complex<double> i1(0.0, 1.0);
             auto tmpmult =
                 multval * exp(i1 * (static_cast<double>(m) * gamma +
                                     static_cast<double>(mp) * alpha));
-            mat_tmp(rowidx, colidx) = dl(mp) * tmpmult;
+            mat_tmp(rowidx, colidx) = dl[mp] * tmpmult;
             ++colidx;
          }
          ++rowidx;
@@ -1459,10 +1459,10 @@ Density3D::PhysicalOutputRotated(
    // get vec_hlm
    auto coefficientnumber = GSHTrans::GSHIndices<GSHTrans::NonNegative>(
                                 _grid.MaxDegree(), _grid.MaxDegree(), 0)
-                                .size();
+                                .Size();
    auto coefficientnumberall = GSHTrans::GSHIndices<GSHTrans::All>(
                                    _grid.MaxDegree(), _grid.MaxDegree(), 0)
-                                   .size();
+                                   .Size();
    auto lMax = _grid.MaxDegree();
    // int npoly = _q.N() - 1;
    auto vec_hlm = std::vector<std::vector<std::vector<std::complex<double>>>>(

@@ -487,9 +487,9 @@ TomographyModelTransform(
    // Make a random coefficient.
    auto getSize = [](auto lMax, auto n) {
       if constexpr (GSHTrans::RealFloatingPoint<Scalar>) {
-         return GSHIndices<NonNegative>(lMax, lMax, n).size();
+         return GSHIndices<NonNegative>(lMax, lMax, n).Size();
       } else {
-         return GSHIndices<All>(lMax, lMax, n).size();
+         return GSHIndices<All>(lMax, lMax, n).Size();
       }
    };
 
@@ -571,9 +571,9 @@ TomographyModelTransformReferential(
    // Make a random coefficient.
    auto getSize = [](auto lMax, auto n) {
       if constexpr (GSHTrans::RealFloatingPoint<Scalar>) {
-         return GSHIndices<NonNegative>(lMax, lMax, n).size();
+         return GSHIndices<NonNegative>(lMax, lMax, n).Size();
       } else {
-         return GSHIndices<All>(lMax, lMax, n).size();
+         return GSHIndices<All>(lMax, lMax, n).Size();
       }
    };
 
@@ -925,7 +925,7 @@ vecgrid_to_sphdecomp(
     std::size_t npoly, std::size_t nelem) {
    auto lMax = grid.MaxDegree();
    auto nMax = grid.MaxUpperIndex();
-   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
+   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
    int matlen = nelem * npoly + 1;   // size of matrix
    auto intsize = grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();
    using veccomp = std::vector<std::complex<FLOAT>>;
@@ -962,7 +962,7 @@ sphdecomp_to_vecgrid(
     std::size_t npoly, std::size_t nelem) {
    auto lMax = grid.MaxDegree();
    auto nMax = grid.MaxUpperIndex();
-   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
+   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
    int matlen = nelem * npoly + 1;   // size of matrix
    auto intsize = grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();
    using veccomp = std::vector<std::complex<FLOAT>>;
@@ -1001,9 +1001,9 @@ h_to_j(GRID<FLOAT, OrderIndexRange, IndexRange> &grid, std::size_t npoly,
    auto lMax = grid.MaxDegree();
    auto nMax = grid.MaxUpperIndex();
    auto size =
-       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();   // dof
-   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();   // dof
+   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
    auto nelem = vec_elemwidth.size();
    int matlen = nelem * npoly + 1;   // size of matrix
    auto intsize = grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();
@@ -1085,9 +1085,9 @@ h_to_a(GRID<FLOAT, OrderIndexRange, IndexRange> &grid, std::size_t npoly,
    auto lMax = grid.MaxDegree();
    auto nMax = grid.MaxUpperIndex();
    auto size =
-       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();   // dof
-   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();   // dof
+   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
    auto nelem = vec_elemwidth.size();
    int matlen = nelem * npoly + 1;   // size of matrix
    auto intsize = grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();

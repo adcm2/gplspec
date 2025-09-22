@@ -114,9 +114,9 @@ dxi_to_dxilm(
    auto lMax = grid.MaxDegree();
    auto nMax = grid.MaxUpperIndex();
    auto size =
-       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();   // dof
-   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();   // dof
+   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
    auto nelem = vec_elemwidth.size();
    int matlen = nelem * npoly + 1;   // size of matrix
    auto intsize = grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();
@@ -184,10 +184,10 @@ dxitodf(GRID<FLOAT, OrderIndexRange, IndexRange> &grid, std::size_t npoly,
    auto lMax = grid.MaxDegree();
    auto nMax = grid.MaxUpperIndex();
    auto size =
-       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();   // dof
-   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
-   auto _sizepp = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 2).size();
+       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();   // dof
+   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
+   auto _sizepp = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 2).Size();
    auto nelem = vec_elemwidth.size();
    int matlen = nelem * npoly + 1;   // size of matrix
    auto intsize = grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();
@@ -392,9 +392,9 @@ h_to_f(GRID<FLOAT, OrderIndexRange, IndexRange> &grid, std::size_t npoly,
    auto lMax = grid.MaxDegree();
    auto nMax = grid.MaxUpperIndex();
    auto size =
-       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();   // dof
-   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();   // dof
+   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
    auto nelem = vec_elemwidth.size();
    int matlen = nelem * npoly + 1;   // size of matrix
    auto intsize = grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();

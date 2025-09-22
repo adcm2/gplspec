@@ -101,7 +101,7 @@ FindForce(GeneralEarthModels::Density3D &inp_model) {
 
    // length of coefficients for YLM
    auto coefficientnumber =
-       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).size();
+       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
 
    // constants
    const double pi_db = 3.1415926535897932;
@@ -211,8 +211,8 @@ FindBoundaryPerturbationForce(GeneralEarthModels::Density3D &inp_model,
    int matlen = nelem * npoly + 1;   // size of matrix
    int lMax = inp_model.GSH_Grid().MaxDegree();
 
-   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
    auto rphys = [&inp_model](int idxelem, double x) {
       return (inp_model.Node_Information().ElementWidth(idxelem) * x +
               (inp_model.Node_Information().ElementUpperRadius(idxelem) +
@@ -404,8 +404,8 @@ AdvectiveBoundaryPerturbation(GeneralEarthModels::Density3D &inp_model,
    int matlen = nelem * npoly + 1;   // size of matrix
    int lMax = inp_model.GSH_Grid().MaxDegree();
 
-   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
    auto rphys = [&inp_model](int idxelem, double x) {
       return (inp_model.Node_Information().ElementWidth(idxelem) * x +
               (inp_model.Node_Information().ElementUpperRadius(idxelem) +
@@ -677,12 +677,14 @@ FindGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
 
    // solve using BICGSTAB
    std::cout << "Force declared\n";
-   // BICGSTAB solver;
-   CONJG solver;
+   BICGSTAB solver;
+   // CONJG solver;
    solver.compute(mymatrix);
    solver.preconditioner().addmatrix(testmat);
    solver.setTolerance(relerr);
+   solver.setMaxIterations(10);
    Eigen::VectorXcd vecguess = solver.preconditioner().solve(vec_fullforce);
+   std::cout << "Preconditioner done\n";
    Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
    // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
    std::cout << "Number of iterations: " << solver.iterations() << "\n";
@@ -945,9 +947,9 @@ GravitationalSphericalIntegral(GeneralEarthModels::Density3D &inp_model) {
 
    // length of coefficients for YLM
    auto coefficientnumber =
-       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).size();
+       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
    auto coefficientnumber2 =
-       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
+       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
    auto numspatial = inp_model.GSH_Grid().NumberOfLongitudes() *
                      inp_model.GSH_Grid().NumberOfCoLatitudes();
    // int laynum = 0;

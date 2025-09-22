@@ -132,8 +132,8 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
        vvveceigvec(_num_layers, vveceigvec(inp_model.q().N(),
                                            veceigvec((lMax + 1) * (lMax + 1))));
    {
-      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
 
       //   std::cout << "\nCheck 2.1\n";
       for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -187,9 +187,9 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
       mat_f0 = Eigen::Matrix3cd::Zero(3, 3);
       _vec_df = vvveceig(
           _num_layers, vveceig(inp_model.q().N(), veceig(spatialsize, mat_f0)));
-      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
-      auto _sizepp = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 2).size();
+      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
+      auto _sizepp = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 2).Size();
       //   EARTHMATRIX3 vec_df(nelem * (npoly + 1),
       //                       std::vector<MATRIX3cd>(intsize, mat_0));
 
@@ -467,9 +467,9 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
    }
    // appending to vec_A if model lmax smaller than lmax:
    auto coefficientnumber =
-       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).size();
+       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
    auto coefficientnumberall =
-       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
+       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
    std::vector<std::complex<double>> vec_lm_rad(coefficientnumber, 0.0);
    //    // std::vector<std::complex<double>>
    //    vec_lm_rad_full(coefficientnumberall, 0.0);
@@ -508,8 +508,8 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
       }
    }
 
-   //    auto spatialsize = inp_model.GSH_Grid().Longitudes().size() *
-   //                       inp_model.GSH_Grid().CoLatitudes().size();
+   //    auto spatialsize = inp_model.GSH_Grid().Longitudes().Size() *
+   //                       inp_model.GSH_Grid().CoLatitudes().Size();
    // std::cout << "Got spatialsize\n";
    //    _vec_h = vvvecdb(_num_layers, vvecdb(inp_model.q().N(),
    //    vecdb(spatialsize, 0.0)));
@@ -653,8 +653,8 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
        vvveceigvec(_num_layers, vveceigvec(inp_model.q().N(),
                                            veceigvec((lMax + 1) * (lMax + 1))));
    {
-      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
 
       //   std::cout << "\nCheck 2.1\n";
       for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -708,9 +708,9 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
       mat_f0 = Eigen::Matrix3cd::Zero(3, 3);
       _vec_df = vvveceig(
           _num_layers, vveceig(inp_model.q().N(), veceig(spatialsize, mat_f0)));
-      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
-      auto _sizepp = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 2).size();
+      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
+      auto _sizepp = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 2).Size();
       //   EARTHMATRIX3 vec_df(nelem * (npoly + 1),
       //                       std::vector<MATRIX3cd>(intsize, mat_0));
 

@@ -19,7 +19,7 @@ target_link_libraries(clean_bench_9 gplspec PlanetaryModel FFTWpp TomographyMode
 add_executable(clean_bench_10 clean_bench_10.cpp)
 target_link_libraries(clean_bench_10 gplspec PlanetaryModel FFTWpp TomographyModels)
 add_executable(phobos_gravity phobos_gravity.cpp)
-target_link_libraries(phobos_gravity gplspec PlanetaryModel FFTWpp TomographyModels)
+target_link_libraries(phobos_gravity gplspec PlanetaryModel FFTWpp TomographyModels GSHTrans)
 add_executable(phobos_gravity_perturbation phobos_gravity_perturbation.cpp)
 target_link_libraries(phobos_gravity_perturbation gplspec PlanetaryModel FFTWpp TomographyModels)
 add_executable(phobos_heterogeneous phobos_heterogeneous.cpp)

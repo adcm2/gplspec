@@ -211,9 +211,9 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
    }
    // appending to vec_A if model lmax smaller than lmax:
    auto coefficientnumber =
-       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).size();
+       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
    auto coefficientnumberall =
-       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
+       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
    std::vector<std::complex<double>> vec_lm_rad(coefficientnumber, 0.0);
    // std::vector<std::complex<double>> vec_lm_rad_full(coefficientnumberall,
    // 0.0);
@@ -277,7 +277,7 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
    //           << maxstep << "\n";
 
    _num_layers = node_data.NumberOfElements();
-   // std::cout << "# layers: " << _num_layers << "\n";
+   std::cout << "# layers: " << _num_layers << "\n";
    // std::cout << "Made node_data\n";
    // finding _mat_gaussderiv
    _mat_gaussderiv.resize(_poly_ord + 1, _poly_ord + 1);
@@ -454,7 +454,7 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
                for (auto ip : _grid.Longitudes()) {
                   // auto idxuse = idxelem * (npoly + 1) + idxnode;
                   double hdivr;
-                  if (idxelem == 0 && idxnode == 0) {
+                  if ((idxelem == 0) && (idxnode == 0)) {
                      hdivr = 0.0;
                   } else {
                      hdivr = _vec_h[idxelem][idxnode][idxspatial] /
@@ -480,9 +480,9 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
       // auto lMax = grid.MaxDegree();
       // auto nMax = grid.MaxUpperIndex();
       auto size =
-          GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();   // dof
-      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+          GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();   // dof
+      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
       auto intsize = _grid.NumberOfLongitudes() * _grid.NumberOfCoLatitudes();
       // auto nelem = vec_elemwidth.size();
       // std::size_t nelem =
@@ -620,8 +620,8 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
       // declaring typenames
       using veccomp = std::vector<std::complex<double>>;
       using vecvech = std::vector<veccomp>;
-      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
       auto intsize = _grid.NumberOfLongitudes() * _grid.NumberOfCoLatitudes();
 
       for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -866,9 +866,9 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
    // finding hlm
    //  length of coefficients for YLM
    auto coefficientnumber =
-       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).size();
+       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
    auto coefficientnumberall =
-       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
+       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
    // get vec_hlm
    auto vec_hlm = std::vector<std::vector<std::vector<std::complex<double>>>>(
        _num_layers, std::vector<std::vector<std::complex<double>>>(
@@ -985,9 +985,9 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
       // auto lMax = grid.MaxDegree();
       // auto nMax = grid.MaxUpperIndex();
       auto size =
-          GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();   // dof
-      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+          GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();   // dof
+      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
       auto intsize = _grid.NumberOfLongitudes() * _grid.NumberOfCoLatitudes();
       // auto nelem = vec_elemwidth.size();
       // std::size_t nelem =
@@ -1125,8 +1125,8 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
       // declaring typenames
       using veccomp = std::vector<std::complex<double>>;
       using vecvech = std::vector<veccomp>;
-      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
       auto intsize = _grid.NumberOfLongitudes() * _grid.NumberOfCoLatitudes();
 
       for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -1368,9 +1368,9 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
    // finding hlm
    //  length of coefficients for YLM
    auto coefficientnumber =
-       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).size();
+       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
    auto coefficientnumberall =
-       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
+       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
    // get vec_hlm
    auto vec_hlm = std::vector<std::vector<std::vector<std::complex<double>>>>(
        _num_layers, std::vector<std::vector<std::complex<double>>>(
@@ -1496,9 +1496,9 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
       // auto lMax = grid.MaxDegree();
       // auto nMax = grid.MaxUpperIndex();
       auto size =
-          GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();   // dof
-      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+          GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();   // dof
+      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
       auto intsize = _grid.NumberOfLongitudes() * _grid.NumberOfCoLatitudes();
       // auto nelem = vec_elemwidth.size();
       // std::size_t nelem =
@@ -1636,8 +1636,8 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
       // declaring typenames
       using veccomp = std::vector<std::complex<double>>;
       using vecvech = std::vector<veccomp>;
-      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
       auto intsize = _grid.NumberOfLongitudes() * _grid.NumberOfCoLatitudes();
 
       for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {

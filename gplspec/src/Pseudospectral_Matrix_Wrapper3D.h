@@ -183,8 +183,8 @@ struct generic_product_impl<MatrixReplacement3D<MRScalar>, Rhs, SparseShape,
       int laynum = 0;
       int lMax = lhs.Model()->GSH_Grid().MaxDegree();
       //   std::cout << "\n\n lMax: " << lMax << "\n\n";
-      int size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).size();
-      int sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).size();
+      int size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
+      int sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
       int sizespatial = lhs.Model()->GSH_Grid().NumberOfLongitudes() *
                         lhs.Model()->GSH_Grid().NumberOfCoLatitudes();
       //   std::vector<std::vector<std::vector<Eigen::Matrix3cd>>> _vec_a =

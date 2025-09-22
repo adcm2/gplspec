@@ -30,8 +30,8 @@ template <typename Scalar_> class SphericalGeometryPreconditioner {
       compute(mat);
    }
 
-   EIGEN_CONSTEXPR Index rows() const EIGEN_NOEXCEPT { return matsize[0]; }
-   EIGEN_CONSTEXPR Index cols() const EIGEN_NOEXCEPT { return matsize[1]; }
+   constexpr Index rows() const noexcept { return matsize[0]; }
+   constexpr Index cols() const noexcept { return matsize[1]; }
 
    template <typename MatType>
    SphericalGeometryPreconditioner &analyzePattern(const MatType &mat) {

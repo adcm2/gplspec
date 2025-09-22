@@ -31,9 +31,17 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 
 # add in Eigen3
-find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+# include(FetchContent)
+# FetchContent_Declare(
+#   Eigen3
+#   GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+#   GIT_TAG master
+# )
+# FetchContent_MakeAvailable(Eigen3)
 
-# set(CMAKE_MODULE_PATH "/usr/local/include/eigen/cmake/;${CMAKE_MODULE_PATH}")
+
+set(CMAKE_MODULE_PATH "/usr/local/include/eigen/cmake/;${CMAKE_MODULE_PATH}")
+find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(FFTW)
 
 
@@ -91,9 +99,9 @@ FetchContent_MakeAvailable(Interpolation)
 add_library (gplspec INTERFACE)
 target_link_libraries(gplspec INTERFACE Eigen3::Eigen)
 # target_link_libraries(Gravitational_Field INTERFACE FFTWpp)
-# target_link_libraries(Gravitational_Field INTERFACE GaussQuad)
-# target_link_libraries(Gravitational_Field INTERFACE PlanetaryModel)
-# target_link_libraries(Gravitational_Field INTERFACE GSHTRANS)
+target_link_libraries(gplspec INTERFACE GaussQuad)
+# target_link_libraries(gplspec INTERFACE PlanetaryModel)
+# target_link_libraries(gplspec INTERFACE GSHTRANS)
 # target_link_libraries(Gravitational_Field INTERFACE TomographyModels)
 # target_link_libraries(Gravitational_Field INTERFACE Interpolation)
 target_include_directories (gplspec INTERFACE
