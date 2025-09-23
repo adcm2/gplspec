@@ -60,11 +60,11 @@ main() {
    };
 
    h = 0.2;
-   lmax2 = 10;
+   lmax2 = 100;
    //  std::cout << "Type in h: ";
    //  std::cin >> h;
-   //  std::cout << "Type in lmax: ";
-   //  std::cin >> lmax2;
+    std::cout << "Type in lmax: ";
+    std::cin >> lmax2;
    std::cout << "Type in maxstep: ";
    std::cin >> maxstep;
 

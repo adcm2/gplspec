@@ -31,7 +31,7 @@ main() {
    int lMax = 100;
    int npoly = 5;
    Density3D phobos(scaledensity, pathtofile, npoly, lMax, lengthnorm, timenorm,
-                    massnorm, 0.1, 1.5);
+                    massnorm, 0.1, 1.6);
    //    Density3D phobos2(scaledensity, pathtofile, npoly, 128, lengthnorm,
    //    timenorm,
    //                      massnorm, 0.1, 1.5);
