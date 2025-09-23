@@ -837,7 +837,7 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
 
       int laynum = node_data.LayerNumber(idxelem);
-      std::cout << "Layer number: " << laynum << "\n";
+      // std::cout << "Layer number: " << laynum << "\n";
       // looping through nodes
       for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
          auto radr = node_data.NodeRadius(idxelem, idxnode);

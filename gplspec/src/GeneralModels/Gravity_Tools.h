@@ -677,8 +677,8 @@ FindGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
 
    // solve using BICGSTAB
    std::cout << "Force declared\n";
-   BICGSTAB solver;
-   // CONJG solver;
+   // BICGSTAB solver;
+   CONJG solver;
    solver.compute(mymatrix);
    solver.preconditioner().addmatrix(testmat);
    solver.setTolerance(relerr);
@@ -1121,11 +1121,11 @@ HomogeneousSphereIntegral(
    double pi_db = 3.1415926535897932;
    double multfact = 2.0 * pi_db * std::pow(4.0 * pi_db, 0.5) * bigg_db *
                      inp_model.Density_Point(0, 0, 0) / 3.0;
-   double planetradius = inp_model.Node_Information().PlanetRadius();
+   double planetradius = inp_model.Node_InformationP().PlanetRadius();
 
    // fill out exact integral
    for (int idx = 0; idx < inp_model.Num_Elements(); ++idx) {
-      double currentrad = inp_model.Node_Information().ElementLowerRadius(idx);
+      double currentrad = inp_model.Node_InformationP().ElementLowerRadius(idx);
 
       // if inside planet
       if (currentrad < planetradius) {
@@ -1137,7 +1137,7 @@ HomogeneousSphereIntegral(
    }
    // final point
    {
-      double currentrad = inp_model.Node_Information().OuterRadius();
+      double currentrad = inp_model.Node_InformationP().OuterRadius();
       vec_exactsol.back() =
           -2.0 * multfact * std::pow(planetradius, 3.0) / currentrad;
    }

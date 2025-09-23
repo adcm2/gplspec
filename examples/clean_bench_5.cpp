@@ -63,8 +63,8 @@ main() {
    lmax2 = 100;
    //  std::cout << "Type in h: ";
    //  std::cin >> h;
-    std::cout << "Type in lmax: ";
-    std::cin >> lmax2;
+   std::cout << "Type in lmax: ";
+   std::cin >> lmax2;
    std::cout << "Type in maxstep: ";
    std::cin >> maxstep;
 
@@ -86,36 +86,41 @@ main() {
    // benchmarking using an equivalent spherical homogeneous
    //  equivalent spherical model
    //  std::cout << "\n\n HELLO HELLO \n\n";
+   timer1.start();
    Density3D equivalent_sphere = Density3D::SphericalHomogeneousPlanet(
        radius, density, lengthnorm, timenorm, massnorm, maxstep, ballrad);
+   timer1.stop("Time for equivalent sphere construction");
+   timer1.start();
    //  std::cout << "\n\n HELLO HELLO \n\n";
    std::vector<std::vector<double>> inp_radii2, vec_exactsol2;
-   for (int idx = 0; idx < testconstruct.GSH_Grid().NumberOfCoLatitudes() *
-                               testconstruct.GSH_Grid().NumberOfLongitudes();
-        ++idx) {
+   auto maxidx = testconstruct.GSH_GridP().NumberOfCoLatitudes() *
+                 testconstruct.GSH_GridP().NumberOfLongitudes();
+   for (int idx = 0; idx < maxidx; ++idx) {
       auto inp_radii = testconstruct.PhysicalRadius_Line(idx);
       auto vec_exactsol =
           HomogeneousSphereIntegral(equivalent_sphere, inp_radii);
       inp_radii2.push_back(inp_radii);
       vec_exactsol2.push_back(vec_exactsol);
    }
+   timer1.stop("Time for equivalent sphere");
    //  for (int idx = 0; idx < vec_exactsol2[0].size(); ++idx) {
    //     std::cout << std::setprecision(16) << "idx: " << vec_exactsol2[0][idx]
    //               << "\n";
    //  }
-   std::cout << std::setprecision(16)
-             << -2.0 * 3.1415926535897932 *
-                    equivalent_sphere.GravitationalConstant() * density *
-                    radius * radius
-             << "\n";
-   std::cout << std::setprecision(16)
-             << stdvec_potsol[0][0][0] / (std::sqrt(4.0 * 3.1415926535897932))
-             << "\n";
-   std::cout << std::setprecision(16)
-             << -2.0 * 3.1415926535897932 *
-                    equivalent_sphere.GravitationalConstant() * density *
-                    radius * radius * equivalent_sphere.PotentialNorm()
-             << "\n";
+   //  std::cout << std::setprecision(16)
+   //            << -2.0 * 3.1415926535897932 *
+   //                   equivalent_sphere.GravitationalConstant() * density *
+   //                   radius * radius
+   //            << "\n";
+   //  std::cout << std::setprecision(16)
+   //            << stdvec_potsol[0][0][0] / (std::sqrt(4.0
+   //            * 3.1415926535897932))
+   //            << "\n";
+   //  std::cout << std::setprecision(16)
+   //            << -2.0 * 3.1415926535897932 *
+   //                   equivalent_sphere.GravitationalConstant() * density *
+   //                   radius * radius * equivalent_sphere.PotentialNorm()
+   //            << "\n";
 
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////

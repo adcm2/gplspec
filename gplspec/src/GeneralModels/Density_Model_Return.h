@@ -3,6 +3,9 @@
 
 #include <string>
 #include <fstream>
+#include "../Radial_Tools.h"
+#include "Earth_Density_Models_3D.h"
+#include <GSHTrans/All>
 
 namespace GeneralEarthModels {
 
@@ -17,6 +20,11 @@ Density3D::Poly_Order() const {
 };
 auto
 Density3D::Node_Information() const {
+   return node_data;
+};
+
+const Radial_Tools::RadialMesh &
+Density3D::Node_InformationP() const {
    return node_data;
 };
 
@@ -39,6 +47,11 @@ Density3D::SpectralElementInformation() {
 };
 auto
 Density3D::GSH_Grid() const {
+   return _grid;
+};
+
+const GSHTrans::GaussLegendreGrid<double, GSHTrans::All, GSHTrans::All> &
+Density3D::GSH_GridP() const {
    return _grid;
 };
 

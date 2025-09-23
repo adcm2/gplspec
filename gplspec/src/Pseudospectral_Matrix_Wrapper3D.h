@@ -80,7 +80,12 @@ class MatrixReplacement3D
        : _inp_model(&inp_model),
          _indexclass(0, inp_model.GSH_Grid().MaxDegree(),
                      inp_model.Poly_Order()),
-         _vec_a(inp_model.LaplaceTensorRef()) {};
+         _vec_a(inp_model.LaplaceTensorRef()),
+         _outerradius{inp_model.Node_Information().OuterRadius()},
+         _nelem{inp_model.Num_Elements()}, _npoly{inp_model.Poly_Order()},
+         _maxdegree{inp_model.GSH_Grid().MaxDegree()},
+         _spatialsize{inp_model.GSH_Grid().NumberOfLongitudes() *
+                      inp_model.GSH_Grid().NumberOfCoLatitudes()} {};
 
    ////////////////////////////////////////////////////////////////////
    //////////////////////  CONSTRUCTOR WITH MAP ///////////////////////
@@ -96,14 +101,24 @@ class MatrixReplacement3D
        : _inp_model(&inp_model),
          _indexclass(0, inp_model.GSH_Grid().MaxDegree(),
                      inp_model.Poly_Order()),
-         _separate_map{true}, _vec_a{vec_a} {};
+         _separate_map{true}, _vec_a{vec_a},
+         _outerradius{inp_model.Node_Information().OuterRadius()},
+         _nelem{inp_model.Num_Elements()}, _npoly{inp_model.Poly_Order()},
+         _maxdegree{inp_model.GSH_Grid().MaxDegree()},
+         _spatialsize{inp_model.GSH_Grid().NumberOfLongitudes() *
+                      inp_model.GSH_Grid().NumberOfCoLatitudes()} {};
 
    MatrixReplacement3D(GeneralEarthModels::Density3D &inp_model,
                        const GeneralEarthModels::MappingPerturbation &inp_map)
        : _inp_model(&inp_model),
          _indexclass(0, inp_model.GSH_Grid().MaxDegree(),
                      inp_model.Poly_Order()),
-         _separate_map{true}, _vec_a{inp_map.ref_da()} {};
+         _separate_map{true}, _vec_a{inp_map.ref_da()},
+         _outerradius{inp_model.Node_Information().OuterRadius()},
+         _nelem{inp_model.Num_Elements()}, _npoly{inp_model.Poly_Order()},
+         _maxdegree{inp_model.GSH_Grid().MaxDegree()},
+         _spatialsize{inp_model.GSH_Grid().NumberOfLongitudes() *
+                      inp_model.GSH_Grid().NumberOfCoLatitudes()} {};
 
    //  return model
    auto Model() const { return _inp_model; }
@@ -112,28 +127,30 @@ class MatrixReplacement3D
       return _vec_a;
    }
 
-   int nelem() const { return _inp_model->Num_Elements(); }
-   int npoly() const { return _inp_model->Poly_Order(); }
+   int nelem() const { return _nelem; }
+   int npoly() const { return _npoly; }
+   auto BoundaryRadius() const { return _outerradius; }
+   auto MaxDegree() const { return _maxdegree; }
+   auto SpatialSize() const { return _spatialsize; }
 
    void IncludeBoundary() const { _inc_boundterm = true; }
    void NoBoundary() const { _inc_boundterm = false; }
    bool BoundaryStatus() const { return _inc_boundterm; }
 
    std::size_t myidxfunc(int idxelem, int idxpoly, int idxl, int idxm) const {
-      return static_cast<int>(
-          std::pow(idxl, 2) + idxl + idxm +
-          (idxpoly + npoly() * idxelem) *
-              std::pow(_inp_model->GSH_Grid().MaxDegree() + 1, 2));
+      return std::pow(idxl, 2) + idxl + idxm +
+             (idxpoly + _npoly * idxelem) * std::pow(_maxdegree + 1, 2);
    };
+
    std::size_t myidxpm(int idxelem, int idxpoly, int idxl, int idxm) const {
-      return static_cast<int>(
-          std::pow(idxl, 2) + idxl + idxm - 1 +
-          (idxpoly + npoly() * idxelem) *
-              (std::pow(_inp_model->GSH_Grid().MaxDegree() + 1, 2) - 1));
+      return std::pow(idxl, 2) + idxl + idxm - 1 +
+             (idxpoly + _npoly * idxelem) * (std::pow(_maxdegree + 1, 2) - 1);
    };
+
    std::size_t idxsmall(int idxl, int idxm) const {
       return static_cast<int>(idxl * idxl + idxl + idxm);
    };
+
    std::size_t idxpmsmall(int idxl, int idxm) const {
       return static_cast<int>(idxl * idxl + idxl + idxm - 1);
    };
@@ -146,6 +163,9 @@ class MatrixReplacement3D
    // Grid _grid;
    mutable bool _inc_boundterm = true;
    mutable bool _separate_map = false;
+   RealScalar _outerradius = 0.0;
+   long int _nelem = 0, _npoly = 0, _maxdegree = 0;
+   std::size_t _spatialsize = 0;
 };
 
 // Implementation of MatrixReplacement3D * Eigen::DenseVector though a
@@ -181,26 +201,25 @@ struct generic_product_impl<MatrixReplacement3D<MRScalar>, Rhs, SparseShape,
 
       int tcount = 0;
       int laynum = 0;
-      int lMax = lhs.Model()->GSH_Grid().MaxDegree();
+      int lMax = lhs.MaxDegree();
       //   std::cout << "\n\n lMax: " << lMax << "\n\n";
       int size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
       int sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
-      int sizespatial = lhs.Model()->GSH_Grid().NumberOfLongitudes() *
-                        lhs.Model()->GSH_Grid().NumberOfCoLatitudes();
+      int sizespatial = lhs.SpatialSize();
       //   std::vector<std::vector<std::vector<Eigen::Matrix3cd>>> _vec_a =
       //       lhs.Model()->LaplaceTensor();
       // std::cout << _vec_a[0][0][0] << "\n";
       // std::cout << _vec_a[1][0][0] << "\n";
       for (int idxelem = 0; idxelem < lhs.nelem(); ++idxelem) {
          double inv2 =
-             2.0 / lhs.Model()->Node_Information().ElementWidth(idxelem);
+             2.0 / lhs.Model()->Node_InformationP().ElementWidth(idxelem);
 
          // looping over quadrature nodes
          int idxpolymax = lhs.npoly() + 1;
          for (int idxpoly = 0; idxpoly < idxpolymax; ++idxpoly) {
             // radius, inverse and squared
             auto rval =
-                lhs.Model()->Node_Information().NodeRadius(idxelem, idxpoly);
+                lhs.Model()->Node_InformationP().NodeRadius(idxelem, idxpoly);
             auto invr = 1 / rval;
             auto rval2 = rval * rval;
 
@@ -209,7 +228,8 @@ struct generic_product_impl<MatrixReplacement3D<MRScalar>, Rhs, SparseShape,
             // std::cout << "Step 1a\n";
             std::vector<Scalar> gsph_nz0(size0, 0.0), gsph_nzp1(sizepm, 0.0),
                 gsph_nzm1(sizepm, 0.0);   // declaration
-
+            // std::cout << "Before step 1, idxelem: " << idxelem
+            //           << ", idxpoly: " << idxpoly << "\n";
             // looping over l,m values
             {
 
@@ -258,6 +278,8 @@ struct generic_product_impl<MatrixReplacement3D<MRScalar>, Rhs, SparseShape,
                }
             }
 
+            // std::cout << "After step 1, idxelem: " << idxelem
+            //           << ", idxpoly: " << idxpoly << "\n\n";
             ///////////////////////////////////////////////////////////////////////////
             // step 2: transforming (\nabla \zeta) into spatial domain
             // std::cout << "Step 2a\n";
@@ -265,17 +287,19 @@ struct generic_product_impl<MatrixReplacement3D<MRScalar>, Rhs, SparseShape,
                 spatial_nzp1(sizespatial, 0.0),
                 spatial_nz0(sizespatial, 0.0);   // declaration
 
+            // std::cout << "Before transformations\n";
             // GSPH transforms:
-            lhs.Model()->GSH_Grid().InverseTransformation(
+            lhs.Model()->GSH_GridP().InverseTransformation(
                 lMax, 0, gsph_nz0,
                 spatial_nz0);   // 0th order
             // std::cout << "Between transformations\n";
-            lhs.Model()->GSH_Grid().InverseTransformation(
+            lhs.Model()->GSH_GridP().InverseTransformation(
                 lMax, 1, gsph_nzp1,
                 spatial_nzp1);   //+1 order
-            lhs.Model()->GSH_Grid().InverseTransformation(
+            lhs.Model()->GSH_GridP().InverseTransformation(
                 lMax, -1, gsph_nzm1,
                 spatial_nzm1);   //-1 order
+            // std::cout << "After transformations\n\n";
 
             /////////////////////////////////////////////////////////////
             // step 3: finding q = a\nabla \zeta
@@ -284,6 +308,7 @@ struct generic_product_impl<MatrixReplacement3D<MRScalar>, Rhs, SparseShape,
             FFTWpp::vector<Scalar> spatial_qm(sizespatial, 0.0),
                 spatial_qp(sizespatial, 0.0), spatial_q0(sizespatial, 0.0);
 
+            // std::cout << "Before multiplying through by matrix a\n";
             // multiplying through by matrix a
             {
                for (int idxr = 0; idxr < sizespatial; ++idxr) {
@@ -322,39 +347,45 @@ struct generic_product_impl<MatrixReplacement3D<MRScalar>, Rhs, SparseShape,
                       spatial_nzm1[idxr];
                }
             }
+            // std::cout << "After multiplying through by matrix a\n\n";
 
             /////////////////////////////////////////////////////////////
             // step 4: transforming q from spatial to spherical harmonic
             // basis
             //  transformation for q^{-1}
             // std::cout << "Step 4a\n";
+            // std::cout << "Before step 4 transformations\n";
+
             std::vector<Complex> gsph_q0(size0, 0.0), gsph_qp1(sizepm, 0.0),
                 gsph_qm1(sizepm, 0.0);   // declaration of GSPH vectors
             {
                // transformation for q^{-1}
-               lhs.Model()->GSH_Grid().ForwardTransformation(
+               lhs.Model()->GSH_GridP().ForwardTransformation(
                    lMax, -1, spatial_qm, gsph_qm1);
 
                // transformation for q^0
-               lhs.Model()->GSH_Grid().ForwardTransformation(
+               lhs.Model()->GSH_GridP().ForwardTransformation(
                    lMax, 0, spatial_q0, gsph_q0);
 
                // transformation for q^{+1}
-               lhs.Model()->GSH_Grid().ForwardTransformation(
+               lhs.Model()->GSH_GridP().ForwardTransformation(
                    lMax, +1, spatial_qp, gsph_qp1);
             }
+            // std::cout << "After step 4 transformations\n\n";
 
             /////////////////////////////////////////////////////////////
             /////////////////////////////////////////////////////////////
             /////////////////////////////////////////////////////////////
             // step 5: evaluating radial integrals to give Ax
             // std::cout << "Step 5a\n";
+            // std::cout << "Before step 5.0, idxelem: " << idxelem
+            //           << ", idxpoly: " << idxpoly << "\n";
             // 0 component term
             {
                // multiplication factor and index
                std::size_t idx2 = lhs.myidxfunc(idxelem, 0, 0, 0);
                // auto mult1 = lhs.gaussweight(idxpoly) * rval2;
-               auto mult1 = lhs.Model()->q().W(idxpoly) * rval;
+               auto mult1 = lhs.Model()->qP().W(idxpoly) * rval;
 
                // loop over radii
                for (int idxn = 0; idxn < lhs.npoly() + 1; ++idxn) {
@@ -377,6 +408,8 @@ struct generic_product_impl<MatrixReplacement3D<MRScalar>, Rhs, SparseShape,
                   }
                }
             }
+            // std::cout << "After step 5.0\n";
+
             // std::cout << "Step 5b\n";
             // pm component
             {
@@ -385,8 +418,8 @@ struct generic_product_impl<MatrixReplacement3D<MRScalar>, Rhs, SparseShape,
                // auto mult1 = lhs.elemwidth(idxelem) * 0.5 *
                //              lhs.gaussweight(idxpoly) * rval;
                auto mult1 =
-                   lhs.Model()->Node_Information().ElementWidth(idxelem) * 0.5 *
-                   lhs.Model()->q().W(idxpoly);
+                   lhs.Model()->Node_InformationP().ElementWidth(idxelem) *
+                   0.5 * lhs.Model()->qP().W(idxpoly);
                for (int idxl = 1; idxl < lMax + 1; ++idxl) {
                   // multiplication factors
                   double omegal0 = std::sqrt(static_cast<double>(idxl) *
@@ -406,10 +439,11 @@ struct generic_product_impl<MatrixReplacement3D<MRScalar>, Rhs, SparseShape,
                   }
                }
             }
+            // std::cout << "After step 5b\n";
             // std::cout << "Step 5c\n";
             // external term
             if (lhs.BoundaryStatus()) {
-               if (idxelem == lhs.nelem() - 1 && idxpoly == lhs.npoly()) {
+               if ((idxelem == (lhs.nelem() - 1)) && (idxpoly == lhs.npoly())) {
                   for (int idxl = 0; idxl < lMax + 1; ++idxl) {
 
                      for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
@@ -417,15 +451,13 @@ struct generic_product_impl<MatrixReplacement3D<MRScalar>, Rhs, SparseShape,
                         std::size_t idx1 =
                             lhs.myidxfunc(idxelem, idxpoly, idxl, idxm);
 
-                        vec_output2(idx1) -=
-                            (static_cast<double>(idxl) + 1.0) *
-                            lhs.Model()->Node_Information().OuterRadius() *
-                            rhs(idx1);
+                        vec_output2(idx1) -= (static_cast<double>(idxl) + 1.0) *
+                                             lhs.BoundaryRadius() * rhs(idx1);
                      }
                   }
                }
             }
-
+            // std::cout << "After step 5 \n\n";
             if (idxelem)
                ++tcount;
          };
