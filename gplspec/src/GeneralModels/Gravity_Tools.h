@@ -727,7 +727,7 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
    std::size_t lmidx = (npoly + npoly * (nelem - 1)) * std::pow(lMax + 1, 2);
    lmidx += l * l + l - m;
    double pi_db = 3.1415926535;
-   double ballrad = inp_model.Node_Information().OuterRadius();
+   double ballrad = inp_model.Node_InformationP().OuterRadius();
    vec_fullforce(lmidx) =
        4.0 * pi_db * inp_model.GravitationalConstant() * std::pow(-1.0, m);
 

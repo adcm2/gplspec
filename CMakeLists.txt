@@ -74,7 +74,7 @@ include(FetchContent)
 FetchContent_Declare(
   GSHTRANS
   GIT_REPOSITORY git@github.com:da380/GSHTrans
-  GIT_TAG develop
+  GIT_TAG main
 )
 FetchContent_MakeAvailable(GSHTRANS)
 

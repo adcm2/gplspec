@@ -31,7 +31,7 @@ main() {
    int lMax = 100;
    int npoly = 5;
    Density3D phobos(scaledensity, pathtofile, npoly, lMax, lengthnorm, timenorm,
-                    massnorm, 0.1, 1.6);
+                    massnorm, 0.1, 1.5);
    //    Density3D phobos2(scaledensity, pathtofile, npoly, 128, lengthnorm,
    //    timenorm,
    //                      massnorm, 0.1, 1.5);
@@ -131,9 +131,9 @@ main() {
    phobos.ReferentialOutputSlice(pathtofolder3, stdvec_senskernel, true);
    //       phobos.PhysicalOutputSlice(pathtofolder2, stdvec_potsol);
    //    phobos.PhysicalOutputRotated(pathtofile3, vec_ang1, vec_ang2,
-   //    stdvec_potsol); phobos.ReferentialOutputRotated(pathtofile1, vec_ang1,
-   //    vec_ang2,
-   //                                    stdvec_potsol);
+   //    stdvec_potsol);
+   phobos.ReferentialOutputRotated(pathtofile1, vec_ang1, vec_ang2,
+                                   stdvec_potsol);
    //    phobos.PhysicalOutputRotated(pathtofile2, vec_ang12, vec_ang22,
    //                                 stdvec_potsol);
    //    phobos.ModelDensityOutputRotated(pathtofile4, vec_ang12, vec_ang22,

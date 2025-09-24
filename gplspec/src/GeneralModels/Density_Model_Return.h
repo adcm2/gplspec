@@ -396,6 +396,7 @@ Density3D::RotateSliceToEquator(
    // int lmax_v = 2;
    // double theta_rot = std::numbers::pi_v<double> / 2.0;
    auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
+   auto wigtemp = GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All, GSHTrans::Single, GSHTrans::ColumnMajor>(_grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
    for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
       // temporary
       Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
@@ -404,18 +405,18 @@ Density3D::RotateSliceToEquator(
 
       // fill out matrix
       for (int m = -l; m < l + 1; ++m) {
-         auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
-         auto dl = wigtemp[l];
-         int colidx = 0;
+         // auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
+         auto dl = wigtemp[m];
+         // int colidx = 0;
          for (int mp = -l; mp < l + 1; ++mp) {
             std::complex<double> i1(0.0, 1.0);
             auto tmpmult =
                 multval * exp(i1 * (static_cast<double>(m) * gamma +
                                     static_cast<double>(mp) * alpha));
-            mat_tmp(rowidx, colidx) = dl[mp] * tmpmult;
-            ++colidx;
+            mat_tmp(m+l, mp + l) = dl[l,mp] * tmpmult;
+            // ++colidx;
          }
-         ++rowidx;
+         // ++rowidx;
       }
       vec_wig[l] = mat_tmp;
       // std::cout << "\n" << mat_tmp << "\n";
@@ -920,6 +921,8 @@ Density3D::ReferentialOutputRotated(
    // int lmax_v = 2;
    // double theta_rot = std::numbers::pi_v<double> / 2.0;
    auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
+   auto wigtemp = GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All, GSHTrans::Single, GSHTrans::ColumnMajor>(_grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
+   std::cout << "Check 0\n";
    for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
       // temporary
       Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
@@ -928,18 +931,18 @@ Density3D::ReferentialOutputRotated(
 
       // fill out matrix
       for (int m = -l; m < l + 1; ++m) {
-         auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
-         auto dl = wigtemp[l];
-         int colidx = 0;
+         // auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
+         auto dl = wigtemp[m];
+         // int colidx = 0;
          for (int mp = -l; mp < l + 1; ++mp) {
             std::complex<double> i1(0.0, 1.0);
             auto tmpmult =
                 multval * exp(i1 * (static_cast<double>(m) * gamma +
                                     static_cast<double>(mp) * alpha));
-            mat_tmp(rowidx, colidx) = dl[mp] * tmpmult;
-            ++colidx;
+            mat_tmp(m+l, mp + l) = dl[l,mp] * tmpmult;
+            // ++colidx;
          }
-         ++rowidx;
+         // ++rowidx;
       }
       vec_wig[l] = mat_tmp;
       // std::cout << "\n" << mat_tmp << "\n";
@@ -948,6 +951,7 @@ Density3D::ReferentialOutputRotated(
 
    assert(vec_fullinformation.size() == this->Num_Elements());
 
+   std::cout << "Check 1\n";
    // outputting result
    // std::string pathtofile = "./work/cleanbench1.out";
    // std::string pathtofile = str_pathtofolder + "/MatrixSolutionRotated.out";
@@ -976,6 +980,7 @@ Density3D::ReferentialOutputRotated(
          return (l * (l + 1)) / 2 + m;
       }
    };
+   std::cout << "Check 2\n";
    // std::cout << "Hello pre hlm\n";
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -1010,6 +1015,7 @@ Density3D::ReferentialOutputRotated(
       }
    }
 
+   std::cout << "Check 3\n";
    // perform rotations
    //  double normfactor = this->PotentialNorm();
    std::vector<std::vector<std::vector<std::complex<double>>>> vec_output(
@@ -1046,6 +1052,7 @@ Density3D::ReferentialOutputRotated(
       }
    };
 
+   std::cout << "Check 4\n";
    for (int i = 0; i < nelem; ++i) {
 
       // transform to spatial
@@ -1075,6 +1082,7 @@ Density3D::ReferentialOutputRotated(
       file2 << std::endl;
    };
 
+   std::cout << "Check 5\n";
    {
 
       // transform to spatial
@@ -1433,6 +1441,7 @@ Density3D::PhysicalOutputRotated(
    // int lmax_v = 2;
    // double theta_rot = std::numbers::pi_v<double> / 2.0;
    auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
+   auto wigtemp = GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All, GSHTrans::Single, GSHTrans::ColumnMajor>(_grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
    for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
       // temporary
       Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
@@ -1441,18 +1450,18 @@ Density3D::PhysicalOutputRotated(
 
       // fill out matrix
       for (int m = -l; m < l + 1; ++m) {
-         auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
-         auto dl = wigtemp[l];
-         int colidx = 0;
+         // auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
+         auto dl = wigtemp[m];
+         // int colidx = 0;
          for (int mp = -l; mp < l + 1; ++mp) {
             std::complex<double> i1(0.0, 1.0);
             auto tmpmult =
                 multval * exp(i1 * (static_cast<double>(m) * gamma +
                                     static_cast<double>(mp) * alpha));
-            mat_tmp(rowidx, colidx) = dl[mp] * tmpmult;
-            ++colidx;
+            mat_tmp(m+l, mp + l) = dl[l,mp] * tmpmult;
+            // ++colidx;
          }
-         ++rowidx;
+         // ++rowidx;
       }
       vec_wig[l] = mat_tmp;
       // std::cout << "\n" << mat_tmp << "\n";

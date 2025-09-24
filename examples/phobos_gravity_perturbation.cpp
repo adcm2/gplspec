@@ -76,16 +76,35 @@ main() {
 
    /////////////////////////////////////////////////////////////////////////////
    /////////////////////////////////////////////////////////////////////////////
+   /////////////////////////////////////////////////////////////////////////////
+   // test rotation
+   //  find Euler angles
+   double theta1 = std::numbers::pi_v<double> / 2.0;
+   double theta2 = std::numbers::pi_v<double> / 2.0;
+   theta2 *= 0.0;
+   double phi1 = std::numbers::pi_v<double> / 2.0;
+   phi1 = 0.0;
+   double phi2 = std::numbers::pi_v<double> / 2.0;
+   phi2 = 0.0;
+
+   // vectors containing theta,phi information
+   std::vector<double> vec_ang1{theta1, phi1}, vec_ang2{theta2, phi2};
+   std::vector<double> vec_ang12{theta1, 0.0}, vec_ang22{theta1, theta1};
+
+   /////////////////////////////////////////////////////////////////////////////
+   /////////////////////////////////////////////////////////////////////////////
    // output test
    std::string pathtofolder1 = "./work/Phobos/Cartesian";
    std::string pathtofolder2 = "./work/Phobos/Spherical";
    std::string pathtofolder3 = "./work/Phobos/Rotated";
    std::string pathtofolder4 = "./work/Phobos/Perturbed";
-   //    phobos.PhysicalOutputAtElement(pathtofolder1, stdvec_potsol);
-   //    phobos.CartesianOutputAtElement(pathtofolder1, stdvec_potsol);
+   std::string pathtofile1 =
+       pathtofolder3 + "/MatrixSolution.out";
+   phobos.PhysicalOutputAtElement(pathtofolder1, stdvec_potsol);
+   phobos.CartesianOutputAtElement(pathtofolder1, stdvec_potsol);
    phobos.PhysicalOutputAtElement(pathtofolder2, stdvec_potsol);
-   //    phobos.PhysicalOutputRotated(pathtofolder3, vec_ang1, vec_ang2,
-   //                                 stdvec_potsol);
+      phobos.PhysicalOutputRotated(pathtofile1, vec_ang1, vec_ang2,
+                                   stdvec_potsol);
    phobos.PhysicalOutputAtElement(pathtofolder4, stdvec_potsol_perturb);
 
    //    std::cout << "Value: " << valtest << "\n";
