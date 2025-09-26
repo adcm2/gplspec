@@ -92,12 +92,14 @@ if(ncolat%2==0):
             for idxp in range (0,nlong):
                 idxfull = idxt * nlong + idxp
                 idxlong = idxr * nlong + idxp
+
                 x[idxlong] = x[idxlong] + 0.5 * dphobos4[idxr,idxfull * 5] * np.sin(dphobos4[idxr,idxfull * 5 + 1] ) * np.cos(dphobos4[idxr,idxfull * 5 + 2] )
+
                 y[idxlong] = y[idxlong] + 0.5 * dphobos4[idxr,idxfull * 5] * np.sin(dphobos4[idxr,idxfull * 5 + 1] ) * np.sin(dphobos4[idxr,idxfull * 5 + 2] )
+
                 sensreal[idxlong] = sensreal[idxlong] + 0.5 * dphobos4[idxr,idxfull * 5 + 3]
+
                 sensimag[idxlong] = sensimag[idxlong] + 0.5 * dphobos4[idxr,idxfull * 5 + 4]
-                realmax = max(realmax,abs(sensreal[idxlong]))
-                imagmax = max(imagmax,abs(sensimag[idxlong]))
                 if (idxr == idxnextlayer):
                     xouter[idxp] = x[idxlong]
                     youter[idxp] = y[idxlong]
@@ -108,72 +110,33 @@ else:
             for idxp in range (0,nlong):
                 idxfull = idxt * nlong + idxp
                 idxlong = idxr * nlong + idxp
+
                 x[idxlong] =  dphobos4[idxr,idxfull * 5] * np.sin(dphobos4[idxr,idxfull * 5 + 1] ) * np.cos(dphobos4[idxr,idxfull * 5 + 2] )
                 y[idxlong] =  dphobos4[idxr,idxfull * 5] * np.sin(dphobos4[idxr,idxfull * 5 + 1] ) * np.sin(dphobos4[idxr,idxfull * 5 + 2] )
+
                 sensreal[idxlong] =  dphobos4[idxr,idxfull * 5 + 3]
                 sensimag[idxlong] =  dphobos4[idxr,idxfull * 5 + 4]
-                realmax = max(realmax,abs(sensreal[idxlong]))
-                imagmax = max(imagmax,abs(sensimag[idxlong]))
+
                 if (idxr == idxnextlayer):
                     xouter[idxp] = x[idxlong]
                     youter[idxp] = y[idxlong]
 
 xouter[numpoints] = xouter[0]
 youter[numpoints] = youter[0]
-# sensreal = sensreal/realmax
-# sensimag = sensimag/imagmax
-print("Number of rows: ", row2)
-print("Number of cols: ", col2)
 triang = tri.Triangulation(x,y)
 minrad = 0.001
 triang.set_mask(np.hypot(x[triang.triangles].mean(axis=1),
                          y[triang.triangles].mean(axis=1))
                 < minrad)
 
-# fig, ax = plt.subplots()
-# ax.set_aspect('equal')
-# tpc = ax.tripcolor(triang, sensreal, shading='flat')
-# fig.colorbar(tpc)
-# ax.set_title('tripcolor of Delaunay triangulation, flat shading')
-
 plt.rcParams['text.usetex'] = True
-# plt.tick_params(left = False, right = False , labelleft = False , 
-#                 labelbottom = False, bottom = False) 
 fig2, ax2 = plt.subplots(1,1)
 ax2.set_aspect('equal')
 tpc = ax2.tripcolor(triang, sensreal, shading='gouraud')
 fig2.colorbar(tpc)
-# ax2.set_title(r'Re$(\phi)$')
+ax2.set_title(r'Re$(\phi)$')
 ax2.set_yticklabels([])
 ax2.set_xticklabels([])
 ax2.plot(xouter,youter,'k',linewidth=1)
 
-# ax2[1].set_aspect('equal')
-# tpc1 = ax2[1].tripcolor(triang, sensimag, shading='gouraud')
-# fig2.colorbar(tpc1)
-# ax2[1].set_title(r'Im$(\phi)$')
-# ax2[1].set_yticklabels([])
-# ax2[1].set_xticklabels([])
-
 plt.show()
-# potential 
-# colnum = 1
-# for idxl in range(0,l+1):
-#     for idxm in range (-idxl,idxl+1):
-#         tmpmax= max(abs(dphobos2[:,colnum]))
-#         if tmpmax/maxval > 0.01:
-#             ax.plot(dphobos2[:,0],dphobos2[:,colnum],linewidth=3, label="Re" + str(idxl) + str(idxm))
-#         else:
-#             ax.plot(dphobos2[:,0],dphobos2[:,colnum],linewidth=3)
-#         colnum = colnum + 1
-#         tmpmax= max(abs(dphobos2[:,colnum]))
-#         if tmpmax/maxval > 0.01:
-#             ax.plot(dphobos2[:,0],dphobos2[:,colnum],linewidth=3, label="Im" + str(idxl) + str(idxm))
-#         else:
-#             ax.plot(dphobos2[:,0],dphobos2[:,colnum],linewidth=3)
-#         colnum = colnum + 1
-
-# ax.set_ylabel("Sensitivity Kernel", fontsize = BIGGER_SIZE)
-# ax.set_xlabel("Referential radius", fontsize = BIGGER_SIZE)
-# ax.legend(fontsize=BIGGER_SIZE)
-# plt.show()

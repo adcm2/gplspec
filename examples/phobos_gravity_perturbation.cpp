@@ -98,13 +98,10 @@ main() {
    std::string pathtofolder2 = "./work/Phobos/Spherical";
    std::string pathtofolder3 = "./work/Phobos/Rotated";
    std::string pathtofolder4 = "./work/Phobos/Perturbed";
-   std::string pathtofile1 =
-       pathtofolder3 + "/MatrixSolution.out";
-   phobos.PhysicalOutputAtElement(pathtofolder1, stdvec_potsol);
-   phobos.CartesianOutputAtElement(pathtofolder1, stdvec_potsol);
-   phobos.PhysicalOutputAtElement(pathtofolder2, stdvec_potsol);
-      phobos.PhysicalOutputRotated(pathtofile1, vec_ang1, vec_ang2,
-                                   stdvec_potsol);
+   std::string pathtofile1 = pathtofolder3 + "/MatrixSolution.out";
+   phobosfull.CartesianOutputAtElement(pathtofolder1, stdvec_potsol);
+   phobosfull.PhysicalOutputAtElement(pathtofolder2, stdvec_potsol);
+   phobos.PhysicalOutputRotated(pathtofile1, vec_ang1, vec_ang2, stdvec_potsol);
    phobos.PhysicalOutputAtElement(pathtofolder4, stdvec_potsol_perturb);
 
    //    std::cout << "Value: " << valtest << "\n";

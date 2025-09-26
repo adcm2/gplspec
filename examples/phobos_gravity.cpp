@@ -129,13 +129,13 @@ main() {
    phobos.PhysicalOutputAtElement(pathtofolder2, stdvec_potsol);
    phobos.ReferentialOutputAtElement(pathtofolder3, stdvec_senskernel, true);
    phobos.ReferentialOutputSlice(pathtofolder3, stdvec_senskernel, true);
-   //       phobos.PhysicalOutputSlice(pathtofolder2, stdvec_potsol);
+   phobos.PhysicalOutputSlice(pathtofolder2, stdvec_potsol);
    //    phobos.PhysicalOutputRotated(pathtofile3, vec_ang1, vec_ang2,
    //    stdvec_potsol);
    phobos.ReferentialOutputRotated(pathtofile1, vec_ang1, vec_ang2,
                                    stdvec_potsol);
-   //    phobos.PhysicalOutputRotated(pathtofile2, vec_ang12, vec_ang22,
-   //                                 stdvec_potsol);
+   phobos.PhysicalOutputRotated(pathtofile2, vec_ang12, vec_ang22,
+                                stdvec_potsol);
    //    phobos.ModelDensityOutputRotated(pathtofile4, vec_ang12, vec_ang22,
    //    true); phobos.ModelDensityOutputRotated(pathtofile5, vec_ang12,
    //    vec_ang22); phobos.ReferentialOutputRotated(pathtofile2, vec_ang12,
