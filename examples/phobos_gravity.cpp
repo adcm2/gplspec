@@ -28,19 +28,11 @@ main() {
    double massnorm = std::pow(lengthnorm, 3.0) * usedensity;
    double timenorm = 3600.0;
    double scaledensity = physdensity / massnorm * std::pow(lengthnorm, 3.0);
-   int lMax = 100;
+   int lMax = 128;
    int npoly = 5;
    Density3D phobos(scaledensity, pathtofile, npoly, lMax, lengthnorm, timenorm,
                     massnorm, 0.1, 1.5);
-   //    Density3D phobos2(scaledensity, pathtofile, npoly, 128, lengthnorm,
-   //    timenorm,
-   //                      massnorm, 0.1, 1.5);
    timer1.stop("Time to construct");
-
-   int numlayers = phobos.Node_Information().NumberOfElements();
-   for (int idx = 0; idx < numlayers; ++idx) {
-      std::cout << phobos.Node_Information().LayerNumber(idx) << "\n";
-   }
 
    // std::cout << phobos.GSH_Grid().NumberOfCoLatitudes() << " " <<
    // phobos.GSH_Grid().NumberOfLongitudes() << "\n"; for (auto idx:
@@ -54,11 +46,10 @@ main() {
    //           << phobos.Density_Point(0, 0, 0) / phobos.Jacobian_Point(0, 0,
    //           0)
    //           << "\n";
-   // std::cout << "Volume: " << phobos.Volume() / std::pow(10.0, 9.0) << "
-   // km^3"
-   //           << "\n";
-   // std::cout << "Density: " << phobos.Mass() / (phobos.Volume() * 1000.0)
-   //           << " g/cm^3\n";
+   std::cout << "Volume: " << phobos.Volume() / std::pow(10.0, 9.0) << "km^3"
+             << "\n";
+   std::cout << "Density: " << phobos.Mass() / (phobos.Volume() * 1000.0)
+             << " g/cm^3\n";
 
    // get gravitational field
    timer1.start();
@@ -70,24 +61,10 @@ main() {
        FindGravitationalPotential(phobos, std::pow(10.0, -3.0));
    timer1.stop("Time for gravity 2");
 
-   //    for (int idx = 0; idx < 30; ++idx) {
-   //       std::cout << stdvec_potsol[10][0][idx] << "\n";
-   //    }
    // get gravitational field
    timer1.start();
    auto stdvec_senskernel = SphericalHarmonicSensitivityKernel(phobos, 2, 0);
    timer1.stop("Time for sensitivity kernel");
-
-   // mean potential on surface
-   // auto coefficientnumberpos =
-   //     GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).size();
-   // std::vector<std::complex<double>> vec_shpot(coefficientnumberpos, 0.0);
-   // phobos.GSH_Grid().ForwardTransformation(lMax, 0, stdvec_potsol[10][0],
-   //                                         vec_shpot);
-   // std::cout << "Average on surface: "
-   //           << stdvec_potsol[10][0][0] / sqrt(4.0 * std::numbers::pi) *
-   //                  phobos.PotentialNorm()
-   //           << "\n";
 
    /////////////////////////////////////////////////////////////////////////////
    /////////////////////////////////////////////////////////////////////////////
@@ -106,9 +83,6 @@ main() {
    std::vector<double> vec_ang1{theta1, phi1}, vec_ang2{theta2, phi2};
    std::vector<double> vec_ang12{theta1, 0.0}, vec_ang22{theta1, theta1};
 
-   //    auto stdvec_potrot =
-   //        phobos.RotateSliceToEquator(vec_ang1, vec_ang2, stdvec_potsol);
-
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
 
@@ -124,23 +98,16 @@ main() {
        pathtofolder2 + "/PhysicalDensitySolutionRotated.out";
    std::string pathtofile5 =
        pathtofolder2 + "/ReferentialDensitySolutionRotated.out";
-   //    phobos.PhysicalOutputAtElement(pathtofolder1, stdvec_potsol);
+
    phobos.CartesianOutputAtElement(pathtofolder1, stdvec_potsol);
    phobos.PhysicalOutputAtElement(pathtofolder2, stdvec_potsol);
    phobos.ReferentialOutputAtElement(pathtofolder3, stdvec_senskernel, true);
    phobos.ReferentialOutputSlice(pathtofolder3, stdvec_senskernel, true);
    phobos.PhysicalOutputSlice(pathtofolder2, stdvec_potsol);
-   //    phobos.PhysicalOutputRotated(pathtofile3, vec_ang1, vec_ang2,
-   //    stdvec_potsol);
    phobos.ReferentialOutputRotated(pathtofile1, vec_ang1, vec_ang2,
                                    stdvec_potsol);
    phobos.PhysicalOutputRotated(pathtofile2, vec_ang12, vec_ang22,
                                 stdvec_potsol);
-   //    phobos.ModelDensityOutputRotated(pathtofile4, vec_ang12, vec_ang22,
-   //    true); phobos.ModelDensityOutputRotated(pathtofile5, vec_ang12,
-   //    vec_ang22); phobos.ReferentialOutputRotated(pathtofile2, vec_ang12,
-   //    vec_ang22,
-   //                                    stdvec_potsol);
 
    return 0;
 }
