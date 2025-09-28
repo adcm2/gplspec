@@ -396,7 +396,10 @@ Density3D::RotateSliceToEquator(
    // int lmax_v = 2;
    // double theta_rot = std::numbers::pi_v<double> / 2.0;
    auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
-   auto wigtemp = GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All, GSHTrans::Single, GSHTrans::ColumnMajor>(_grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
+   auto wigtemp =
+       GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
+                        GSHTrans::Single, GSHTrans::ColumnMajor>(
+           _grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
    for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
       // temporary
       Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
@@ -413,7 +416,7 @@ Density3D::RotateSliceToEquator(
             auto tmpmult =
                 multval * exp(i1 * (static_cast<double>(m) * gamma +
                                     static_cast<double>(mp) * alpha));
-            mat_tmp(m+l, mp + l) = dl[l,mp] * tmpmult;
+            mat_tmp(m + l, mp + l) = dl[l, mp] * tmpmult;
             // ++colidx;
          }
          // ++rowidx;
@@ -479,10 +482,10 @@ Density3D::ReferentialOutputAtElement(
    for (int i = 0; i < nelem; ++i) {
       double currentrad;
       if (i == nelem) {
-         currentrad = this->Node_Information().ElementUpperRadius(i) *
+         currentrad = this->Node_InformationP().ElementUpperRadius(i) *
                       this->LengthNorm();
       } else {
-         currentrad = this->Node_Information().ElementLowerRadius(i) *
+         currentrad = this->Node_InformationP().ElementLowerRadius(i) *
                       this->LengthNorm();
       }
 
@@ -495,7 +498,7 @@ Density3D::ReferentialOutputAtElement(
       // working through lm
       //
       int idxlm = 0;
-      for (int idxl = 0; idxl < this->GSH_Grid().MaxDegree() + 1; ++idxl) {
+      for (int idxl = 0; idxl < this->GSH_GridP().MaxDegree() + 1; ++idxl) {
          for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
             file2 << ";" << vec_fullinformation[i][0][idxlm].real() * normfactor
                   << ";"
@@ -508,11 +511,11 @@ Density3D::ReferentialOutputAtElement(
 
    {
       double currentrad =
-          this->Node_Information().ElementUpperRadius(nelem - 1) *
+          this->Node_InformationP().ElementUpperRadius(nelem - 1) *
           this->LengthNorm();
       file2 << std::setprecision(16) << currentrad;
       int idxlm = 0;
-      for (int idxl = 0; idxl < this->GSH_Grid().MaxDegree() + 1; ++idxl) {
+      for (int idxl = 0; idxl < this->GSH_GridP().MaxDegree() + 1; ++idxl) {
          for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
             file2 << ";"
                   << vec_fullinformation[nelem - 1][this->Poly_Order()][idxlm]
@@ -921,7 +924,10 @@ Density3D::ReferentialOutputRotated(
    // int lmax_v = 2;
    // double theta_rot = std::numbers::pi_v<double> / 2.0;
    auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
-   auto wigtemp = GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All, GSHTrans::Single, GSHTrans::ColumnMajor>(_grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
+   auto wigtemp =
+       GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
+                        GSHTrans::Single, GSHTrans::ColumnMajor>(
+           _grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
    std::cout << "Check 0\n";
    for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
       // temporary
@@ -939,7 +945,7 @@ Density3D::ReferentialOutputRotated(
             auto tmpmult =
                 multval * exp(i1 * (static_cast<double>(m) * gamma +
                                     static_cast<double>(mp) * alpha));
-            mat_tmp(m+l, mp + l) = dl[l,mp] * tmpmult;
+            mat_tmp(m + l, mp + l) = dl[l, mp] * tmpmult;
             // ++colidx;
          }
          // ++rowidx;
@@ -1031,7 +1037,7 @@ Density3D::ReferentialOutputRotated(
    for (int i = 0; i < nelem; ++i) {
       for (int idxnode = 0; idxnode < _poly_ord + 1; ++idxnode) {
          int idxlm = 0;
-         for (int idxl = 0; idxl < this->GSH_Grid().MaxDegree() + 1; ++idxl) {
+         for (int idxl = 0; idxl < this->GSH_GridP().MaxDegree() + 1; ++idxl) {
             int rowidx = 0;
             for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
                int idxlmp = idxl * idxl;
@@ -1441,7 +1447,10 @@ Density3D::PhysicalOutputRotated(
    // int lmax_v = 2;
    // double theta_rot = std::numbers::pi_v<double> / 2.0;
    auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
-   auto wigtemp = GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All, GSHTrans::Single, GSHTrans::ColumnMajor>(_grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
+   auto wigtemp =
+       GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
+                        GSHTrans::Single, GSHTrans::ColumnMajor>(
+           _grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
    for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
       // temporary
       Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
@@ -1458,7 +1467,7 @@ Density3D::PhysicalOutputRotated(
             auto tmpmult =
                 multval * exp(i1 * (static_cast<double>(m) * gamma +
                                     static_cast<double>(mp) * alpha));
-            mat_tmp(m+l, mp + l) = dl[l,mp] * tmpmult;
+            mat_tmp(m + l, mp + l) = dl[l, mp] * tmpmult;
             // ++colidx;
          }
          // ++rowidx;
@@ -1547,7 +1556,7 @@ Density3D::PhysicalOutputRotated(
    for (int i = 0; i < nelem; ++i) {
       for (int idxnode = 0; idxnode < _poly_ord + 1; ++idxnode) {
          int idxlm = 0;
-         for (int idxl = 0; idxl < this->GSH_Grid().MaxDegree() + 1; ++idxl) {
+         for (int idxl = 0; idxl < this->GSH_GridP().MaxDegree() + 1; ++idxl) {
             int rowidx = 0;
             for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
                int idxlmp = idxl * idxl;

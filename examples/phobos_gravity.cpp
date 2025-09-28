@@ -99,15 +99,35 @@ main() {
    std::string pathtofile5 =
        pathtofolder2 + "/ReferentialDensitySolutionRotated.out";
 
+   timer1.start();
    phobos.CartesianOutputAtElement(pathtofolder1, stdvec_potsol);
+   timer1.stop("First output");
+
+   timer1.start();
    phobos.PhysicalOutputAtElement(pathtofolder2, stdvec_potsol);
+   timer1.stop("Second output");
+
+   timer1.start();
    phobos.ReferentialOutputAtElement(pathtofolder3, stdvec_senskernel, true);
+   timer1.stop("Third output");
+
+   timer1.start();
    phobos.ReferentialOutputSlice(pathtofolder3, stdvec_senskernel, true);
+   timer1.stop("Fifth output");
+
+   timer1.start();
    phobos.PhysicalOutputSlice(pathtofolder2, stdvec_potsol);
+   timer1.stop("Sixth output");
+
+   timer1.start();
    phobos.ReferentialOutputRotated(pathtofile1, vec_ang1, vec_ang2,
                                    stdvec_potsol);
+   timer1.stop("Referential rotated");
+
+   timer1.start();
    phobos.PhysicalOutputRotated(pathtofile2, vec_ang12, vec_ang22,
                                 stdvec_potsol);
+   timer1.stop("Physical rotated");
 
    return 0;
 }
