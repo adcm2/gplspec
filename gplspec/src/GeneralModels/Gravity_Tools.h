@@ -682,7 +682,7 @@ FindGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
    solver.compute(mymatrix);
    solver.preconditioner().addmatrix(testmat);
    solver.setTolerance(relerr);
-   solver.setMaxIterations(10);
+   // solver.setMaxIterations(10);
    Eigen::VectorXcd vecguess = solver.preconditioner().solve(vec_fullforce);
    std::cout << "Preconditioner done\n";
    Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
@@ -705,11 +705,14 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
    using BICGSTAB =
        Eigen::BiCGSTAB<MatrixReplacement3D<std::complex<double>>,
                        Eigen::SphericalGeometryPreconditioner<Complex>>;
+   using CONJG = Eigen::ConjugateGradient<
+       MatrixReplacement3D<Complex>, Eigen::Lower | Eigen::Upper,
+       Eigen::SphericalGeometryPreconditioner<Complex>>;
 
    // preconditioning matrix
    Eigen::SparseMatrix<std::complex<double>> testmat =
        -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           0, inp_model.GSH_Grid().MaxDegree());
+           0, inp_model.GSH_GridP().MaxDegree());
    testmat.makeCompressed();
 
    // pseudospectral matrix replacement
@@ -719,8 +722,8 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
    // force vector is simply a minus one in the lm component on the boundary. We
    // simply need to find its index.
    int npoly = inp_model.q().N() - 1;
-   int lMax = inp_model.GSH_Grid().MaxDegree();
-   int nelem = inp_model.Node_Information().NumberOfElements();
+   int lMax = inp_model.GSH_GridP().MaxDegree();
+   int nelem = inp_model.Node_InformationP().NumberOfElements();
    int matlen = nelem * npoly + 1;   // size of matrix
    Eigen::VectorXcd vec_fullforce =
        Eigen::VectorXcd::Zero(std::pow(lMax + 1, 2) * matlen);
@@ -733,7 +736,7 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
 
    // solve using BICGSTAB
    std::cout << "Force declared\n";
-   BICGSTAB solver;
+   CONJG solver;
    solver.compute(mymatrix);
    solver.preconditioner().addmatrix(testmat);
    solver.setTolerance(relerr);

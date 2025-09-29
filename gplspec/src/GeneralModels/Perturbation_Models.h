@@ -107,8 +107,8 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
 
          // check if within planet
          if (radr > inp_model.Node_InformationP().PlanetRadius()) {
-            double planetrad = inp_model.Node_Information().PlanetRadius();
-            double outerrad = inp_model.Node_Information().OuterRadius();
+            double planetrad = inp_model.Node_InformationP().PlanetRadius();
+            double outerrad = inp_model.Node_InformationP().OuterRadius();
             raduse = planetrad;
             multfact = (outerrad - radr) / (outerrad - planetrad);
          }
@@ -538,7 +538,7 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
    //    idx *= 1.0 / length_norm;
    // }
    //    double physicalaverageradius = vec_A[0] / std::sqrt(4.0 * pi_db);
-   double referentialradius = inp_model.Node_Information().PlanetRadius();
+   double referentialradius = inp_model.Node_InformationP().PlanetRadius();
    std::vector<double> vec_houter(spatialsize, 0.0);
    for (int idx = 0; idx < spatialsize; ++idx) {
       vec_houter[idx] = vec_outerradius[idx] / inp_model.LengthNorm();
@@ -554,7 +554,7 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
 
-      int laynum = inp_model.Node_Information().LayerNumber(idxelem);
+      int laynum = inp_model.Node_InformationP().LayerNumber(idxelem);
 
       // looping through nodes
       for (int idxnode = 0; idxnode < inp_model.qP().N(); ++idxnode) {

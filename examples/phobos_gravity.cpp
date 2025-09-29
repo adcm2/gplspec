@@ -28,7 +28,7 @@ main() {
    double massnorm = std::pow(lengthnorm, 3.0) * usedensity;
    double timenorm = 3600.0;
    double scaledensity = physdensity / massnorm * std::pow(lengthnorm, 3.0);
-   int lMax = 128;
+   int lMax = 100;
    int npoly = 5;
    Density3D phobos(scaledensity, pathtofile, npoly, lMax, lengthnorm, timenorm,
                     massnorm, 0.1, 1.5);
@@ -54,7 +54,7 @@ main() {
    // get gravitational field
    timer1.start();
    auto stdvec_potsol =
-       FindGravitationalPotential(phobos, std::pow(10.0, -5.0));
+       FindGravitationalPotential(phobos, std::pow(10.0, -12.0));
    timer1.stop("Time for gravity");
    timer1.start();
    auto stdvec_potsol2 =
