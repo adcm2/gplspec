@@ -1,3 +1,14 @@
+/**
+ * @file clean_bench_1.cpp
+ * @brief Benchmark for gravitational potential calculation of a homogeneous
+ * sphere.
+ *
+ * This example demonstrates:
+ * - Construction of a homogeneous spherical density model.
+ * - Calculation of gravitational potential using two methods.
+ * - Output of results for further analysis.
+ */
+
 #include <GaussQuad/All>
 #include <gplspec/All>
 #include <gplspec/Test>
@@ -9,46 +20,46 @@
 #include <iostream>
 #include <ranges>
 #include <sstream>
+
+/**
+ * @brief Main routine for the homogeneous sphere gravity benchmark.
+ *
+ * - Constructs a homogeneous sphere model.
+ * - Computes gravitational potential using direct and integral methods.
+ * - Outputs results to files.
+ */
 int
 main() {
-
    using namespace GeneralEarthModels;
    using namespace Gravity_Tools;
 
-   // declaring variables:
-   double normrad = 1.0;
-   double normrho = 1.0;
-   double lengthnorm = 6371000.0;
-   double timenorm = 3600.0;
-   double massnorm = 5.972 * std::pow(10.0, 24.0);
-   double maxstep = 0.01;
-   double ballrad = 1.2;
+   // Physical and model parameters
+   double normrad = 1.0;            ///< Normalized radius
+   double normrho = 1.0;            ///< Normalized density
+   double lengthnorm = 6371000.0;   ///< Length normalization (meters)
+   double timenorm = 3600.0;        ///< Time normalization (seconds)
+   double massnorm = 5.972e24;      ///< Mass normalization (kg)
+   double maxstep = 0.01;           ///< Maximum step size for mesh
+   double ballrad = 1.2;            ///< Ball radius for computation
 
    Timer timer1;
-   timer1.start();
 
-   // declare model and find the potential
+   // Construct homogeneous sphere model and compute potential
+   timer1.start();
    Density3D testsphere = Density3D::SphericalHomogeneousPlanet(
        normrad, normrho, lengthnorm, timenorm, massnorm, maxstep, ballrad);
-   //    Eigen::VectorXcd vec_potsol = FindGravitationalPotential(testsphere);
-
-   //    // convert to "standard" format
-   //    auto stdvec_potsol =
-   //    testsphere.SingleEigenVectorToGeneralFormat(vec_potsol);
    auto stdvec_potsol = FindGravitationalPotential(testsphere);
    timer1.stop("Time for 3D");
 
-   // solution using spherical integration method:
+   // Compute potential using spherical integration method
    timer1.start();
    auto vec_integral_potential = GravitationalSphericalIntegral(testsphere);
    timer1.stop("Time for integral");
 
+   // Compute exact solution for homogeneous sphere
    auto vec_exactsol = HomogeneousSphereIntegral(testsphere);
 
-   //////////////////////////////////////////////////////////////////
-   //////////////////////////////////////////////////////////////////
-
-   // output test
+   // Output results to files
    std::string pathtofolder = "./work/Bench1";
    testsphere.ReferentialOutputAtElement(pathtofolder, stdvec_potsol);
    testsphere.OutputAtElement(pathtofolder, vec_integral_potential);

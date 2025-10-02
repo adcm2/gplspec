@@ -1173,6 +1173,11 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
    // int lmax_v = 2;
    // double theta_rot = std::numbers::pi_v<double> / 2.0;
    auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
+   auto wigtemp =
+       GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
+                        GSHTrans::Single, GSHTrans::ColumnMajor>(
+           _grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
+   std::cout << "Check 0\n";
    for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
       // temporary
       Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
@@ -1181,21 +1186,16 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
 
       // fill out matrix
       for (int m = -l; m < l + 1; ++m) {
-         auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
-         auto dl = wigtemp[l];
-         int colidx = 0;
+         auto dl = wigtemp[m];
          for (int mp = -l; mp < l + 1; ++mp) {
             std::complex<double> i1(0.0, 1.0);
             auto tmpmult =
                 multval * exp(i1 * (static_cast<double>(m) * gamma +
                                     static_cast<double>(mp) * alpha));
-            mat_tmp(rowidx, colidx) = dl[mp] * tmpmult;
-            ++colidx;
+            mat_tmp(m + l, mp + l) = dl[l, mp] * tmpmult;
          }
-         ++rowidx;
       }
       vec_wig[l] = mat_tmp;
-      // std::cout << "\n" << mat_tmp << "\n";
    }
    int nelem = this->Num_Elements();
 
@@ -1253,7 +1253,7 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
             vec_denstmp = _vec_density[idxelem][idxnode];
             // }
          }
-
+         // std::cout << "Check 2a " << idxelem << " " << idxnode << "\n";
          _grid.ForwardTransformation(lMax, 0, _vec_h[idxelem][idxnode], tmp_h);
          _grid.ForwardTransformation(lMax, 0, vec_denstmp, tmp_rho);
 
@@ -1300,12 +1300,15 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
    for (int i = 0; i < nelem; ++i) {
       for (int idxnode = 0; idxnode < _poly_ord + 1; ++idxnode) {
          int idxlm = 0;
-         for (int idxl = 0; idxl < this->GSH_Grid().MaxDegree() + 1; ++idxl) {
+         for (int idxl = 0; idxl < this->GSH_GridP().MaxDegree() + 1; ++idxl) {
             int rowidx = 0;
             for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
                int idxlmp = idxl * idxl;
                int colidx = 0;
                for (int idxmp = -idxl; idxmp < idxl + 1; ++idxmp) {
+                  // std::cout << "Check 3a " << i << " " << idxnode << " " <<
+                  // idxl
+                  //           << " " << idxm << " " << idxmp << "\n";
                   vec_output[i][idxnode][idxlm] +=
                       vec_wig[idxl](rowidx, colidx) *
                       vec_rholm[i][idxnode][idxlmp];

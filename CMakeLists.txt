@@ -15,7 +15,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # set(CMAKE_CXX_FLAGS  "-march=native")
 # set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2b -fconcepts-diagnostics-depth=2")
-set(CMAKE_CXX_FLAGS "-O2")
+# set(CMAKE_CXX_FLAGS "-O2")
 
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -35,7 +35,7 @@ include(FetchContent)
 FetchContent_Declare(
   Eigen3
   GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-  GIT_TAG 3.4
+  GIT_TAG 3.4.1
 )
 FetchContent_MakeAvailable(Eigen3)
 
@@ -73,8 +73,8 @@ FetchContent_MakeAvailable(PlanetaryModel)
 include(FetchContent)
 FetchContent_Declare(
   GSHTRANS
-  GIT_REPOSITORY git@github.com:da380/GSHTrans
-  GIT_TAG main
+  GIT_REPOSITORY git@github.com:adcm2/GSHTrans
+  GIT_TAG develop
 )
 FetchContent_MakeAvailable(GSHTRANS)
 
@@ -91,7 +91,7 @@ include(FetchContent)
 FetchContent_Declare(
   Interpolation
   GIT_REPOSITORY git@github.com:da380/Interpolation.git
-  GIT_TAG develop
+  GIT_TAG main
 )
 FetchContent_MakeAvailable(Interpolation)
 
