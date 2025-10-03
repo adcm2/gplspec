@@ -1,4 +1,4 @@
-/** @page getting_started_page Getting Started
+/** @page getting_started_page Getting Started */
 
 # Getting Started with gplspec
 

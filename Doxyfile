@@ -29,6 +29,7 @@ REFERENCES_RELATION    = YES
 # HTML output
 GENERATE_HTML          = YES
 HTML_OUTPUT            = .
+GENERATE_TREEVIEW      = YES
 
 # LaTeX output (optional)
 GENERATE_LATEX         = NO
