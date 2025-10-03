@@ -1,4 +1,7 @@
 var searchData=
 [
-  ['wignertest_2ecpp_0',['wignertest.cpp',['../wignertest_8cpp.html',1,'']]]
+  ['generating_20documentation_0',['Generating Documentation',['../index.html#autotoc_md4',1,'']]],
+  ['getting_20started_1',['Getting Started',['../index.html#autotoc_md1',1,'']]],
+  ['gplspec_3a_20gravity_20solver_2',['gplspec: Gravity solver',['../index.html',1,'']]],
+  ['gravity_20solver_3',['gplspec: Gravity solver',['../index.html',1,'']]]
 ];

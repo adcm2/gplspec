@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>gplspec: Main Page</title>
+<title>gplspec: gplspec: Gravity solver</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,10 +69,54 @@ $(function() {
 </div>
 </div>
 
-<div class="header">
-  <div class="headertitle"><div class="title">gplspec Documentation</div></div>
+<div><div class="header">
+  <div class="headertitle"><div class="title">gplspec: Gravity solver </div></div>
 </div><!--header-->
 <div class="contents">
+<div class="textblock"><p><a class="anchor" id="md_mainpage"></a> <code>gplspec</code> is a C++ library for finding the gravitational potential of isolated, aspherical, heterogeneous planets. This documentation provides an overview of the library, its API, and usage examples.</p>
+<h1><a class="anchor" id="autotoc_md1"></a>
+Getting Started</h1>
+<p>This section describes how to build and run the project.</p>
+<h2><a class="anchor" id="autotoc_md2"></a>
+Prerequisites</h2>
+<ul>
+<li>A C++ compiler (e.g., g++) that meets the C++20 standard</li>
+<li>CMake</li>
+<li>Doxygen (for documentation)</li>
+<li>NetCDF</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md3"></a>
+Building the Project</h2>
+<ol type="1">
+<li>Clone the repository.</li>
+<li>Create a build directory using CMake, e.g. cmake -S . -B build</li>
+<li>Compile the source code using CMake, e.g. cmake &ndash;build build</li>
+</ol>
+<h2><a class="anchor" id="autotoc_md4"></a>
+Generating Documentation</h2>
+<p>To generate this documentation, run Doxygen from the project root: </p><div class="fragment"><div class="line">doxygen Doxyfile</div>
+</div><!-- fragment --><p> The output will be in the <code>docs/</code> directory.</p>
+<h1><a class="anchor" id="autotoc_md5"></a>
+Usage</h1>
+<p>Here is a basic example of how to use the library:</p>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &lt;iostream&gt;</span></div>
+<div class="line"><span class="preprocessor">#include &quot;gplspec/All&quot;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">int</span></div>
+<div class="line"><a class="code hl_function" href="clean__bench__1_8cpp.html#ae66f6b31b5ad750f1fe042a706a4e3d4">main</a>() {</div>
+<div class="line">   <span class="keyword">using namespace </span>GeneralEarthModels;</div>
+<div class="line">   <span class="keyword">using namespace </span>Gravity_Tools;</div>
+<div class="line"> </div>
+<div class="line"> </div>
+<div class="line">   <span class="comment">// Construct homogeneous sphere model and compute potential</span></div>
+<div class="line">   Density3D testsphere = Density3D::SphericalHomogeneousPlanet(</div>
+<div class="line">       1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);</div>
+<div class="line">   <span class="keyword">auto</span> potential = FindGravitationalPotential(testsphere);</div>
+<div class="line"> </div>
+<div class="line">   <span class="keywordflow">return</span> 0;</div>
+<div class="line">}</div>
+<div class="ttc" id="aclean__bench__1_8cpp_html_ae66f6b31b5ad750f1fe042a706a4e3d4"><div class="ttname"><a href="clean__bench__1_8cpp.html#ae66f6b31b5ad750f1fe042a706a4e3d4">main</a></div><div class="ttdeci">int main()</div><div class="ttdoc">Main routine for the homogeneous sphere gravity benchmark.</div><div class="ttdef"><b>Definition</b> <a href="clean__bench__1_8cpp_source.html#l00032">clean_bench_1.cpp:32</a></div></div>
+</div><!-- fragment --> </div></div><!-- PageDoc -->
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
