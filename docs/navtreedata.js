@@ -26,7 +26,8 @@ var NAVTREE =
 [
   [ "gplspec", "index.html", [
     [ "gplspec: Gravity and Planetary Spectra Solver", "index.html", null ],
-    [ "Getting Started", "getting_started_page.html", [
+    [ "getting_started", "md_getting__started.html", null ],
+    [ "Getting Started */", "getting_started_page.html", [
       [ "Getting Started with gplspec", "getting_started_page.html#autotoc_md1", [
         [ "Prerequisites", "getting_started_page.html#autotoc_md2", null ],
         [ "Building the Project", "getting_started_page.html#autotoc_md3", null ],
