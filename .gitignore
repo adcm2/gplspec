@@ -1,5 +1,4 @@
 *.out
 build/
-/docs/
 /html/
 /latex/
