@@ -16,7 +16,7 @@ var searchData=
   ['code_20examples_13',['Code Examples',['../examples_page.html#autotoc_md10',1,'']]],
   ['comparison_14',['Step 4: Output Results for Comparison',['../group__bench2__step4.html',1,'']]],
   ['concepts_15',['Tutorial: Core Concepts',['../tutorial_core_concepts_page.html#autotoc_md5',1,'']]],
-  ['concepts_20tutorial_16',['Core Concepts Tutorial',['../tutorial_core_concepts_page.html',1,'']]],
+  ['concepts_20tutorial_16',['Core Concepts Tutorial */',['../tutorial_core_concepts_page.html',1,'']]],
   ['core_20concepts_17',['Tutorial: Core Concepts',['../tutorial_core_concepts_page.html#autotoc_md5',1,'']]],
-  ['core_20concepts_20tutorial_18',['Core Concepts Tutorial',['../tutorial_core_concepts_page.html',1,'']]]
+  ['core_20concepts_20tutorial_18',['Core Concepts Tutorial */',['../tutorial_core_concepts_page.html',1,'']]]
 ];

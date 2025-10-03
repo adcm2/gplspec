@@ -35,7 +35,7 @@ var NAVTREE =
       ] ]
     ] ],
     [ "tutorial_core_concepts", "md_tutorial__core__concepts.html", null ],
-    [ "Core Concepts Tutorial", "tutorial_core_concepts_page.html", [
+    [ "Core Concepts Tutorial */", "tutorial_core_concepts_page.html", [
       [ "Tutorial: Core Concepts", "tutorial_core_concepts_page.html#autotoc_md5", [
         [ "The Density3D Class", "tutorial_core_concepts_page.html#autotoc_md6", null ],
         [ "Gravitational Potential Solvers", "tutorial_core_concepts_page.html#autotoc_md7", [
@@ -45,7 +45,7 @@ var NAVTREE =
       ] ]
     ] ],
     [ "examples_page", "md_examples__page.html", null ],
-    [ "Examples", "examples_page.html", [
+    [ "Examples */", "examples_page.html", [
       [ "Code Examples", "examples_page.html#autotoc_md10", null ]
     ] ],
     [ "Topics", "topics.html", "topics" ],

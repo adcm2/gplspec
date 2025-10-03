@@ -15,7 +15,7 @@ This guide covers the basic steps to compile and use the `gplspec` library.
 
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repository-url>
+    git clone https://github.com/adcm2/gplspec.git
     cd gplspec
     ```
 
