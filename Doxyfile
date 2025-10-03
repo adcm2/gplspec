@@ -1,0 +1,54 @@
+# Doxyfile for gplspec documentation
+
+# Project settings
+PROJECT_NAME           = "gplspec"
+PROJECT_BRIEF          = "Gravity and Planetary Spectra Solver"
+PROJECT_LOGO           =
+OUTPUT_DIRECTORY       = docs
+CREATE_SUBDIRS         = NO
+
+# Input settings
+INPUT                  = ./examples ./src
+FILE_PATTERNS          = *.cpp *.h
+RECURSIVE              = YES
+EXCLUDE                = build
+
+# Build settings
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_ANON_NSPACES   = YES
+
+# Source code browsing
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+
+# HTML output
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+
+# LaTeX output (optional)
+GENERATE_LATEX         = NO
+
+# Diagrams (optional, needs dot)
+HAVE_DOT               = YES
+DOT_IMAGE_FORMAT       = svg
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+CLASS_DIAGRAMS         = YES
+COLLABORATION_GRAPH    = YES
+
+# Misc
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+
+# If you want to document private members, set this to YES
+# EXTRACT_PRIVATE      = YES
+
+# If you want to use Markdown in your comments
+MARKDOWN_SUPPORT       = YES
