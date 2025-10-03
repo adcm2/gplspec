@@ -88,10 +88,14 @@ Prerequisites</h2>
 <h2><a class="anchor" id="autotoc_md3"></a>
 Building the Project</h2>
 <ol type="1">
-<li>Clone the repository.</li>
-<li>Create a build directory using CMake, e.g. cmake -S . -B build</li>
-<li>Compile the source code using CMake, e.g. cmake &ndash;build build</li>
+<li>Clone the repository</li>
+<li>Create a build directory</li>
+<li>Compile the source code</li>
 </ol>
+<p>Building can be performed via: </p><div class="fragment"><div class="line">git clone https://github.com/adcm2/gplspec.git</div>
+<div class="line">cmake -S . -B build</div>
+<div class="line">cmake --build build/</div>
+</div><!-- fragment --><p> Be careful to ensure that the compiler used by CMake is C++20 compliant. If you have multiple compilers installed this can be enforced with the option -DCMAKE_CXX_COMPILER=path_to_compiler.</p>
 <h2><a class="anchor" id="autotoc_md4"></a>
 Generating Documentation</h2>
 <p>To generate this documentation, run Doxygen from the project root: </p><div class="fragment"><div class="line">doxygen Doxyfile</div>
