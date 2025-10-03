@@ -15,9 +15,17 @@ This section describes how to build and run the project.
 
 ### Building the Project
 
-1.  Clone the repository.
-2.  Create a build directory using CMake, e.g. cmake -S . -B build
-3.  Compile the source code using CMake, e.g. cmake --build build
+1.  Clone the repository
+2.  Create a build directory 
+3.  Compile the source code 
+
+Building can be performed via:
+```bash
+git clone https://github.com/adcm2/gplspec.git
+cmake -S . -B build
+cmake --build build/
+```
+Be careful to ensure that the compiler used by CMake is C++20 compliant. If you have multiple compilers installed this can be enforced with the option -DCMAKE_CXX_COMPILER=path_to_compiler.
 
 ### Generating Documentation
 
@@ -28,7 +36,6 @@ doxygen Doxyfile
 The output will be in the `docs/` directory.
 
 ## Usage
-
 Here is a basic example of how to use the library:
 
 ```cpp
