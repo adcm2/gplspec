@@ -35,4 +35,3 @@ auto vec_integral_potential = GravitationalSphericalIntegral(testprem);
 
 See the @ref clean_bench_2.cpp example for a full benchmark comparison.
 
-*/

@@ -19,16 +19,10 @@ This guide covers the basic steps to compile and use the `gplspec` library.
     cd gplspec
     ```
 
-2.  **Configure with CMake:**
+2.  **Configure and compile with CMake:**
     ```bash
-    mkdir build
-    cd build
-    cmake ..
-    ```
-
-3.  **Compile the code:**
-    ```bash
-    make
+    cmake -S . -B build
+    cmake --build build/
     ```
     The executables for the examples will be located in the `build/examples` directory.
 
@@ -39,5 +33,3 @@ To generate the documentation yourself, run Doxygen from the project's root dire
 doxygen Doxyfile
 ```
 The output will be generated in the `docs/` folder. Open `docs/index.html` to view it.
-
-*/
