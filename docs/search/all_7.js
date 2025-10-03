@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['for_20comparison_0',['Step 4: Output Results for Comparison',['../group__bench2__step4.html',1,'']]]
+  ['density3d_20class_0',['The Density3D Class',['../tutorial_core_concepts_page.html#autotoc_md12',1,'']]],
+  ['documentation_1',['Generating Documentation',['../getting_started_page.html#autotoc_md10',1,'']]]
 ];

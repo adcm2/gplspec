@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['building_20the_20project_0',['Building the Project',['../index.html#autotoc_md3',1,'']]]
+  ['and_20planetary_20spectra_20solver_0',['gplspec: Gravity and Planetary Spectra Solver',['..//home/adcm2/Documents/c++/gplspec/mainpage.md#autotoc_md0',1,'']]]
 ];

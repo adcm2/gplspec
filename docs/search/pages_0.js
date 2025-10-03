@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['gplspec_3a_20gravity_20solver_0',['gplspec: Gravity solver',['../index.html',1,'']]],
-  ['gravity_20solver_1',['gplspec: Gravity solver',['../index.html',1,'']]]
+  ['concepts_20tutorial_0',['Core Concepts Tutorial',['../tutorial_core_concepts_page.html',1,'']]],
+  ['core_20concepts_20tutorial_1',['Core Concepts Tutorial',['../tutorial_core_concepts_page.html',1,'']]]
 ];

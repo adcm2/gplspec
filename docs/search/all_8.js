@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['generating_20documentation_0',['Generating Documentation',['../index.html#autotoc_md4',1,'']]],
-  ['getting_20started_1',['Getting Started',['../index.html#autotoc_md1',1,'']]],
-  ['gplspec_3a_20gravity_20solver_2',['gplspec: Gravity solver',['../index.html',1,'']]],
-  ['gravity_20solver_3',['gplspec: Gravity solver',['../index.html',1,'']]]
+  ['element_20method_0',['The Spectral-Element Method',['../tutorial_core_concepts_page.html#autotoc_md14',1,'']]],
+  ['examples_1',['examples',['../examples_page.html#autotoc_md16',1,'Code Examples'],['../examples_page.html',1,'Examples']]],
+  ['examples_5fpage_2',['examples_page',['../md_examples__page.html',1,'']]],
+  ['examples_5fpage_2emd_3',['examples_page.md',['../examples__page_8md.html',1,'']]]
 ];

@@ -1,6 +1,4 @@
 var searchData=
 [
-  ['phobos_5fgravity_2ecpp_0',['phobos_gravity.cpp',['../phobos__gravity_8cpp.html',1,'']]],
-  ['phobos_5fgravity_5fperturbation_2ecpp_1',['phobos_gravity_perturbation.cpp',['../phobos__gravity__perturbation_8cpp.html',1,'']]],
-  ['phobos_5fheterogeneous_2ecpp_2',['phobos_heterogeneous.cpp',['../phobos__heterogeneous_8cpp.html',1,'']]]
+  ['getting_5fstarted_2emd_0',['getting_started.md',['../getting__started_8md.html',1,'']]]
 ];

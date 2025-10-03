@@ -8,7 +8,7 @@ OUTPUT_DIRECTORY       = docs
 CREATE_SUBDIRS         = NO
 
 # Input settings
-INPUT                  = ./examples ./src ./mainpage.md
+INPUT                  = ./src ./examples ./mainpage.md ./getting_started.md ./tutorial_core_concepts.md ./examples_page.md
 FILE_PATTERNS          = *.cpp *.h
 RECURSIVE              = YES
 EXCLUDE                = build
