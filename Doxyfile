@@ -28,7 +28,7 @@ REFERENCES_RELATION    = YES
 
 # HTML output
 GENERATE_HTML          = YES
-HTML_OUTPUT            = html
+HTML_OUTPUT            = .
 
 # LaTeX output (optional)
 GENERATE_LATEX         = NO
