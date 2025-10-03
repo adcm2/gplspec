@@ -25,7 +25,7 @@
 #include <sstream>
 
 /**
- * @brief Main entry point for the benchmark example.
+ * @brief Main entry point for the second benchmark.
  * @return int Exit status.
  */
 int
@@ -34,22 +34,32 @@ main() {
    using namespace GeneralEarthModels;
    using namespace Gravity_Tools;
 
-   // --- 1. Setup Model Parameters ---
-   /// @brief Maximum step size for the model.
+   /** @defgroup bench2_step1 Step 1: Setup Model Parameters
+    *  @{
+    */
+   // Maximum step size for the model.
    double maxstep = 0.01;
-   /// @brief Radius of the bounding sphere.
+
+   // Radius of the bounding sphere.
    double ballrad = 1.2;
-   /// @brief Polynomial degree for spectral elements.
+
+   // Polynomial degree for spectral elements.
    int npoly = 5;
-   /// @brief Maximum spherical harmonic degree.
+
+   // Maximum spherical harmonic degree.
    int lmax = 2;
-   /// @brief Path to the PREM model data file.
+
+   // Path to the PREM model data file.
    std::string pathtoprem = "modeldata/prem.200";
 
-   /// @brief Timer to measure performance of calculations.
+   // Timer to measure performance of calculations.
    Timer timer1;
+   /** @} */
 
-   // --- 2. Calculate Potential with 3D Spectral-Element Method ---
+   /** @defgroup bench2_step2 Step 2: Calculate Potential with 3D
+    * Spectral-Element Method
+    *  @{
+    */
    timer1.start();
 
    // Declare model and find the potential
@@ -61,24 +71,32 @@ main() {
    /// method.
    auto stdvec_potsol = FindGravitationalPotential(testprem);
    timer1.stop("Time for 3D");
+   /** @} */
 
-   // --- 3. Calculate Potential with Spherical Integration Method ---
+   /** @defgroup bench2_step3 Step 3: Calculate Potential with Spherical
+    * Integration Method
+    *  @{
+    */
    timer1.start();
    /// @brief Gravitational potential calculated using direct spherical
    /// integration.
    auto vec_integral_potential = GravitationalSphericalIntegral(testprem);
    timer1.stop("Time for integral");
+   /** @} */
 
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
 
-   // --- 4. Output Results for Comparison ---
+   /** @defgroup bench2_step4 Step 4: Output Results for Comparison
+    *  @{
+    */
    /// @brief Output directory for the results.
    std::string pathtofolder = "./work/Bench2";
    // Output from the 3D spectral-element method
    testprem.ReferentialOutputAtElement(pathtofolder, stdvec_potsol);
    // Output from the spherical integration method
    testprem.OutputAtElement(pathtofolder, vec_integral_potential);
+   /** @} */
 
    return 0;
 }

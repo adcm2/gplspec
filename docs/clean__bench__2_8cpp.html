@@ -74,8 +74,6 @@ $(function() {
 </div>
 </div><!-- top -->
 <div class="header">
-  <div class="summary">
-<a href="#func-members">Functions</a>  </div>
   <div class="headertitle"><div class="title">clean_bench_2.cpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
@@ -100,13 +98,6 @@ Include dependency graph for clean_bench_2.cpp:</div>
 </div>
 </div>
 <p><a href="clean__bench__2_8cpp_source.html">Go to the source code of this file.</a></p>
-<table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
-Functions</h2></td></tr>
-<tr class="memitem:ae66f6b31b5ad750f1fe042a706a4e3d4" id="r_ae66f6b31b5ad750f1fe042a706a4e3d4"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clean__bench__2_8cpp.html#ae66f6b31b5ad750f1fe042a706a4e3d4">main</a> ()</td></tr>
-<tr class="memdesc:ae66f6b31b5ad750f1fe042a706a4e3d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Main entry point for the benchmark example.  <br /></td></tr>
-<tr class="separator:ae66f6b31b5ad750f1fe042a706a4e3d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Example demonstrating and benchmarking gravitational potential calculations. </p>
 <p>This example compares two methods for calculating the gravitational potential of a 1D planetary model (PREM):</p><ol type="1">
@@ -116,79 +107,7 @@ Functions</h2></td></tr>
 <p>The execution time for each method is measured and printed to the console. The results from both methods are then saved to the 'work/Bench2' directory for comparison. </p>
 
 <p class="definition">Definition in file <a class="el" href="clean__bench__2_8cpp_source.html">clean_bench_2.cpp</a>.</p>
-</div><h2 class="groupheader">Function Documentation</h2>
-<a id="ae66f6b31b5ad750f1fe042a706a4e3d4" name="ae66f6b31b5ad750f1fe042a706a4e3d4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae66f6b31b5ad750f1fe042a706a4e3d4">&#9670;&#160;</a></span>main()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int main </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Main entry point for the benchmark example. </p>
-<dl class="section return"><dt>Returns</dt><dd>int Exit status. </dd></dl>
-<p>Maximum step size for the model.</p>
-<p>Radius of the bounding sphere.</p>
-<p>Polynomial degree for spectral elements.</p>
-<p>Maximum spherical harmonic degree.</p>
-<p>Path to the PREM model data file.</p>
-<p>Timer to measure performance of calculations.</p>
-<p>3D density model initialized from a 1D planetary file (PREM).</p>
-<p>Gravitational potential calculated using the 3D spectral-element method.</p>
-<p>Gravitational potential calculated using direct spherical integration.</p>
-<p>Output directory for the results.</p>
-
-<p class="definition">Definition at line <a class="el" href="clean__bench__2_8cpp_source.html#l00032">32</a> of file <a class="el" href="clean__bench__2_8cpp_source.html">clean_bench_2.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">   32</span>       {</div>
-<div class="line"><span class="lineno">   33</span> </div>
-<div class="line"><span class="lineno">   34</span>   <span class="keyword">using namespace </span>GeneralEarthModels;</div>
-<div class="line"><span class="lineno">   35</span>   <span class="keyword">using namespace </span>Gravity_Tools;</div>
-<div class="line"><span class="lineno">   36</span> </div>
-<div class="line"><span class="lineno">   37</span>   <span class="comment">// --- 1. Setup Model Parameters ---</span></div>
-<div class="line"><span class="lineno">   39</span>   <span class="keywordtype">double</span> maxstep = 0.01;</div>
-<div class="line"><span class="lineno">   41</span>   <span class="keywordtype">double</span> ballrad = 1.2;</div>
-<div class="line"><span class="lineno">   43</span>   <span class="keywordtype">int</span> npoly = 5;</div>
-<div class="line"><span class="lineno">   45</span>   <span class="keywordtype">int</span> lmax = 2;</div>
-<div class="line"><span class="lineno">   47</span>   std::string pathtoprem = <span class="stringliteral">&quot;modeldata/prem.200&quot;</span>;</div>
-<div class="line"><span class="lineno">   48</span> </div>
-<div class="line"><span class="lineno">   50</span>   Timer timer1;</div>
-<div class="line"><span class="lineno">   51</span> </div>
-<div class="line"><span class="lineno">   52</span>   <span class="comment">// --- 2. Calculate Potential with 3D Spectral-Element Method ---</span></div>
-<div class="line"><span class="lineno">   53</span>   timer1.start();</div>
-<div class="line"><span class="lineno">   54</span> </div>
-<div class="line"><span class="lineno">   55</span>   <span class="comment">// Declare model and find the potential</span></div>
-<div class="line"><span class="lineno">   57</span>   Density3D testprem = Density3D::OneDimensionalPlanetFromFile(</div>
-<div class="line"><span class="lineno">   58</span>       pathtoprem, npoly, lmax, maxstep, ballrad);</div>
-<div class="line"><span class="lineno">   59</span> </div>
-<div class="line"><span class="lineno">   62</span>   <span class="keyword">auto</span> stdvec_potsol = FindGravitationalPotential(testprem);</div>
-<div class="line"><span class="lineno">   63</span>   timer1.stop(<span class="stringliteral">&quot;Time for 3D&quot;</span>);</div>
-<div class="line"><span class="lineno">   64</span> </div>
-<div class="line"><span class="lineno">   65</span>   <span class="comment">// --- 3. Calculate Potential with Spherical Integration Method ---</span></div>
-<div class="line"><span class="lineno">   66</span>   timer1.start();</div>
-<div class="line"><span class="lineno">   69</span>   <span class="keyword">auto</span> vec_integral_potential = GravitationalSphericalIntegral(testprem);</div>
-<div class="line"><span class="lineno">   70</span>   timer1.stop(<span class="stringliteral">&quot;Time for integral&quot;</span>);</div>
-<div class="line"><span class="lineno">   71</span> </div>
-<div class="line"><span class="lineno">   74</span> </div>
-<div class="line"><span class="lineno">   75</span>   <span class="comment">// --- 4. Output Results for Comparison ---</span></div>
-<div class="line"><span class="lineno">   77</span>   std::string pathtofolder = <span class="stringliteral">&quot;./work/Bench2&quot;</span>;</div>
-<div class="line"><span class="lineno">   78</span>   <span class="comment">// Output from the 3D spectral-element method</span></div>
-<div class="line"><span class="lineno">   79</span>   testprem.ReferentialOutputAtElement(pathtofolder, stdvec_potsol);</div>
-<div class="line"><span class="lineno">   80</span>   <span class="comment">// Output from the spherical integration method</span></div>
-<div class="line"><span class="lineno">   81</span>   testprem.OutputAtElement(pathtofolder, vec_integral_potential);</div>
-<div class="line"><span class="lineno">   82</span> </div>
-<div class="line"><span class="lineno">   83</span>   <span class="keywordflow">return</span> 0;</div>
-<div class="line"><span class="lineno">   84</span>}</div>
-</div><!-- fragment -->
-</div>
-</div>
-</div><!-- contents -->
+</div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8
