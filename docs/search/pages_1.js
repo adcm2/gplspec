@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['examples_0',['Examples',['../examples_page.html',1,'']]],
-  ['examples_5fpage_1',['examples_page',['../md_examples__page.html',1,'']]]
+  ['concepts_20tutorial_0',['Core Concepts Tutorial',['../tutorial_core_concepts_page.html',1,'']]],
+  ['core_20concepts_20tutorial_1',['Core Concepts Tutorial',['../tutorial_core_concepts_page.html',1,'']]]
 ];

@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['getting_20started_0',['Getting Started',['../getting_started_page.html',1,'']]],
-  ['getting_5fstarted_1',['getting_started',['../md_getting__started.html',1,'']]],
-  ['gplspec_2',['gplspec',['../index.html',1,'']]]
+  ['examples_0',['Examples',['../examples_page.html',1,'']]],
+  ['examples_5fpage_1',['examples_page',['../md_examples__page.html',1,'']]]
 ];
