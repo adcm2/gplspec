@@ -1,7 +1,9 @@
 ---
 title: "Benchmarks"
 layout: default
+permalink: /benchmark/
 ---
+
 
 # Benchmarks
 
@@ -9,8 +11,8 @@ This section contains performance benchmarks and validation tests for gplspec.
 
 ## Available Benchmarks
 
-{% for benchmarks in site.benchmarks %}
-- [{{ benchmarks.title }}]({{ benchmarks.url | relative_url }}) - {{ benchmarks.description }}
+{% for benchmark in site.benchmarks %}
+- [{{ benchmark.title }}]({{ benchmark.url | relative_url }}) - {{ benchmark.description }}
 {% endfor %}
 
 ## Running Benchmarks

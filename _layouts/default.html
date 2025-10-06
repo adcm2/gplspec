@@ -23,6 +23,7 @@
                 <ul>
                     <li><a href="{{ '/getting-started/' | relative_url }}">Installation</a></li>
                     <li><a href="{{ '/quick-start/' | relative_url }}">Quick Start Guide</a></li>
+                    <li><a href="{{ '/benchmark/' | relative_url }}">Benchmarks</a></li>
                 </ul>
             </div>
 
@@ -47,8 +48,8 @@
             <div class="nav-section">
                 <h3>Benchmarks</h3>
                 <ul>
-                    {% for example in site.benchmarks %}
-                    <li><a href="{{ benchmarks.url | relative_url }}">{{ benchmarks.title }}</a></li>
+                    {% for benchmark in site.benchmarks %}
+                    <li><a href="{{ benchmark.url | relative_url }}">{{ benchmark.title }}</a></li>
                     {% endfor %}
                 </ul>
             </div>

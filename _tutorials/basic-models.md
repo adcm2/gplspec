@@ -1,8 +1,8 @@
 ---
-title: "Core Concepts"
+title: "Homogeneous sphere"
 ---
 
-# Core Concepts Tutorial
+# Basic models
 
 This tutorial introduces the fundamental concepts and classes in gplspec, helping you understand how to effectively use the library for gravitational modeling.
 
