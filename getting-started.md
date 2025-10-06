@@ -3,7 +3,7 @@ title: "Getting Started"
 permalink: /getting-started/
 ---
 
-# Getting Started with gplspec
+# Getting started with gplspec
 gplspec is a header only library, consequently it does not require installation. Indeed, one only needs the header files to be able to include it. It is, however, dependent upon other libraries that we have developed, and consequently it is set up so that it can be included via CMake for ease. Although there is no requirement to use CMake the rest of this guide will describe how to include via CMake.
 
 ## Prerequisites

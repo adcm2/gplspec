@@ -31,7 +31,7 @@ This documentation is organized into several sections:
 
 - **[Getting Started]({{ '/getting-started/' | relative_url }})** - Installation and basic setup
 - **[Tutorials]({{ '/tutorials/' | relative_url }})** - Step-by-step guides to core concepts
-- **[Benchmarks]({{ '/benchmarks/' | relative_url }})** - Benchmarks of code accuracy and performance
+- **[Benchmarks]({{ '/benchmark/' | relative_url }})** - Benchmarks of code accuracy and performance
 - **[API Reference]({{ '/api/' | relative_url }})** - Detailed class and function documentation
 
 
@@ -43,7 +43,7 @@ Explore our performance benchmarks and validation tests:
 - [{{ benchmark.title }}]({{ benchmark.url | relative_url }})
 {% endfor %}
 
-[View all benchmarks →]({{ '/benchmarks/' | relative_url }})
+[View all benchmarks →]({{ '/benchmark/' | relative_url }})
 
 ## Citation
 
