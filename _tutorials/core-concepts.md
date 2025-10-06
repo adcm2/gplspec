@@ -17,11 +17,11 @@ gplspec is built around several key concepts:
 
 ## The Density3D Class
 
-The `Density3D` class is the cornerstone of gplspec, representing a three-dimensional density distribution of a planetary body.
+The `Density3D` class is the main class within gplspec, representing a three-dimensional density distribution of a planetary body. There are other classes which can be used for one-dimensional or spherical bodies, but there is little to be gained in most practical scenarios.
 
 ### Creating a Density Model
 
-The most common way to create a density model is from a 1D radial profile:
+There are multiple ways in which to construct a density model. These are discussed in more detail through the rest of the tutorials. In the below example a one dimensional model is constructed using the data from PREM. 
 
 ```cpp
 #include <gplspec/All>
@@ -43,7 +43,7 @@ Density3D earth_model = Density3D::OneDimensionalPlanetFromFile(
 
 - **`maxstep`**: Controls the radial resolution of the spectral elements
 - **`ballrad`**: Defines the size of the computational domain (normalized units)
-- **`npoly`**: Higher values give more accuracy but increase computational cost
+- **`npoly`**: Maximum polynomial degree of the radial spectral elements
 - **`lmax`**: Maximum degree of spherical harmonic expansion for lateral variations
 
 ## Gravitational Potential Calculation
@@ -55,16 +55,12 @@ Once you have a density model, you can compute the gravitational potential using
 This is the primary method, optimized for high accuracy and performance:
 
 ```cpp
-#include <gplspec/Timer>
+#include <gplspec/All>
 using namespace Gravity_Tools;
-
-Timer timer;
-timer.start();
 
 // Compute potential using spectral-element method
 auto potential_spectral = FindGravitationalPotential(earth_model);
 
-timer.stop("Spectral-element method");
 ```
 
 ### Method 2: Spherical Integration
@@ -72,12 +68,9 @@ timer.stop("Spectral-element method");
 For validation and comparison, a direct integration method is available:
 
 ```cpp
-timer.start();
-
 // Compute potential using spherical integration
 auto potential_integration = GravitationalSphericalIntegral(earth_model);
 
-timer.stop("Spherical integration method");
 ```
 
 ## Working with Results
@@ -104,24 +97,10 @@ earth_model.OutputAtElement(output_directory, potential_integration);
 
 The computational cost scales with your parameter choices:
 
-- **Higher `npoly`**: More accurate but slower
-- **Smaller `maxstep`**: More radial resolution but more elements
+- **Higher `npoly`**: Generally increases accuracy
+- **Smaller `maxstep`**: Decreases the maximum element size
 - **Higher `lmax`**: More lateral detail but increased memory usage
 
-### Typical Parameter Ranges
-
-For different applications:
-
-```cpp
-// Quick testing
-int npoly = 3; double maxstep = 0.02; int lmax = 1;
-
-// Standard accuracy
-int npoly = 5; double maxstep = 0.01; int lmax = 2;
-
-// High precision
-int npoly = 7; double maxstep = 0.005; int lmax = 4;
-```
 
 ## Complete Example
 
@@ -177,8 +156,5 @@ int main() {
 
 Now that you understand the core concepts:
 
-1. **Explore the [Benchmarks]({{ '/benchmark/' | relative_url }})** to see these concepts in action
-2. **Learn about advanced features** in the specialized tutorials
-3. **Consult the [API Reference]({{ '/api/' | relative_url }})** for detailed function documentation
-
-The next tutorial covers [Advanced Modeling Techniques]({{ '/tutorials/advanced-modeling/' | relative_url }}) for more complex scenarios.
+1. **Explore the rest of the [Tutorials]({{ '/tutorials/' | relative_url }})** to see these concepts in action
+2. **See the [Benchmarks]({{ '/benchmark/' | relative_url }})** for validation of the model framework
