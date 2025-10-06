@@ -152,6 +152,6 @@ Now that you have gplspec installed:
 
 If you encounter issues:
 
-- Check the [Benchmarks]({{ '/examples/' | relative_url }}) for similar use cases
+- Check the [Examples]({{ '/examples/' | relative_url }}) for similar use cases
 - Review the [API documentation]({{ '/api/' | relative_url }})
 - Open an issue on the GitHub repository
