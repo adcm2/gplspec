@@ -74,7 +74,35 @@
     <script src="{{ '/assets/js/navigation.js' | relative_url }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // ...existing toggle code...
+            // Add click handlers to all nav toggles
+            const toggles = document.querySelectorAll('.nav-toggle');
+
+            toggles.forEach(function (toggle) {
+                toggle.addEventListener('click', function () {
+                    const targetId = this.getAttribute('data-target');
+                    const targetList = document.getElementById(targetId);
+                    const arrow = this.querySelector('.arrow');
+
+                    if (targetList) {
+                        // Toggle the expanded class on both toggle and list
+                        this.classList.toggle('expanded');
+                        targetList.classList.toggle('expanded');
+
+                        // Update aria attributes for accessibility
+                        const isExpanded = targetList.classList.contains('expanded');
+                        this.setAttribute('aria-expanded', isExpanded);
+                        targetList.setAttribute('aria-hidden', !isExpanded);
+                    }
+                });
+
+                // Set initial state - you can modify this to have sections open by default
+                const targetId = toggle.getAttribute('data-target');
+                const targetList = document.getElementById(targetId);
+                if (targetList) {
+                    toggle.setAttribute('aria-expanded', 'false');
+                    targetList.setAttribute('aria-hidden', 'true');
+                }
+            });
 
             // Auto-expand section containing current page
             const currentLink = document.querySelector('.nav-links a.active');
