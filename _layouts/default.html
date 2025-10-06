@@ -45,6 +45,15 @@
             </div>
 
             <div class="nav-section">
+                <h3>Benchmarks</h3>
+                <ul>
+                    {% for example in site.benchmarks %}
+                    <li><a href="{{ benchmark.url | relative_url }}">{{ benchmark.title }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="nav-section">
                 <h3>Reference</h3>
                 <ul>
                     <li><a href="{{ '/api/' | relative_url }}">API Documentation</a></li>

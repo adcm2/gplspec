@@ -67,6 +67,16 @@ The particle-relabelling method offers significant computational advantages:
 - Check out [examples]({{ '/examples/' | relative_url }}) for practical applications
 - Refer to the [API documentation]({{ '/api/' | relative_url }}) for detailed function references
 
+## Benchmarks
+
+Explore our performance benchmarks and validation tests:
+
+{% for benchmark in site.benchmarks limit:3 %}
+- [{{ benchmark.title }}]({{ benchmark.url | relative_url }})
+{% endfor %}
+
+[View all benchmarks →]({{ '/benchmarks/' | relative_url }})
+
 ## Citation
 
 If you use gplspec in your research, please cite:
