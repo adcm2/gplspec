@@ -4,12 +4,11 @@ permalink: /getting-started/
 ---
 
 # Getting Started with gplspec
-
-This guide will help you install, build, and run your first gplspec program.
+gplspec is a header only library, consequently it does not require installation. Indeed, one only needs the header files to be able to include it. It is, however, dependent upon other libraries that we have developed, and consequently it is set up so that it can be included via CMake for ease. Although there is no requirement to use CMake the rest of this guide will describe how to include via CMake.
 
 ## Prerequisites
 
-Before building gplspec, ensure you have:
+Before including gplspec via CMake, ensure you have:
 
 - **C++ Compiler**: C++20 support
 - **CMake**: Version 3.15 or later
@@ -20,9 +19,10 @@ Before building gplspec, ensure you have:
 - **Doxygen**: For generating API documentation
 - **Graphviz**: For generating dependency diagrams in documentation
 
-## Installation
+## Testing gplspec
+If you wish to test gplspec before including it in larger projects you can clone the repository and run the examples. Steps to do this using CMake are given below.
 
-### 1. Clone the Repository
+### 1. Cloning and building from GitHub
 
 ```bash
 git clone https://github.com/adcm2/gplspec.git
@@ -51,11 +51,34 @@ Test your installation by running one of the included examples:
 ./examples/clean_bench_1
 ```
 
-## Your First Program
+### Project Structure
 
-Create a simple program to verify everything is working:
+After building, the gplspec directory will look like this:
 
-### Step 1: Create a new file
+```
+gplspec/
+├── src/                 # Source code
+├── examples/            # Example programs
+├── build/               # Build artifacts
+├── CMakeLists.txt       # CMake configuration
+└── README.md
+```
+
+## Including in larger projects
+
+### Fetching the content
+To include it in a program via CMake it is recommended that one fetches the repository from Git, ie include the following in your CMakeLists.txt file:
+```cmake 
+include(FetchContent)
+FetchContent_Declare(
+  gplspec
+  GIT_REPOSITORY https://github.com/adcm2/gplspec.git
+  GIT_TAG main
+)
+FetchContent_MakeAvailable(gplspec)
+```
+### A simple program
+Once you have included the library and appropriately linked it to your executable you can include different parts or all of the library. For example to include all of the library:
 
 ```cpp
 // file: hello_gplspec.cpp
@@ -73,25 +96,7 @@ int main() {
 }
 ```
 
-### Step 2: Compile and run
 
-```bash
-g++ -std=c++20 -I/path/to/gplspec/src hello_gplspec.cpp -o hello_gplspec
-./hello_gplspec
-```
-
-## Project Structure
-
-After building, your project directory will look like this:
-
-```
-gplspec/
-├── src/                 # Source code
-├── examples/            # Example programs
-├── build/               # Build artifacts
-├── CMakeLists.txt       # CMake configuration
-└── README.md
-```
 
 ## Build Options
 
@@ -101,7 +106,7 @@ For development and debugging:
 
 ```bash
 cmake -DCMAKE_BUILD_TYPE=Debug ..
-make
+cmake --build build/
 ```
 
 ### Release Build
@@ -110,27 +115,13 @@ For optimized performance:
 
 ```bash
 cmake -DCMAKE_BUILD_TYPE=Release ..
-make
-```
-
-### Building Documentation
-
-If you have Doxygen installed:
-
-```bash
-cmake -DBUILD_DOCS=ON ..
-make docs
+cmake --build build/
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-**CMake can't find dependencies:**
-```bash
-# Make sure you have the required packages
-sudo apt-get install build-essential cmake git
-```
 
 **Compilation errors:**
 - Ensure you're using a C++20 compatible compiler

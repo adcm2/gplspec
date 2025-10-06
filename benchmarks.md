@@ -9,8 +9,8 @@ This section contains performance benchmarks and validation tests for gplspec.
 
 ## Available Benchmarks
 
-{% for benchmark in site.benchmarks %}
-- [{{ benchmark.title }}]({{ benchmark.url | relative_url }}) - {{ benchmark.description }}
+{% for benchmarks in site.benchmarks %}
+- [{{ benchmarks.title }}]({{ benchmarks.url | relative_url }}) - {{ benchmarks.description }}
 {% endfor %}
 
 ## Running Benchmarks
