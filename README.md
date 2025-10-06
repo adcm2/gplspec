@@ -1,21 +1,2 @@
 # Gravitational_Field
-This code is written for the calculation of gravitational potential in aspherical bodies using the particle relabelling transformation method. There are several examples provided and it is designed to be built using cmake.
-
-This package can be installed easily via:
-1. git clone 
-2. cd gplspec
-3. cmake -S . -B build
-4. cmake --build build/
-
-Pre-requisites:
-A local installation of Eigen3. This is included via cmake in Find_Package(Eigen3 3.3 REQUIRED NO_MODULE). To download Eigen please see the information here https://eigen.tuxfamily.org/index.php?title=Main_Page.
-
-For faster compilation (on machines that are designed to handle this) adding the flag -jN to the 4th step, where N is the number of cores to compile on, can significantly speed things up. 
-
-Benchmarks and the example of Phobos are included in the examples folder. These examples are set up to be run from the gplspec folder. In other words once compiled one can 
-1. Navigate to gplspec folder
-2. Run ./build/bin/clean_bench_1
-3. cd work
-4. python3 CleanBench1Plot.py &
-
-Tomography models are provided within the package, adapted from the compilation by Shule Ye, available at https://github.com/shuleyu/seismic-tomography-models.
+This code is written for the calculation of gravitational potential in aspherical bodies using the particle relabelling transformation method. Documentation (still being finalised is available here: https://adcm2.github.io/gplspec/).
