@@ -6,23 +6,11 @@ url: "https://adcm2.github.io"
 # Build settings
 markdown: kramdown
 highlighter: rouge
-theme: minima
-
-# Plugins
-plugins:
-  - jekyll-feed
-  - jekyll-sitemap
-
-# Navigation structure
-navigation:
-  - title: "Getting Started"
-    url: "/getting-started/"
-  - title: "Tutorials"
-    url: "/tutorials/"
-  - title: "Examples"
-    url: "/examples/"
-  - title: "API Reference"
-    url: "/api/"
+kramdown:
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    block:
+      line_numbers: false
 
 # Collections for organizing content
 collections:
@@ -33,6 +21,21 @@ collections:
     output: true
     permalink: /:collection/:name/
 
+# Default layouts
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: "default"
+  - scope:
+      path: "_tutorials"
+    values:
+      layout: "default"
+  - scope:
+      path: "_examples"
+    values:
+      layout: "default"
+
 # Exclude files from processing
 exclude:
   - src/
@@ -40,3 +43,11 @@ exclude:
   - CMakeLists.txt
   - Doxyfile
   - README.md
+  - Gemfile
+  - Gemfile.lock
+  - vendor/
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap

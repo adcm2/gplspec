@@ -4,26 +4,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ page.title | default: site.title }}</title>
+    <title>{% if page.title %}{{ page.title }} - {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
     <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/default.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
 </head>
 
 <body>
-    <div class="wrapper">
+    <div class="page-wrapper">
+        <!-- Sidebar Navigation -->
         <nav class="sidebar">
             <div class="sidebar-header">
-                <h2><a href="{{ '/' | relative_url }}">{{ site.title }}</a></h2>
+                <h1><a href="{{ '/' | relative_url }}">{{ site.title | replace: " Documentation", "" }}</a></h1>
                 <p>{{ site.description }}</p>
             </div>
-            <ul class="nav-list">
-                {% for item in site.navigation %}
-                <li><a href="{{ item.url | relative_url }}">{{ item.title }}</a></li>
-                {% endfor %}
-            </ul>
 
             <div class="nav-section">
-                <h4>Tutorials</h4>
+                <h3>Getting Started</h3>
+                <ul>
+                    <li><a href="{{ '/getting-started/' | relative_url }}">Installation</a></li>
+                    <li><a href="{{ '/quick-start/' | relative_url }}">Quick Start Guide</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <h3>Tutorials</h3>
                 <ul>
                     {% for tutorial in site.tutorials %}
                     <li><a href="{{ tutorial.url | relative_url }}">{{ tutorial.title }}</a></li>
@@ -32,22 +36,34 @@
             </div>
 
             <div class="nav-section">
-                <h4>Examples</h4>
+                <h3>Examples</h3>
                 <ul>
                     {% for example in site.examples %}
                     <li><a href="{{ example.url | relative_url }}">{{ example.title }}</a></li>
                     {% endfor %}
                 </ul>
             </div>
+
+            <div class="nav-section">
+                <h3>Reference</h3>
+                <ul>
+                    <li><a href="{{ '/api/' | relative_url }}">API Documentation</a></li>
+                    <li><a href="{{ '/modules/' | relative_url }}">Modules</a></li>
+                </ul>
+            </div>
         </nav>
 
-        <main class="content">
-            {{ content }}
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-wrapper">
+                {{ content }}
+            </div>
         </main>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-    <script>hljs.highlightAll();</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 </body>
 
 </html>
