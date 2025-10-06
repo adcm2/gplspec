@@ -1,0 +1,53 @@
+title: "gplspec Documentation"
+description: "Gravity and Planetary Spectra Solver"
+baseurl: "/gplspec"
+url: "https://adcm2.github.io"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    block:
+      line_numbers: false
+
+# Collections for organizing content
+collections:
+  tutorials:
+    output: true
+    permalink: /:collection/:name/
+  examples:
+    output: true
+    permalink: /:collection/:name/
+
+# Default layouts
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: "default"
+  - scope:
+      path: "_tutorials"
+    values:
+      layout: "default"
+  - scope:
+      path: "_examples"
+    values:
+      layout: "default"
+
+# Exclude files from processing
+exclude:
+  - src/
+  - build/
+  - CMakeLists.txt
+  - Doxyfile
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - vendor/
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
