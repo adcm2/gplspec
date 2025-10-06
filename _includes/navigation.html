@@ -1,0 +1,40 @@
+<nav class="sidebar-nav">
+    <!-- Tutorials Section -->
+    <div class="nav-section">
+        <div class="nav-toggle">
+            <span class="arrow">▶</span>
+            Tutorials
+        </div>
+        <ul class="nav-links">
+            {% for tutorial in site.tutorials %}
+            <li><a href="{{ tutorial.url | relative_url }}">{{ tutorial.title }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Examples Section -->
+    <div class="nav-section">
+        <div class="nav-toggle">
+            <span class="arrow">▶</span>
+            Examples
+        </div>
+        <ul class="nav-links">
+            {% for example in site.examples %}
+            <li><a href="{{ example.url | relative_url }}">{{ example.title }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Benchmarks Section -->
+    <div class="nav-section">
+        <div class="nav-toggle">
+            <span class="arrow">▶</span>
+            Benchmarks
+        </div>
+        <ul class="nav-links">
+            {% for benchmark in site.benchmarks %}
+            <li><a href="{{ benchmark.url | relative_url }}">{{ benchmark.title }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+</nav>

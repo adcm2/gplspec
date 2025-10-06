@@ -28,8 +28,10 @@
             </div>
 
             <div class="nav-section">
-                <h3>Tutorials</h3>
-                <ul>
+                <h3 class="nav-toggle" data-target="tutorials">
+                    <span class="arrow">▶</span> Tutorials
+                </h3>
+                <ul class="nav-links" id="tutorials">
                     {% for tutorial in site.tutorials %}
                     <li><a href="{{ tutorial.url | relative_url }}">{{ tutorial.title }}</a></li>
                     {% endfor %}
@@ -37,8 +39,10 @@
             </div>
 
             <div class="nav-section">
-                <h3>Examples</h3>
-                <ul>
+                <h3 class="nav-toggle" data-target="examples">
+                    <span class="arrow">▶</span> Examples
+                </h3>
+                <ul class="nav-links" id="examples">
                     {% for example in site.examples %}
                     <li><a href="{{ example.url | relative_url }}">{{ example.title }}</a></li>
                     {% endfor %}
@@ -46,8 +50,10 @@
             </div>
 
             <div class="nav-section">
-                <h3>Benchmarks</h3>
-                <ul>
+                <h3 class="nav-toggle" data-target="benchmarks">
+                    <span class="arrow">▶</span> Benchmarks
+                </h3>
+                <ul class="nav-links" id="benchmarks">
                     {% for benchmark in site.benchmarks %}
                     <li><a href="{{ benchmark.url | relative_url }}">{{ benchmark.title }}</a></li>
                     {% endfor %}
@@ -74,6 +80,23 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="{{ '/assets/js/navigation.js' | relative_url }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ...existing toggle code...
+            
+            // Auto-expand section containing current page
+            const currentLink = document.querySelector('.nav-links a.active');
+            if (currentLink) {
+                const parentSection = currentLink.closest('.nav-section');
+                const toggle = parentSection.querySelector('.nav-toggle');
+                const navLinks = parentSection.querySelector('.nav-links');
+                
+                toggle.classList.add('active');
+                navLinks.classList.add('active');
+            }
+        });
+    </script>
 </body>
 
 </html>
