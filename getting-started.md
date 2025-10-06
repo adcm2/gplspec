@@ -136,7 +136,7 @@ cmake --build build/
 Now that you have gplspec installed:
 
 1. **Learn the basics**: Read the [Core Concepts Tutorial]({{ '/tutorials/core-concepts/' | relative_url }})
-2. **See it in action**: Explore the [Benchmarks]({{ '/benchmarks/' | relative_url }})
+2. **See it in action**: Explore the [Benchmarks]({{ '/benchmark/' | relative_url }})
 3. **Deep dive**: Check the [API Reference]({{ '/api/' | relative_url }})
 
 ## Getting Help

@@ -12,18 +12,6 @@
         </ul>
     </div>
 
-    <!-- Examples Section -->
-    <div class="nav-section">
-        <div class="nav-toggle">
-            <span class="arrow">▶</span>
-            Examples
-        </div>
-        <ul class="nav-links">
-            {% for example in site.examples %}
-            <li><a href="{{ example.url | relative_url }}">{{ example.title }}</a></li>
-            {% endfor %}
-        </ul>
-    </div>
 
     <!-- Benchmarks Section -->
     <div class="nav-section">
