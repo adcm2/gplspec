@@ -11,7 +11,7 @@ This guide will help you install, build, and run your first gplspec program.
 
 Before building gplspec, ensure you have:
 
-- **C++ Compiler**: GCC 9+ or Clang 10+ with C++20 support
+- **C++ Compiler**: C++20 support
 - **CMake**: Version 3.15 or later
 - **Git**: For cloning the repository
 
@@ -31,18 +31,16 @@ cd gplspec
 
 ### 2. Build the Project
 
-Create a build directory and configure with CMake:
+Create a build directory and configure with CMake, for example:
 
 ```bash
-mkdir build
-cd build
-cmake ..
+cmake -S . -B build
 ```
 
 Compile the project:
 
 ```bash
-make -j$(nproc)
+cmake --build build/
 ```
 
 ### 3. Run the Examples
@@ -50,7 +48,7 @@ make -j$(nproc)
 Test your installation by running one of the included examples:
 
 ```bash
-./examples/clean_bench_2
+./examples/clean_bench_1
 ```
 
 ## Your First Program
@@ -91,7 +89,6 @@ gplspec/
 ├── src/                 # Source code
 ├── examples/            # Example programs
 ├── build/               # Build artifacts
-├── docs/                # Documentation
 ├── CMakeLists.txt       # CMake configuration
 └── README.md
 ```
@@ -155,6 +152,6 @@ Now that you have gplspec installed:
 
 If you encounter issues:
 
-- Check the [Examples]({{ '/examples/' | relative_url }}) for similar use cases
+- Check the [Benchmarks]({{ '/examples/' | relative_url }}) for similar use cases
 - Review the [API documentation]({{ '/api/' | relative_url }})
 - Open an issue on the GitHub repository

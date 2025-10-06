@@ -2,18 +2,26 @@
 title: "Home"
 ---
 
-# gplspec: Gravity and Planetary Spectra Solver
+# gplspec: Gravitational potential via pseudospectral particle relabelling and radial spectral elements
 
-Welcome to the documentation for `gplspec`, a C++ library for solving problems related to gravity and planetary spectra using advanced numerical methods.
+Welcome to the documentation for `gplspec`, a C++ library for finding the gravitational potential of arbitrary, heterogeneous planets. The original theory paper for this method is available at https://academic.oup.com/gji/article/219/2/1043/5541065 whilst further theoretical developments and implementation details for gplspec are discussed in https://arxiv.org/abs/2508.07910.
 
 ## Overview
 
-`gplspec` provides efficient tools for:
+`gplspec` implements a novel numerical method that combines the **particle-relabelling transformation** with **radial spectral elements** to solve Poisson's equation for gravitational potential. This approach provides several key advantages:
 
-- **Gravitational potential calculations** using spectral-element methods
-- **Planetary density modeling** with radial basis functions
-- **Spherical harmonic analysis** for global field representations
-- **High-performance computing** with optimized numerical algorithms
+### Core Methodology
+
+- **Particle-Relabelling Transformation**: Maps aspherical planets onto a spherical reference planet. Only requirement is concentric, non-intersecting layers
+- **Radial Spectral Elements**: High-order Gauss-Lobatto-Legendre basis functions provide exponential convergence for smooth solutions
+- **Spherical Harmonic Decomposition**: Spherical geometry of reference planet enables usage of spherical harmonic decomposition
+- **Matrix-Free Implementation**: Avoids storage of large system matrices through efficient operator applications
+
+### Technical Features
+
+- **Arbitrary Heterogeneity**: Handles complex 3D density variations including discontinuities and rapid spatial changes
+- **Spectral Accuracy**: Achieves machine precision for smooth density distributions with relatively few degrees of freedom
+- **Computational Efficiency**: Scales as O(L^3) for maximum spherical harmonic degree L
 
 ## Quick Start
 
@@ -45,22 +53,26 @@ This documentation is organized into several sections:
 - **[Examples]({{ '/examples/' | relative_url }})** - Complete working examples with explanations
 - **[API Reference]({{ '/api/' | relative_url }})** - Detailed class and function documentation
 
-## Key Features
+## Performance Characteristics
 
-### Spectral-Element Methods
-High-order accuracy for gravitational potential calculations with efficient sparse matrix operations.
+The particle-relabelling method offers significant computational advantages:
 
-### Planetary Modeling
-Support for 1D radial models (like PREM) extended to full 3D representations using spherical harmonics.
-
-### Performance Optimization
-Optimized algorithms designed for modern C++ with parallel computing support.
+- **Convergence Rate**: Exponential convergence for smooth density distributions
+- **Memory Efficiency**: Matrix-free implementation reduces memory requirements by orders of magnitude
+- **Accuracy**: Machine precision achievable for well-resolved problems
 
 ## Getting Help
 
 - Browse the [tutorials]({{ '/tutorials/' | relative_url }}) for guided learning
 - Check out [examples]({{ '/examples/' | relative_url }}) for practical applications
 - Refer to the [API documentation]({{ '/api/' | relative_url }}) for detailed function references
+
+## Citation
+
+If you use gplspec in your research, please cite:
+
+- Myhill, A. D., Maitra, M. A., & Al-Attar, D. (2025). Forward and adjoint calculations of gravitational potential in heterogeneous, aspherical planets. arXiv preprint arXiv:2508.07910.
+- Maitra, M., & Al-Attar, D. (2019). A non-perturbative method for gravitational potential calculations within heterogeneous and aspherical planets. Geophysical Journal International, 219(2), 1043-1055.
 
 ## License
 
