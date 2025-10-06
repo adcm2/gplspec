@@ -87,7 +87,9 @@ These files can be used to:
 
 The benchmark produces gravitational potential solutions that can be compared for accuracy validation:
 
-![Benchmark 1 Results]({{ '/benchfigures/Bench1.png' | relative_url }})
+<div class="figure">
+<img src="{{ '/benchfigures/Bench1.png' | relative_url }}" alt="Benchmark 1 Results" class="figure-medium">
+</div>
 
 *Figure: Comparison of gravitational potential calculations for a homogeneous sphere using different numerical methods.*
 
