@@ -20,4 +20,31 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   });
+
+  // Auto-expand section containing current page
+  const currentPath = window.location.pathname;
+  const navLinks = document.querySelectorAll(".nav-links a");
+
+  navLinks.forEach(function (link) {
+    if (
+      link.getAttribute("href") === currentPath ||
+      currentPath.includes(link.getAttribute("href"))
+    ) {
+      // Add active class to current link
+      link.classList.add("current");
+
+      // Find parent section and expand it
+      const parentSection = link.closest(".nav-section");
+      if (parentSection) {
+        const toggle = parentSection.querySelector(".nav-toggle");
+        const navLinksContainer = parentSection.querySelector(".nav-links");
+        const arrow = toggle.querySelector(".arrow");
+
+        // Expand the section
+        toggle.classList.add("active");
+        navLinksContainer.classList.add("active");
+        arrow.style.transform = "rotate(90deg)";
+      }
+    }
+  });
 });

@@ -173,6 +173,13 @@ body {
     border-left-color: #0056b3;
 }
 
+.nav-links a.current {
+    background-color: #007bff;
+    color: white;
+    border-left-color: #0056b3;
+    font-weight: 600;
+}
+
 /* Main content area */
 .content {
     margin-left: 270px;
