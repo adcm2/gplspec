@@ -136,13 +136,12 @@ cmake --build build/
 Now that you have gplspec installed:
 
 1. **Learn the basics**: Read the [Core Concepts Tutorial]({{ '/tutorials/core-concepts/' | relative_url }})
-2. **See it in action**: Explore the [Examples]({{ '/examples/' | relative_url }})
+2. **See it in action**: Explore the [Benchmarks]({{ '/benchmarks/' | relative_url }})
 3. **Deep dive**: Check the [API Reference]({{ '/api/' | relative_url }})
 
 ## Getting Help
 
 If you encounter issues:
 
-- Check the [Examples]({{ '/examples/' | relative_url }}) for similar use cases
 - Review the [API documentation]({{ '/api/' | relative_url }})
 - Open an issue on the GitHub repository
