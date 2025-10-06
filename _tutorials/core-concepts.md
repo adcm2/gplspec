@@ -177,7 +177,7 @@ int main() {
 
 Now that you understand the core concepts:
 
-1. **Explore the [Examples]({{ '/examples/' | relative_url }})** to see these concepts in action
+1. **Explore the [Benchmarks]({{ '/examples/' | relative_url }})** to see these concepts in action
 2. **Learn about advanced features** in the specialized tutorials
 3. **Consult the [API Reference]({{ '/api/' | relative_url }})** for detailed function documentation
 
