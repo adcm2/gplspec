@@ -20,6 +20,9 @@ collections:
   examples:
     output: true
     permalink: /:collection/:name/
+  benchmarks:
+    output: true
+    permalink: /:collection/:name/
 
 # Default layouts
 defaults:
@@ -33,6 +36,10 @@ defaults:
       layout: "default"
   - scope:
       path: "_examples"
+    values:
+      layout: "default"
+  - scope:
+      path: "_benchmarks"
     values:
       layout: "default"
 
