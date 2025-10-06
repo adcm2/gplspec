@@ -50,7 +50,7 @@ This documentation is organized into several sections:
 
 - **[Getting Started]({{ '/getting-started/' | relative_url }})** - Installation and basic setup
 - **[Tutorials]({{ '/tutorials/' | relative_url }})** - Step-by-step guides to core concepts
-- **[Examples]({{ '/examples/' | relative_url }})** - Complete working examples with explanations
+- **[Benchmarks]({{ '/benchmarks/' | relative_url }})** - Benchmarks of code accuracy and performance
 - **[API Reference]({{ '/api/' | relative_url }})** - Detailed class and function documentation
 
 ## Performance Characteristics
