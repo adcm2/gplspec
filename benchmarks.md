@@ -1,7 +1,7 @@
 ---
 title: "Benchmarks"
 layout: default
-permalink: /benchmarks/
+permalink: /benchmark/
 ---
 
 
