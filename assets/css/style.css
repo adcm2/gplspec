@@ -170,6 +170,15 @@ body {
     padding-left: 25px;
 }
 
+/* Add this to hide empty navigation sections */
+.nav-links:empty {
+    display: none;
+}
+
+.nav-section:has(.nav-links:empty) {
+    display: none;
+}
+
 /* Main content area */
 .content {
     margin-left: 270px;
