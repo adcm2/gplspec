@@ -9,17 +9,7 @@
  * - Output of results for further analysis.
  */
 
-#include <GaussQuad/All>
 #include <gplspec/All>
-#include <gplspec/Test>
-#include <gplspec/Timer>
-#include <PlanetaryModel/All>
-#include <TomographyModels/All>
-#include <filesystem>
-#include <iomanip>
-#include <iostream>
-#include <ranges>
-#include <sstream>
 
 /**
  * @brief Main routine for the homogeneous sphere gravity benchmark.
@@ -34,20 +24,17 @@ main() {
    using namespace Gravity_Tools;
 
    // Physical and model parameters
-   double normrad = 1.0;            ///< Normalized radius
-   double normrho = 1.0;            ///< Normalized density
-   double lengthnorm = 6371000.0;   ///< Length normalization (meters)
-   double timenorm = 3600.0;        ///< Time normalization (seconds)
-   double massnorm = 5.972e24;      ///< Mass normalization (kg)
-   double maxstep = 0.01;           ///< Maximum step size for mesh
-   double ballrad = 1.2;            ///< Ball radius for computation
+   // Normalised radius, density, length, time and mass normalisations, the
+   // maximum mesh step size and the ball radius
+   double nrad = 1.0, nrho = 1.0, lengthnorm = 6371000.0, timenorm = 3600.0,
+          massnorm = 5.972e24, maxstep = 0.1, ballrad = 1.2;
 
    Timer timer1;
 
    // Construct homogeneous sphere model and compute potential
    timer1.start();
    Density3D testsphere = Density3D::SphericalHomogeneousPlanet(
-       normrad, normrho, lengthnorm, timenorm, massnorm, maxstep, ballrad);
+       nrad, nrho, lengthnorm, timenorm, massnorm, maxstep, ballrad);
    auto stdvec_potsol = FindGravitationalPotential(testsphere);
    timer1.stop("Time for 3D");
 

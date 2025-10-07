@@ -17,7 +17,7 @@ collections:
   tutorials:
     output: true
     permalink: /:collection/:name/
-  examples:
+  benchmarks:
     output: true
     permalink: /:collection/:name/
 
@@ -32,7 +32,7 @@ defaults:
     values:
       layout: "default"
   - scope:
-      path: "_examples"
+      path: "_benchmarks"
     values:
       layout: "default"
 

@@ -19,16 +19,20 @@
             </div>
 
             <div class="nav-section">
-                <h3>Getting Started</h3>
+                <h3 class="nav-toggle" data-target="getting-started">
+                    <span class="arrow">▶</span> Getting started
+                </h3>
                 <ul>
-                    <li><a href="{{ '/getting-started/' | relative_url }}">Installation</a></li>
-                    <li><a href="{{ '/quick-start/' | relative_url }}">Quick Start Guide</a></li>
+                    <li><a href="{{ '/getting-started/' | relative_url }}">Quick start guide</a></li>
+                    <li><a href="{{ '/benchmark/' | relative_url }}">Benchmarks</a></li>
                 </ul>
             </div>
 
             <div class="nav-section">
-                <h3>Tutorials</h3>
-                <ul>
+                <h3 class="nav-toggle" data-target="tutorials">
+                    <span class="arrow">▶</span> Tutorials
+                </h3>
+                <ul class="nav-links" id="tutorials">
                     {% for tutorial in site.tutorials %}
                     <li><a href="{{ tutorial.url | relative_url }}">{{ tutorial.title }}</a></li>
                     {% endfor %}
@@ -36,19 +40,22 @@
             </div>
 
             <div class="nav-section">
-                <h3>Examples</h3>
-                <ul>
-                    {% for example in site.examples %}
-                    <li><a href="{{ example.url | relative_url }}">{{ example.title }}</a></li>
+                <h3 class="nav-toggle" data-target="benchmarks">
+                    <span class="arrow">▶</span> Benchmarks
+                </h3>
+                <ul class="nav-links" id="benchmarks">
+                    {% for benchmark in site.benchmarks %}
+                    <li><a href="{{ benchmark.url | relative_url }}">{{ benchmark.title }}</a></li>
                     {% endfor %}
                 </ul>
             </div>
 
             <div class="nav-section">
-                <h3>Reference</h3>
+                <h3 class="nav-toggle" data-target="reference">
+                    <span class="arrow">▶</span> Reference
+                </h3>
                 <ul>
                     <li><a href="{{ '/api/' | relative_url }}">API Documentation</a></li>
-                    <li><a href="{{ '/modules/' | relative_url }}">Modules</a></li>
                 </ul>
             </div>
         </nav>
@@ -64,6 +71,51 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="{{ '/assets/js/navigation.js' | relative_url }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Add click handlers to all nav toggles
+            const toggles = document.querySelectorAll('.nav-toggle');
+
+            toggles.forEach(function (toggle) {
+                toggle.addEventListener('click', function () {
+                    const targetId = this.getAttribute('data-target');
+                    const targetList = document.getElementById(targetId);
+                    const arrow = this.querySelector('.arrow');
+
+                    if (targetList) {
+                        // Toggle the expanded class on both toggle and list
+                        this.classList.toggle('expanded');
+                        targetList.classList.toggle('expanded');
+
+                        // Update aria attributes for accessibility
+                        const isExpanded = targetList.classList.contains('expanded');
+                        this.setAttribute('aria-expanded', isExpanded);
+                        targetList.setAttribute('aria-hidden', !isExpanded);
+                    }
+                });
+
+                // Set initial state - you can modify this to have sections open by default
+                const targetId = toggle.getAttribute('data-target');
+                const targetList = document.getElementById(targetId);
+                if (targetList) {
+                    toggle.setAttribute('aria-expanded', 'false');
+                    targetList.setAttribute('aria-hidden', 'true');
+                }
+            });
+
+            // Auto-expand section containing current page
+            const currentLink = document.querySelector('.nav-links a.active');
+            if (currentLink) {
+                const parentSection = currentLink.closest('.nav-section');
+                const toggle = parentSection.querySelector('.nav-toggle');
+                const navLinks = parentSection.querySelector('.nav-links');
+
+                toggle.classList.add('active');
+                navLinks.classList.add('active');
+            }
+        });
+    </script>
 </body>
 
 </html>
