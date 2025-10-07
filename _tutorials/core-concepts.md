@@ -81,7 +81,7 @@ The standard output from the pseudospectral method, and the format in which most
 * Third index: the spherical harmonic component of the potential at radius within that element
 
 ### Spherical harmonic ordering
-The spherical harmonic ordering is designed for efficient generalised spherical harmonic transformations. The components are stored as $$[\zeta_{00}, \zeta_{1, -1}, \zeta_{1,0}, \zeta_{1,1}, \zeta_{2,-2}, ..., \zeta_{l_{\text{max}},l_{\text{max}}}]$$. 
+The spherical harmonic ordering is designed for efficient generalised spherical harmonic transformations. The components are stored as $[\zeta_{00}, \zeta_{1, -1}, \zeta_{1,0}, \zeta_{1,1}, \zeta_{2,-2}, ..., \zeta_{l_{\text{max}},l_{\text{max}}}]$. 
 
 ## Working with Results
 

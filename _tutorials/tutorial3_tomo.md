@@ -1,6 +1,6 @@
 ---
 title: "Tutorial 3: S40RTS  "
-description: "Gravitational potential calculation for PREM"
+description: "Gravitational potential calculation for S40RTS"
 layout: default
 ---
 

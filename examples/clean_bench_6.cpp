@@ -67,15 +67,6 @@ main() {
        FindGravitationalPotential(testtomo, std::pow(10.0, -14.0));
    timer1.stop("Time for 3D");
 
-   //    std::cout << "lm components at 0\n\n";
-   //    int mycount = 0;
-   //    for (auto idx : stdvec_potsol[0][0]) {
-   //       ++mycount;
-   //       if (std::abs(idx) > std::pow(10.0, -15.0)) {
-   //          std::cout << "Damn: " << mycount << " " << idx << "\n";
-   //       }
-   //    }
-   //    std::cout << "\n\n";
    // solution using spherical integration method:
    timer1.start();
    auto vec_integral_potential = GravitationalSphericalIntegral(testtomo);
@@ -103,10 +94,6 @@ main() {
    testtomo.ReferentialOutputAtElement(pathtofolderlm, stdvec_potsol);
    testtomo.OutputAtElement(pathtofolderlm, vec_integral_potential);
    testtomo.ReferentialOutputAtElement(pathtofolderlm, stdvec_senskernel, true);
-   //  equivalent_sphere.OutputAtElement(pathtofolder, inp_radii2,
-   //  vec_exactsol2);
-
-   //    testprem.OutputAtElement(pathtofolder, vec_exactsol);
 
    return 0;
 }
