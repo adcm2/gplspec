@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 3: PREM "
+title: "Tutorial 3: S40RTS  "
 description: "Gravitational potential calculation for PREM"
 layout: default
 ---
@@ -7,7 +7,6 @@ layout: default
 # Tomography models and sensitivity kernels
 
 This tutorial demonstrates how to construct a density model from PREM and how to add 3D variation via a tomography model. In addition the calculation of a sensitivity kernel is shown.
-
 
 ## Code
 ### Model
@@ -19,10 +18,10 @@ This requires a path to a radial model, a path to the tomography model as well a
 
 ### Sensitivity kernel
 The sensitivity kernel functionality allows one to find the sensitivity kernel for a specific combination of spherical harmonic components of the gravitational potential on the ball surrounding the planet. This is given by 
-```math
-Q(\zeta) = b^{-2} \int_{\partial \mathcal{B}} \sum_{lm} q_{lm}\overline{Y}_{lm} \zeta dS,
-```
-where the $$q_{lm}$$ are the relative components of the sensitivity kernel. To specify this, one simply needs to provide three vectors, with the degree l, the order m and the coefficient $$q_{lm}$$. A single function call will then give the sensitivity kernel in the standard output format. 
+
+$$Q(\zeta) = b^{-2} \int_{\partial \mathcal{B}} \sum_{lm} q_{lm}\overline{Y}_{lm} \zeta dS,$$
+
+where the $q_{lm}$ are the relative components of the sensitivity kernel. To specify this, one simply needs to provide three vectors, with the degree l, the order m and the coefficient $q_{lm}$. A single function call will then give the sensitivity kernel in the standard output format.
 
 ### Source code
 In this code we use PREM as the 1D reference model and S40RTS as the tomography model. 
@@ -86,7 +85,7 @@ main() {
 The benchmark generates several output files in the `./work/Bench6/` directory:
 
 - **3D Solution**: Spectral element method results
-- **Integral Solution**: Spherical integration method results  
+- **Integral Solution**: Spherical integration method results
 
 
 
