@@ -73,6 +73,16 @@ auto potential_integration = GravitationalSphericalIntegral(earth_model);
 
 ```
 
+## Format of output
+### Pseudospectral method
+The standard output from the pseudospectral method, and the format in which most data is stored, is given as a vector of vectors of vectors. This is indexed as
+* First index: the element 
+* Second index: the node within that element
+* Third index: the spherical harmonic component of the potential at radius within that element
+
+### Spherical harmonic ordering
+The spherical harmonic ordering is designed for efficient generalised spherical harmonic transformations. The components are stored as $$[\zeta_{00}, \zeta_{1, -1}, \zeta_{1,0}, \zeta_{1,1}, \zeta_{2,-2}, ..., \zeta_{l_{\text{max}},l_{\text{max}}}]$$. 
+
 ## Working with Results
 
 The potential solvers return vectors containing the gravitational potential at each computational point.

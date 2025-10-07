@@ -4,14 +4,18 @@ description: "Gravitational potential calculation for PREM"
 layout: default
 ---
 
-# Homogeneous Sphere 
+# PREM
 
 This tutorial demonstrates how to construct a density model from PREM and the pseudospectral and radial integral methods for potential calculation.
 
 
 ## Construction
 ### Outline
-To construct a radial model we will use the named constructor ```cpp OneDimensionalPlanetFromFile ```. This requires a path to a radial model, as well as parameters for the mesh. Optionally one can specify norms, but the ``default'' values for the norms are those used in PREM so in this case we do not need to change these. 
+To construct a radial model we will use the named constructor 
+```cpp 
+OneDimensionalPlanetFromFile 
+```
+This requires a path to a radial model, as well as parameters for the mesh. Optionally one can specify norms, but the ``default'' values for the norms are those used in PREM so in this case we do not need to change these. 
 
 ### Source code
 

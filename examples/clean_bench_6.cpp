@@ -39,29 +39,6 @@ main() {
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
    // declare model and find the potential
-   // mapping class
-   // class inp_map {
-   //  public:
-   //    inp_map() {};
-   //    inp_map(const double h, const double r) : _h{h}, _prad{r} {};
-   //    auto RadialMapping(int i) const {
-   //       auto lambdamap = [hmult = _h, pr = _prad](double r, double theta,
-   //                                                 double phi) {
-   //          double rscale = r / pr;
-   //          // return hmult * std::sin(theta) * std::sin(phi) * r * (1.0 -
-   //          // rscale);
-   //          return hmult * std::sin(theta) * std::cos(theta) * std::sin(phi)
-   //          *
-   //                 r * (1.0 - rscale);
-   //       };
-   //       return lambdamap;
-   //    }
-
-   //  private:
-   //    double _h = 0.0;
-   //    double _prad = 1.0;
-   // };
-
    h = 2;
    lmax = 20;
 
