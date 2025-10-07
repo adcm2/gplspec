@@ -8,12 +8,12 @@ document.addEventListener("DOMContentLoaded", function () {
       const navLinks = this.nextElementSibling;
       const arrow = this.querySelector(".arrow");
 
-      // Toggle active class
-      this.classList.toggle("active");
-      navLinks.classList.toggle("active");
+      // Toggle expanded class (not active)
+      this.classList.toggle("expanded");
+      navLinks.classList.toggle("expanded");
 
-      // Rotate arrow
-      if (this.classList.contains("active")) {
+      // Rotate arrow - CSS should handle this, but keeping for backwards compatibility
+      if (this.classList.contains("expanded")) {
         arrow.style.transform = "rotate(90deg)";
       } else {
         arrow.style.transform = "rotate(0deg)";
@@ -32,9 +32,9 @@ document.addEventListener("DOMContentLoaded", function () {
       const navLinksContainer = parentSection.querySelector(".nav-links");
       const arrow = toggle.querySelector(".arrow");
 
-      // Expand the section
-      toggle.classList.add("active");
-      navLinksContainer.classList.add("active");
+      // Expand the section using 'expanded' class to match CSS
+      toggle.classList.add("expanded");
+      navLinksContainer.classList.add("expanded");
       arrow.style.transform = "rotate(90deg)";
     }
   });
