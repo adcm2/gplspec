@@ -5,26 +5,37 @@ layout: default
 ---
 
 # Surface topography
-
-This tutorial demonstrates how to construct a density model that contains a mapping $$\xi$$. We choose to construct a model that has a non-zero mapping but is of a spherical, homogeneous planet. 
-
-## Code
-### Model
-To construct a 3D model we will use the constructor 
-```cpp 
-SphericalThreeDimensionalPlanetFromFile
+## Outline
+This tutorial demonstrates how to construct a density model that contains a mapping $$\xi$$. We choose to construct a model that has a non-zero mapping but is of a spherical, homogeneous planet. We specify the physical properties of the planet, such as density and radius, as well as the mapping. The mapping needs to have a function called 
+```cpp
+RadialMapping(int i)
 ```
-This requires a path to a radial model, a path to the tomography model as well as radial parameters. Optionally one can specify norms, but the "default" values for the norms are those used in PREM so in this case we do not need to change these. 
+This specifies the radial mapping within the $i$-th layer. It must return a function that can take in three doubles, for the radius, colatitude and longitude. An example of the radial mapping class is
+```cpp
+class inp_map {
+    public:
+      inp_map() {};
+      inp_map(const double h) : _h{h} {};
+      auto RadialMapping(int i) const {
+         auto lambdamap = [hmult = _h](double r, double theta, double phi) {
+            return hmult * r;
+         };
+         return lambdamap;
+      }
 
-### Sensitivity kernel
-The sensitivity kernel functionality allows one to find the sensitivity kernel for a specific combination of spherical harmonic components of the gravitational potential on the ball surrounding the planet. This is given by 
+    private:
+      double _h = 0.0;
+   };
+```
 
-$$Q(\zeta) = b^{-2} \int_{\partial \mathcal{B}} \sum_{lm} q_{lm}\overline{Y}_{lm} \zeta dS,$$
 
-where the $q_{lm}$ are the relative components of the sensitivity kernel. To specify this, one simply needs to provide three vectors, with the degree l, the order m and the coefficient $q_{lm}$. A single function call will then give the sensitivity kernel in the standard output format.
+The model that is generated will have the following properties
+* Physically it will be a homogeneous sphere with density and radius as specified
+* The reference model will not necessarily have spherical internal boundaries 
+* The mapping will be that specified by the user
+
 
 ### Source code
-In this code we use PREM as the 1D reference model and S40RTS as the tomography model. 
 ```cpp
 #include <gplspec/All>
 int
@@ -106,16 +117,6 @@ main() {
 
 
 ```
-
-## Results
-### Output Files
-
-The benchmark generates several output files in the `./work/Bench6/` directory:
-
-- **3D Solution**: Spectral element method results
-- **Integral Solution**: Spherical integration method results
-
-
 
 
 
