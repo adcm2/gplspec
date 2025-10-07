@@ -38,7 +38,7 @@ main() {
     *  @{
     */
    // Maximum step size for the model.
-   double maxstep = 0.01;
+   double maxstep = 0.1;
 
    // Radius of the bounding sphere.
    double ballrad = 1.2;
