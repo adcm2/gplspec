@@ -4,33 +4,31 @@
             <span class="arrow">▶</span> Getting started
         </h3>
         <ul class="nav-links" id="getting-started">
-            <li><a href="{{ '/getting-started/' | relative_url }}">Quick start guide</a></li>
-            <li><a href="{{ '/benchmark/' | relative_url }}">Benchmarks</a></li>
+            <li><a href="{{ '/getting-started/' | relative_url }}" {% if page.url contains '/getting-started/' %}class="current"{% endif %}>Quick start guide</a></li>
+            <li><a href="{{ '/benchmark/' | relative_url }}" {% if page.url contains '/benchmark/' %}class="current"{% endif %}>Benchmarks</a></li>
         </ul>
     </div>
 
     <!-- Tutorials Section -->
     <div class="nav-section">
-        <div class="nav-toggle" data-target="tutorials">
-            <span class="arrow">▶</span>
-            Tutorials
-        </div>
+        <h3 class="nav-toggle" data-target="tutorials">
+            <span class="arrow">▶</span> Tutorials
+        </h3>
         <ul class="nav-links" id="tutorials">
             {% for tutorial in site.tutorials %}
-            <li><a href="{{ tutorial.url | relative_url }}">{{ tutorial.title }}</a></li>
+            <li><a href="{{ tutorial.url | relative_url }}" {% if page.url == tutorial.url %}class="current"{% endif %}>{{ tutorial.title }}</a></li>
             {% endfor %}
         </ul>
     </div>
 
     <!-- Benchmarks Section -->
     <div class="nav-section">
-        <div class="nav-toggle" data-target="benchmarks">
-            <span class="arrow">▶</span>
-            Benchmarks
-        </div>
+        <h3 class="nav-toggle" data-target="benchmarks">
+            <span class="arrow">▶</span> Benchmarks
+        </h3>
         <ul class="nav-links" id="benchmarks">
             {% for benchmark in site.benchmarks %}
-            <li><a href="{{ benchmark.url | relative_url }}">{{ benchmark.title }}</a></li>
+            <li><a href="{{ benchmark.url | relative_url }}" {% if page.url == benchmark.url %}class="current"{% endif %}>{{ benchmark.title }}</a></li>
             {% endfor %}
         </ul>
     </div>
@@ -40,7 +38,7 @@
             <span class="arrow">▶</span> Reference
         </h3>
         <ul class="nav-links" id="reference">
-            <li><a href="{{ '/api/' | relative_url }}">API Documentation</a></li>
+            <li><a href="{{ '/api/' | relative_url }}" {% if page.url contains '/api/' %}class="current"{% endif %}>API Documentation</a></li>
         </ul>
     </div>
 </nav>
