@@ -188,13 +188,13 @@ main() {
              << " g/cm^3\n";
 
    {   // Path to the PREM model data file.
-      std::string pathtoprem = "modeldata/prem.200";
+      std::string pathtoprem = "modeldata/prem.200.no";
 
       Density3D testprem =
           Density3D::OneDimensionalPlanetFromFile(pathtoprem, 5, 2, 0.1, 1.2);
       auto vec_integral_potential = GravitationalSphericalIntegral(testprem);
 
-      std::string pathtofile1 = "work/Ziheng/PREM200INTEGRAL.out";
+      std::string pathtofile1 = "work/Ziheng/PREM200.NO.INTEGRAL.out";
       std::ofstream file1(pathtofile1);
       if (!file1) {
          std::cerr << "Error: unable to open output file: " << pathtofile1
