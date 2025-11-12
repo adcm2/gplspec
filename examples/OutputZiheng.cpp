@@ -182,11 +182,52 @@ main() {
    }
    timer1.stop("Time to construct");
 
+   //////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////
+   timer1.start();
+   auto stdvec_potsol =
+       FindGravitationalPotential(phobos, std::pow(10.0, -12.0));
+   timer1.stop("Time for gravity");
+   std::cout << "Size of stdvec_potsol: " << stdvec_potsol.size() << " "
+             << stdvec_potsol[0].size() << " " << stdvec_potsol[0][0].size()
+             << "\n";
+
    std::cout << "Volume: " << phobos.Volume() / std::pow(10.0, 9.0) << "km^3"
              << "\n";
    std::cout << "Density: " << phobos.Mass() / (phobos.Volume() * 1000.0)
              << " g/cm^3\n";
 
+   std::cout << "Outermost radius: "
+             << phobos.Node_Information().OuterRadius() * phobos.LengthNorm()
+             << " m\n";
+   // output outermost:
+   {
+      std::string pathtofile1 = "work/Ziheng/PHOBOS_POTENTIAL_OUTER.out";
+      std::ofstream file1(pathtofile1);
+      if (!file1) {
+         std::cerr << "Error: unable to open output file: " << pathtofile1
+                   << "\n";
+         return 1;
+      }
+      file1.setf(std::ios::fixed);
+      file1 << std::setprecision(16);
+      std::size_t fidx = 0;
+      for (int idxl = 0; idxl < lMax + 1; ++idxl) {
+         for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
+            file1 << idxl << ";" << idxm << ";"
+                  << stdvec_potsol.back().back()[fidx++].real() << ";"
+                  << stdvec_potsol.back().back()[fidx++].imag() << "\n";
+         }
+      }
+      file1.close();
+   }
+   //////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////
+
+   //////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////
    {   // Path to the PREM model data file.
       std::string pathtoprem = "modeldata/prem.200.no";
 
