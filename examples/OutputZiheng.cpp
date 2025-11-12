@@ -191,7 +191,7 @@ main() {
       std::string pathtoprem = "modeldata/prem.200.no";
 
       Density3D testprem =
-          Density3D::OneDimensionalPlanetFromFile(pathtoprem, 5, 2, 0.1, 1.2);
+          Density3D::OneDimensionalPlanetFromFile(pathtoprem, 5, 2, 0.001, 1.2);
       auto vec_integral_potential = GravitationalSphericalIntegral(testprem);
 
       std::string pathtofile1 = "work/Ziheng/PREM200.NO.INTEGRAL.out";
@@ -204,10 +204,10 @@ main() {
 
       file1.setf(std::ios::fixed);
       file1 << std::setprecision(16);
-      file1 << 0.0 << ";" << vec_integral_potential[0][0] << "\n";
+      file1 << 0.0 << ";" << vec_integral_potential[0][0].real() << "\n";
       for (int idx = 0; idx < vec_integral_potential.size() - 1; ++idx) {
-         file1 << testprem.Node_InformationP().ElementUpperRadius(idx) << " "
-               << vec_integral_potential[idx + 1][0] << "\n";
+         file1 << testprem.Node_InformationP().ElementUpperRadius(idx) << ";"
+               << vec_integral_potential[idx + 1][0].real() << "\n";
       }
       file1.close();
    }
