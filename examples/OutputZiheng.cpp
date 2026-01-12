@@ -217,7 +217,7 @@ main() {
       for (int idxl = 0; idxl < lMax + 1; ++idxl) {
          for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
             file1 << idxl << ";" << idxm << ";"
-                  << stdvec_potsol.back().back()[fidx++].real() << ";"
+                  << stdvec_potsol.back().back()[fidx].real() << ";"
                   << stdvec_potsol.back().back()[fidx++].imag() << "\n";
          }
       }
