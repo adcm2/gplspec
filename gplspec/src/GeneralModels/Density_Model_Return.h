@@ -1066,9 +1066,15 @@ Density3D::ReferentialOutputRotated(
       auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
       std::vector<std::complex<double>> vectmp(spatialsize),
           vechrot(spatialsize);
-      _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
-      _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);
-
+      if (i == 0) {
+         _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
+         _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);
+      } else {
+         _grid.InverseTransformation(
+             lmax, 0, vec_output[i - 1][this->Poly_Order()], vectmp);
+         _grid.InverseTransformation(
+             lmax, 0, vec_roth[i - 1][this->Poly_Order()], vechrot);
+      }
       // output
       int idxspatial = 0;
       for (auto it : _grid.CoLatitudes()) {
@@ -1331,8 +1337,16 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
       auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
       std::vector<std::complex<double>> vectmp(spatialsize),
           vechrot(spatialsize);
-      _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
-      _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);
+
+      if (i == 0) {
+         _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
+         _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);
+      } else {
+         _grid.InverseTransformation(
+             lmax, 0, vec_output[i - 1][this->Poly_Order()], vectmp);
+         _grid.InverseTransformation(
+             lmax, 0, vec_roth[i - 1][this->Poly_Order()], vechrot);
+      }
 
       // output
       int idxspatial = 0;
@@ -1587,8 +1601,15 @@ Density3D::PhysicalOutputRotated(
       auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
       std::vector<std::complex<double>> vectmp(spatialsize),
           vechrot(spatialsize);
-      _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
-      _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);
+      if (i == 0) {
+         _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
+         _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);
+      } else {
+         _grid.InverseTransformation(
+             lmax, 0, vec_output[i - 1][this->Poly_Order()], vectmp);
+         _grid.InverseTransformation(
+             lmax, 0, vec_roth[i - 1][this->Poly_Order()], vechrot);
+      }
 
       // output
       int idxspatial = 0;
