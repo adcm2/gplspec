@@ -130,6 +130,10 @@ pcm3 = ax[2].pcolormesh(phimat2,thetamat2,potdiff,cmap='jet',shading='gouraud')
 ax[2].set_title('Relative error (%)',fontsize=20)
 ax[2].set_xlabel('Longitude',fontsize=20)
 
+# print average and max potdiff
+print("Average relative error: ", np.mean(potdiff))
+print("Max relative error: ", np.amax(potdiff))
+
 p1max = np.amax(potrealmat)
 p2max = np.amax(potrealmat_p)
 p1min = np.amin(potrealmat)

@@ -9,6 +9,7 @@
 #include <GaussQuad/All>
 #include <Interpolation/All>
 #include <cmath>
+#include "../Timer_Class.h"
 
 namespace Gravity_Tools {
 
@@ -822,7 +823,7 @@ FindGravitationalPotentialPerturbation(
    using CONJG = Eigen::ConjugateGradient<
        MatrixReplacement3D<Complex>, Eigen::Lower | Eigen::Upper,
        Eigen::SphericalGeometryPreconditioner<Complex>>;
-
+   Timer _timer;
    // preconditioning matrix
    Eigen::SparseMatrix<std::complex<double>> testmat =
        -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
@@ -845,11 +846,13 @@ FindGravitationalPotentialPerturbation(
    std::cout << "Force declared\n";
    // BICGSTAB solver;
    CONJG solver;
+   _timer.start();
    solver.compute(mymatrix);
    solver.preconditioner().addmatrix(testmat);
    solver.setTolerance(relerr1);
    Eigen::VectorXcd vecguess = solver.preconditioner().solve(vec_fullforce);
    Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
+   _timer.stop("Time for base solution");
    // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
    std::cout << "Number of iterations: " << solver.iterations() << "\n";
 
@@ -857,6 +860,7 @@ FindGravitationalPotentialPerturbation(
 
    std::cout << "Square norm: " << vec_pertforce.squaredNorm() << "\n";
 
+   _timer.start();
    Eigen::VectorXcd vecguess2 = solver.preconditioner().solve(vec_pertforce);
    solver.setTolerance(relerr2);
    Eigen::VectorXcd vecpertsol =
@@ -864,7 +868,7 @@ FindGravitationalPotentialPerturbation(
    // Eigen::VectorXcd vecpertsol = solver2.solve(vec_pertforce);
    std::cout << "Number of iterations for perturbation solution: "
              << solver.iterations() << "\n";
-
+   _timer.stop("Time for perturbation solution");
    Eigen::VectorXcd fullsol = testsol + vecpertsol;
    // for (int idx = 0; idx < testsol.size(); ++idx) {
    //    testsol(idx) *= inp_model.PotentialNorm();
