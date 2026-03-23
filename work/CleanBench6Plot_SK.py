@@ -4,22 +4,12 @@ import scipy as sc
 import matplotlib.pyplot as plt
 import math
 
-# d = np.loadtxt("Lagrange.out", delimiter=";")
 path_to_folder = "Bench6/lm"
-# path1 = path_to_folder + "/IntegralSolution.out"
-# path2 = path_to_folder + "/IntegralSolution.out"
-# path2 = path_to_folder + "/MatrixSolution.out"
 path3 = path_to_folder + "/SensitivityKernel.out"
 
-# d0 = np.loadtxt(path1, delimiter=";")
-# d2 = np.loadtxt(path2, delimiter=";")
 d3 = np.loadtxt(path3, delimiter=";")
 
-# d2 = np.loadtxt('time_test.STAT1.Z')
-
-# initialise plot
 fig, ax = plt.subplots(1,1)
-# plt.rcParams.update({'font.size': 18})
 fig.tight_layout()
 
 SMALL_SIZE = 13
@@ -58,13 +48,12 @@ for idxl in range(0,l+1):
             ax.plot(d3[:,0],d3[:,colnum],linewidth=3)
         colnum = colnum + 1
 
-# ax.set_yscale('log')
-ax.tick_params(axis='both', which='major', labelsize=SMALL_SIZE)
+ax.tick_params(axis='both', which='major', labelsize=15)
 t = ax.yaxis.get_offset_text()
-t.set_size(MEDIUM_SIZE)
-ax.set_ylabel("Sensitivity Kernel", fontsize = BIGGER_SIZE)
-ax.set_xlabel("Radius", fontsize = BIGGER_SIZE)
-ax.legend(fontsize=BIGGER_SIZE)
+t.set_size(15)
+ax.set_ylabel("Sensitivity Kernel (N.D.)", fontsize = 20, labelpad=15)
+ax.set_xlabel("Radius (m)", fontsize = 20, labelpad=15)
+ax.legend(fontsize=15)
 
 plt.show()
 
