@@ -398,8 +398,8 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
    // construct da = 0
    Eigen::Matrix3cd mat_a0;
    mat_a0 = Eigen::Matrix3cd::Zero(3, 3);
-   _vec_da =
-       vvveceig(_num_layers, vveceig(inp_model.qP().N(), veceig(spatialsize)));
+   _vec_da = vvveceig(_num_layers,
+                      vveceig(inp_model.qP().N(), veceig(spatialsize, mat_a0)));
    {
       Eigen::Matrix3cd mat_metric = Eigen::Matrix3cd::Zero();
       mat_metric(0, 2) = -1.0;
@@ -919,8 +919,8 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
    // construct da = 0
    Eigen::Matrix3cd mat_a0;
    mat_a0 = Eigen::Matrix3cd::Zero(3, 3);
-   _vec_da =
-       vvveceig(_num_layers, vveceig(inp_model.qP().N(), veceig(spatialsize)));
+   _vec_da = vvveceig(_num_layers,
+                      vveceig(inp_model.qP().N(), veceig(spatialsize, mat_a0)));
    {
       Eigen::Matrix3cd mat_metric = Eigen::Matrix3cd::Zero();
       mat_metric(0, 2) = -1.0;
