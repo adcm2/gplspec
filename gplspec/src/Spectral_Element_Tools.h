@@ -154,7 +154,7 @@ class MatrixWeakForm {
    MatrixWeakForm() {};
    // MatrixWeakForm(const std::vector<double> &,
    //                const GaussQuad::Quadrature1D<double> &);
-   MatrixWeakForm(const Radial_Tools::RadialMesh &,
+   inline MatrixWeakForm(const Radial_Tools::RadialMesh &,
                   const GaussQuad::Quadrature1D<double> &);
 
    // optional arguments:
@@ -164,7 +164,7 @@ class MatrixWeakForm {
    void set_left_lower() { leftlowertriangle = true; };
 
    // output matrix element
-   double matrixelement(int, int, int, int);
+   inline double matrixelement(int, int, int, int);
 
    // function to return the full spectral element matrix
    template <typename MSCALAR>

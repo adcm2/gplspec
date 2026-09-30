@@ -195,7 +195,7 @@ class RadialMesh {
    RadialMesh() {};   // default
 
    // simple constructor
-   RadialMesh(const double, const double, const double,
+   inline RadialMesh(const double, const double, const double,
               const GaussQuad::Quadrature1D<double> &);
 
    template <class sphericalmodel>

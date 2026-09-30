@@ -36,16 +36,16 @@ class Density3D {
    // Density3D(const std::string &, const std::string &, const int, const int,
    //           double, double);
 
-   static Density3D SphericalHomogeneousPlanet(double, double, double, double,
+   inline static Density3D SphericalHomogeneousPlanet(double, double, double, double,
                                                double, double, double);
 
-   static Density3D SphericalLayeredPlanet(std::vector<double>,
+   inline static Density3D SphericalLayeredPlanet(std::vector<double>,
                                            std::vector<double>, double, double,
                                            double, double, double);
 
-   static Density3D OneDimensionalPlanetFromFile(const std::string &, const int,
+   inline static Density3D OneDimensionalPlanetFromFile(const std::string &, const int,
                                                  const int, double, double);
-   static Density3D SphericalThreeDimensionalPlanetFromFile(const std::string &,
+   inline static Density3D SphericalThreeDimensionalPlanetFromFile(const std::string &,
                                                             const std::string &,
                                                             const int,
                                                             const int, double,
@@ -98,7 +98,7 @@ class Density3D {
 
    // constructor for homogeneous physical planet with mapping/layers
    // this is used for Phobos
-   Density3D(
+   inline Density3D(
        double physicaldensity, std::string pathtofile, const int lMaxMod,
        const int npoly, const int lMax,
        double ilength_norm = EarthModels::EarthConstants<double>().LengthNorm(),
@@ -107,7 +107,7 @@ class Density3D {
        double maxradialstep = 0.01, double ballrad = 1.2,
        bool randdensity = false);
 
-   Density3D(
+   inline Density3D(
        double physicaldensity, std::string pathtofile, const int npoly,
        const int lMax,
        double ilength_norm = EarthModels::EarthConstants<double>().LengthNorm(),
@@ -123,76 +123,76 @@ class Density3D {
    /////////////////////////////////////////////////////
 
    // info on nodes
-   auto Num_Elements() const;
-   auto Poly_Order() const;
-   auto Node_Information() const;
-   const Radial_Tools::RadialMesh &Node_InformationP() const;
+   inline auto Num_Elements() const;
+   inline auto Poly_Order() const;
+   inline auto Node_Information() const;
+   inline const Radial_Tools::RadialMesh &Node_InformationP() const;
 
    // interpolation polynomial derivative
-   auto GaussDerivative() const;
-   auto GaussDerivative(int, int) const;
-   auto q() const;
+   inline auto GaussDerivative() const;
+   inline auto GaussDerivative(int, int) const;
+   inline auto q() const;
    const GaussQuad::Quadrature1D<double> &qP() const { return _q; };
 
-   auto SpectralElementInformation();
-   auto GSH_Grid() const;
-   const Grid &GSH_GridP() const;
+   inline auto SpectralElementInformation();
+   inline auto GSH_Grid() const;
+   inline const Grid &GSH_GridP() const;
 
    // density
-   auto Density() const;
-   auto DensityAtRadialNode(int, int) const;
-   auto Density_Point(int, int, int) const;
+   inline auto Density() const;
+   inline auto DensityAtRadialNode(int, int) const;
+   inline auto Density_Point(int, int, int) const;
 
    // h
-   auto Mapping() const;
-   auto MappingAtRadialNode(int, int) const;
-   auto Mapping_Point(int, int, int) const;
+   inline auto Mapping() const;
+   inline auto MappingAtRadialNode(int, int) const;
+   inline auto Mapping_Point(int, int, int) const;
 
    // j
-   auto Jacobian() const;
-   auto JacobianAtRadialNode(int, int) const;
-   auto Jacobian_Point(int, int, int) const;
+   inline auto Jacobian() const;
+   inline auto JacobianAtRadialNode(int, int) const;
+   inline auto Jacobian_Point(int, int, int) const;
 
    // F^{-1}
-   auto InverseF() const;
-   const std::vector<std::vector<std::vector<Eigen::Matrix3cd>>> &
+   inline auto InverseF() const;
+   inline const std::vector<std::vector<std::vector<Eigen::Matrix3cd>>> &
    InverseFRef() const;
-   auto InverseFAtRadialNode(int, int) const;
-   auto InverseF_Point(int, int, int) const;
+   inline auto InverseFAtRadialNode(int, int) const;
+   inline auto InverseF_Point(int, int, int) const;
 
    // a
-   auto LaplaceTensor() const;
-   const std::vector<std::vector<std::vector<Eigen::Matrix3cd>>> &
+   inline auto LaplaceTensor() const;
+   inline const std::vector<std::vector<std::vector<Eigen::Matrix3cd>>> &
    LaplaceTensorRef() const;
-   auto LaplaceTensorAtRadialNode(int, int) const;
-   auto LaplaceTensor_Point(int, int, int) const;
+   inline auto LaplaceTensorAtRadialNode(int, int) const;
+   inline auto LaplaceTensor_Point(int, int, int) const;
 
    // physical radius
-   auto PhysicalRadius_Line(int) const;
-   auto PhysicalRadius_Point(int, int, int) const;
+   inline auto PhysicalRadius_Line(int) const;
+   inline auto PhysicalRadius_Point(int, int, int) const;
 
    // volume and mass etc
-   auto Volume() const;
-   auto Mass() const;
+   inline auto Volume() const;
+   inline auto Mass() const;
    // converting between form of solution as single Eigen::Vector to the
    // "standard" vector of vectors
-   auto SingleEigenVectorToGeneralFormat(const Eigen::VectorXcd &) const;
-   auto
+   inline auto SingleEigenVectorToGeneralFormat(const Eigen::VectorXcd &) const;
+   inline auto
    PowerSTD(const std::vector<std::vector<std::vector<std::complex<double>>>>
                 &vec_pot) const;
    // lower triangle
-   void SetLowerTriangle();
+   inline void SetLowerTriangle();
    //    void SetLowerTriangle() { _spectral_info.set_left_lower(); };
 
    // rotation to output a specific slice
-   auto RotateSliceToEquator(
+   inline auto RotateSliceToEquator(
        std::vector<double> &, std::vector<double> &,
        const std::vector<std::vector<std::vector<std::complex<double>>>> &);
-   void PhysicalOutputRotated(
+   inline void PhysicalOutputRotated(
        const std::string, std::vector<double> &, std::vector<double> &,
        const std::vector<std::vector<std::vector<std::complex<double>>>> &)
        const;
-   void ReferentialOutputRotated(
+   inline void ReferentialOutputRotated(
        const std::string, std::vector<double> &, std::vector<double> &,
        const std::vector<std::vector<std::vector<std::complex<double>>>> &)
        const;
@@ -201,15 +201,15 @@ class Density3D {
    //     const std::string,
    //     const std::vector<std::vector<std::vector<std::complex<double>>>>
    //     &) const;
-   void ReferentialOutputAtElement(
+   inline void ReferentialOutputAtElement(
        const std::string,
        const std::vector<std::vector<std::vector<std::complex<double>>>> &,
        bool) const;
-   void PhysicalOutputAtElement(
+   inline void PhysicalOutputAtElement(
        const std::string,
        const std::vector<std::vector<std::vector<std::complex<double>>>> &,
        bool) const;
-   void PhysicalOutputSlice(
+   inline void PhysicalOutputSlice(
        const std::string,
        const std::vector<std::vector<std::vector<std::complex<double>>>> &,
        bool) const;
@@ -217,45 +217,45 @@ class Density3D {
    //        const std::string,
    //        const std::vector<std::vector<std::vector<std::complex<double>>>>
    //        &) const;
-   void ReferentialOutputSlice(
+   inline void ReferentialOutputSlice(
        const std::string,
        const std::vector<std::vector<std::vector<std::complex<double>>>> &,
        bool) const;
-   void OutputAtElement(
+   inline void OutputAtElement(
        const std::string,
        const std::vector<std::vector<std::complex<double>>> &) const;
-   void PhysicalOutputAtElement(
+   inline void PhysicalOutputAtElement(
        const std::string,
        const std::vector<std::vector<std::complex<double>>> &) const;
-   void OutputAtElement(const std::string, const std::vector<double> &) const;
-   void OutputAtElement(const std::string, const std::vector<double> &,
+   inline void OutputAtElement(const std::string, const std::vector<double> &) const;
+   inline void OutputAtElement(const std::string, const std::vector<double> &,
                         const std::vector<double> &) const;
-   void OutputAtElement(const std::string,
+   inline void OutputAtElement(const std::string,
                         const std::vector<std::vector<double>> &,
                         const std::vector<std::vector<double>> &) const;
-   void CartesianOutputAtElement(
+   inline void CartesianOutputAtElement(
        const std::string,
        const std::vector<std::vector<std::complex<double>>> &) const;
-   void CartesianOutputAtElement(
+   inline void CartesianOutputAtElement(
        const std::string,
        const std::vector<std::vector<std::vector<std::complex<double>>>> &)
        const;
-   void ModelDensityOutputRotated(const std::string, std::vector<double> &,
+   inline void ModelDensityOutputRotated(const std::string, std::vector<double> &,
                                   std::vector<double> &, bool) const;
 
    // norms
-   double const LengthNorm() const;
-   double const MassNorm() const;
-   double const TimeNorm() const;
-   double const DensityNorm() const;
-   double const InertiaNorm() const;
-   double const VelocityNorm() const;
-   double const AccelerationNorm() const;
-   double const ForceNorm() const;
-   double const StressNorm() const;
-   double const GravitationalConstantNorm() const;
-   double const GravitationalConstant() const;
-   double const PotentialNorm() const;
+   inline double const LengthNorm() const;
+   inline double const MassNorm() const;
+   inline double const TimeNorm() const;
+   inline double const DensityNorm() const;
+   inline double const InertiaNorm() const;
+   inline double const VelocityNorm() const;
+   inline double const AccelerationNorm() const;
+   inline double const ForceNorm() const;
+   inline double const StressNorm() const;
+   inline double const GravitationalConstantNorm() const;
+   inline double const GravitationalConstant() const;
+   inline double const PotentialNorm() const;
 
  private:
    using vecdb = std::vector<double>;

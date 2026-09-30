@@ -14,6 +14,8 @@
 // #include "Earth_Density_Models_3D.h"
 // #include "Earth_General_Models_1D.h"
 // #include "Radial_Tools.h"
+#include "GeneralModels/Earth_Density_Models_3D.h"
+#include "GeneralModels/Perturbation_Models.h"
 #include "Spherical_Integrator.h"
 
 template <typename MRScalar> class MatrixReplacement3D;

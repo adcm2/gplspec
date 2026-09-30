@@ -34,7 +34,7 @@ class MappingPerturbation {
 
  public:
    // no perturbation
-   MappingPerturbation(const Density3D &);
+   inline MappingPerturbation(const Density3D &);
 
    // radial map only
    template <class mapclass>
@@ -42,7 +42,7 @@ class MappingPerturbation {
    MappingPerturbation(const Density3D &, const mapclass &);
 
    // radial map with file input
-   MappingPerturbation(const Density3D &, const std::string &, const int,
+   inline MappingPerturbation(const Density3D &, const std::string &, const int,
                        const int);
 
    auto dxi() const { return _vec_dxi; };

@@ -14,7 +14,7 @@
 namespace Gravity_Tools {
 
 // function for finding the force vector:
-Eigen::VectorXcd
+inline Eigen::VectorXcd
 FindForce(GeneralEarthModels::spherical_1D &inp_model, const int &lMax) {
    // auto intsize = grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();
    // lambda to use in mapping [-1,1] to [idxelem]
@@ -81,7 +81,7 @@ FindForce(GeneralEarthModels::spherical_1D &inp_model, const int &lMax) {
 };
 
 // function for finding the force vector:
-Eigen::VectorXcd
+inline Eigen::VectorXcd
 FindForce(GeneralEarthModels::Density3D &inp_model) {
    // auto intsize = grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();
    // lambda to use in mapping [-1,1] to [idxelem]
@@ -202,7 +202,7 @@ FindForce(GeneralEarthModels::Density3D &inp_model) {
 // function for finding the force vector:
 template <class mapclass>
    requires PlanetaryModel::RadialMappingClass<mapclass>
-Eigen::VectorXcd
+inline Eigen::VectorXcd
 FindBoundaryPerturbationForce(GeneralEarthModels::Density3D &inp_model,
                               mapclass &inp_map) {
    using Real = double;
@@ -394,7 +394,7 @@ FindBoundaryPerturbationForce(GeneralEarthModels::Density3D &inp_model,
 // the mapping defined by inp_map
 template <class mapclass>
    requires PlanetaryModel::RadialMappingClass<mapclass>
-Eigen::VectorXcd
+inline Eigen::VectorXcd
 AdvectiveBoundaryPerturbation(GeneralEarthModels::Density3D &inp_model,
                               mapclass &inp_map,
                               const Eigen::VectorXcd &vec_phi) {
@@ -614,7 +614,7 @@ AdvectiveBoundaryPerturbation(GeneralEarthModels::Density3D &inp_model,
 
 // find potential
 template <class Grid>
-auto
+inline auto
 FindGravitationalPotential(GeneralEarthModels::spherical_1D &inp_model,
                            Grid &grid, double relerr = std::pow(10.0, -6.0)) {
    using Complex = std::complex<double>;
@@ -650,7 +650,7 @@ FindGravitationalPotential(GeneralEarthModels::spherical_1D &inp_model,
 };
 
 // 3D solver
-auto
+inline auto
 FindGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
                            double relerr = std::pow(10.0, -6.0)) {
    using Complex = std::complex<double>;
@@ -698,7 +698,7 @@ FindGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
 };
 
 // 3D solver
-auto
+inline auto
 SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
                                    int l, int m,
                                    double relerr = std::pow(10.0, -6.0)) {
@@ -753,7 +753,7 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
 };
 
 // 3D solver
-auto
+inline auto
 SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
                                    std::vector<int> l, std::vector<int> m,
                                    std::vector<double> multval,
@@ -810,7 +810,7 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
 };
 
 // 3D solver
-auto
+inline auto
 FindGravitationalPotentialPerturbation(
     GeneralEarthModels::Density3D &inp_model,
     GeneralEarthModels::MappingPerturbation &inp_map,
@@ -880,7 +880,7 @@ FindGravitationalPotentialPerturbation(
 // 3D solver
 template <class mapclass>
    requires PlanetaryModel::RadialMappingClass<mapclass>
-auto
+inline auto
 FindGravitationalPotentialClassicalPerturbation(
     GeneralEarthModels::Density3D &inp_model, mapclass &inp_map,
     double relerr = std::pow(10.0, -6.0)) {
@@ -943,7 +943,7 @@ FindGravitationalPotentialClassicalPerturbation(
 };
 
 // integral solver for spherical model
-auto
+inline auto
 GravitationalSphericalIntegral(GeneralEarthModels::Density3D &inp_model) {
    std::size_t nelem = inp_model.Num_Elements();
    int npoly = inp_model.Poly_Order();
@@ -1117,7 +1117,7 @@ GravitationalSphericalIntegral(GeneralEarthModels::Density3D &inp_model) {
    return vec_output;
 }
 
-auto
+inline auto
 HomogeneousSphereIntegral(
     GeneralEarthModels::Density3D &inp_model) {   // exact solution:
    std::vector<double> vec_exactsol(inp_model.Num_Elements() + 1);
@@ -1152,7 +1152,7 @@ HomogeneousSphereIntegral(
    return vec_exactsol;
 };
 
-auto
+inline auto
 HomogeneousSphereIntegral(GeneralEarthModels::Density3D &inp_model,
                           std::vector<double> &inp_radii) {   // exact solution:
    std::vector<double> vec_exactsol(inp_radii.size());

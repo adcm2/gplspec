@@ -426,7 +426,7 @@ AdvectiveBoundaryPerturbation(
    return vec_output2;
 };
 
-auto
+inline auto
 filelength(const std::string &filename) {
    std::ifstream inputFile;
    std::string line;
@@ -937,7 +937,7 @@ EarthModel<FLOAT, INTEGRAL>::EarthModel(
 
 // full constructor
 
-void
+inline void
 PhobosRead(const std::string &pathtofile) {
 
    // std::cout << this->density_norm << "\n";

@@ -47,86 +47,86 @@ class General3D {
 
    // density
    auto Density() const { return _vec_density; };
-   auto Density_Radius(int, int) const;
-   auto Density_Point(int, int, int) const;
+   inline auto Density_Radius(int, int) const;
+   inline auto Density_Point(int, int, int) const;
 
    // VP
    auto VP() const { return _vec_VP; };
-   auto VP_Radius(int, int) const;
-   auto VP_Point(int, int, int) const;
+   inline auto VP_Radius(int, int) const;
+   inline auto VP_Point(int, int, int) const;
 
    // VPV
    auto VPV() const { return _vec_VPV; };
-   auto VPV_Radius(int, int) const;
-   auto VPV_Point(int, int, int) const;
+   inline auto VPV_Radius(int, int) const;
+   inline auto VPV_Point(int, int, int) const;
 
    // VPH
    auto VPH() const { return _vec_VPH; };
-   auto VPH_Radius(int, int) const;
-   auto VPH_Point(int, int, int) const;
+   inline auto VPH_Radius(int, int) const;
+   inline auto VPH_Point(int, int, int) const;
 
    // VS
    auto VS() const { return _vec_VS; };
-   auto VS_Radius(int, int) const;
-   auto VS_Point(int, int, int) const;
+   inline auto VS_Radius(int, int) const;
+   inline auto VS_Point(int, int, int) const;
 
    // VSV
    auto VSV() const { return _vec_VSV; };
-   auto VSV_Radius(int, int) const;
-   auto VSV_Point(int, int, int) const;
+   inline auto VSV_Radius(int, int) const;
+   inline auto VSV_Point(int, int, int) const;
 
    // VSH
    auto VSH() const { return _vec_VSH; };
-   auto VSH_Radius(int, int) const;
-   auto VSH_Point(int, int, int) const;
+   inline auto VSH_Radius(int, int) const;
+   inline auto VSH_Point(int, int, int) const;
 
    // Eta
    auto Eta() const { return _vec_Eta; };
-   auto Eta_Radius(int, int) const;
-   auto Eta_Point(int, int, int) const;
+   inline auto Eta_Radius(int, int) const;
+   inline auto Eta_Point(int, int, int) const;
 
    // A
    auto A() const { return _vec_A; };
-   auto A_Radius(int, int) const;
-   auto A_Point(int, int, int) const;
+   inline auto A_Radius(int, int) const;
+   inline auto A_Point(int, int, int) const;
 
    // C
    auto C() const { return _vec_C; };
-   auto C_Radius(int, int) const;
-   auto C_Point(int, int, int) const;
+   inline auto C_Radius(int, int) const;
+   inline auto C_Point(int, int, int) const;
 
    // N
    auto N() const { return _vec_N; };
-   auto N_Radius(int, int) const;
-   auto N_Point(int, int, int) const;
+   inline auto N_Radius(int, int) const;
+   inline auto N_Point(int, int, int) const;
 
    // L
    auto L() const { return _vec_L; };
-   auto L_Radius(int, int) const;
-   auto L_Point(int, int, int) const;
+   inline auto L_Radius(int, int) const;
+   inline auto L_Point(int, int, int) const;
 
    // F
    auto F() const { return _vec_F; };
-   auto F_Radius(int, int) const;
-   auto F_Point(int, int, int) const;
+   inline auto F_Radius(int, int) const;
+   inline auto F_Point(int, int, int) const;
 
    // Kappa
    auto Kappa() const { return _vec_Kappa; };
-   auto Kappa_Radius(int, int) const;
-   auto Kappa_Point(int, int, int) const;
+   inline auto Kappa_Radius(int, int) const;
+   inline auto Kappa_Point(int, int, int) const;
    // Mu
    auto Mu() const { return _vec_Mu; };
-   auto Mu_Radius(int, int) const;
-   auto Mu_Point(int, int, int) const;
+   inline auto Mu_Radius(int, int) const;
+   inline auto Mu_Point(int, int, int) const;
 
    // h
    auto Mapping() const { return _vec_h; };
-   auto Mapping_Radius(int, int) const;
-   auto Mapping_Point(int, int, int) const;
+   inline auto Mapping_Radius(int, int) const;
+   inline auto Mapping_Point(int, int, int) const;
 
    auto LaplaceTensor() const { return _vec_a; };
-   auto LaplaceTensor_Radius(int, int) const;
-   auto LaplaceTensor_Point(int, int, int) const;
+   inline auto LaplaceTensor_Radius(int, int) const;
+   inline auto LaplaceTensor_Point(int, int, int) const;
 
    // lower triangle
    void SetLowerTriangle() { _spectral_info.set_left_lower(); };

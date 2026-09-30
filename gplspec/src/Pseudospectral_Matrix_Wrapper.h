@@ -13,6 +13,8 @@
 // #include "Timer_Class.h"
 // #include "Earth_Density_Models_3D.h"
 // #include "Earth_General_Models_1D.h"
+#include "GeneralModels/Earth_Density_Models_3D.h"
+#include "GeneralModels/Earth_General_Models_1D.h"
 #include "Radial_Tools.h"
 #include "Spherical_Integrator.h"
 
