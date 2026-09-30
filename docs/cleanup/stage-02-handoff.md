@@ -1,7 +1,7 @@
 # Stage 02 handoff — header organization
 
 - Starting accepted base: `62e5e315301de4b198edf7f6d4724fd47f364d56` (`cleanup/base`).
-- Branch: `cleanup/02-headers`. Dependency-only commit: `49006f882550c79c8cd6a08739a2b547507a6124`; the fixed GPLSpec-header candidate commit follows it and is supplied with the handoff.
+- Branch: `cleanup/02-headers`. Dependency-only commit: `49006f882550c79c8cd6a08739a2b547507a6124`; fixed candidate reviewed: `944181c77a5a02003144b4945b492ba60993c56e`.
 - Public umbrella paths are unchanged: `gplspec/Core`, `gplspec/SimpleModels`, `gplspec/GeneralModels`, and `gplspec/All`. Their roles and implementation-fragment boundaries are in `stage-02-decisions.md`. Matrix wrappers now include model declarations they directly name, removing include-order assumptions.
 - GPLSpec header ODR repairs add `inline` only to affected non-template class declarations and header free functions; function bodies, member layout, ownership, and mathematical operations are unchanged.
 - The first full `<gplspec/All>` two-TU link exposed seven external duplicate definitions in the exact pinned dependency revisions: FFTWpp `CleanUp` (`FFTWpp/src/Core.h`); `ExportWisdom`, `ImportWisdom`, `ForgetWisdom` (`FFTWpp/src/Wisdom.h`); TomographyModels `Tomography::GetValueAt`, `ReverseLatitude` (`TomographyModels/src/Tomography.hpp`), and `ShellExec` (`TomographyModels/src/ShellExec.hpp`). Local patch files add only `inline`; CMake applies them after dependency population in per-build FetchContent copies and checks all seven markers. No dependency pin or shared cache was changed.

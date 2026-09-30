@@ -55,3 +55,5 @@
 - Stop-boundary update from the user: after stage02 review and integration, stop this campaign. Stages03–05, the Sol checkpoint, and stages06–07 are not authorized. Updated `AGENTS.md` and `docs/cleanup/campaign.md` accordingly; no utility/model/operator refactor was started.
 
 - Dependency-only linkage/ODR commit: `49006f882550c79c8cd6a08739a2b547507a6124`, kept separate from the GPLSpec header repairs.
+
+- Fixed stage-02 source candidate: `944181c77a5a02003144b4945b492ba60993c56e`. The dependency-only commit precedes it at `49006f882550c79c8cd6a08739a2b547507a6124`; candidate is ready for independent Luna review.
