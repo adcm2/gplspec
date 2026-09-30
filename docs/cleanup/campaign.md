@@ -6,7 +6,7 @@ The campaign extracts existing GPLSpec/GSHTrans functionality while preserving n
 
 | Stage | Branch | Status | Acceptance |
 |---|---|---|---|
-| 00 Baseline | `cleanup/00-baseline` | Candidate prepared; independent Luna review pending | Pinned reproducible build, immutable original-source reference, repeatable five-fixture regression and output check |
+| 00 Baseline | `cleanup/00-baseline` | Accepted after independent Luna review of `dece12e59f86de59978e6cccfe684e22b4fcb06e` | Pinned reproducible build, immutable original-source reference, repeatable five-fixture regression and output check |
 | 01 Hygiene | `cleanup/01-hygiene` | Not started | Documented deletion/interface decisions; examples and baseline regressions pass; Luna approval |
 | 02 Headers | `cleanup/02-headers` | Not started | Public include/link checks and examples pass; baseline regressions pass; Luna approval |
 | 03 Utilities | `cleanup/03-utilities` | Not started | Focused old/new helper comparisons and baseline regressions pass; Luna approval |
