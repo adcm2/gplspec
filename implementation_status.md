@@ -18,3 +18,7 @@
 - Final stage-00 public-consumer check: on the clean, SHA-fetched build with examples enabled, both `clean_bench_1` and `phobos_gravity` compiled and linked; the two-run baseline runner again passed with zero numeric changes and byte-identical `MatrixSolution.out`.
 
 - Independent stage-00 review: PASS at fixed candidate `dece12e59f86de59978e6cccfe684e22b4fcb06e`. Reviewer `/root/luna_review_00` independently configured, built, and ran the harness in `/tmp/gplspec-review-stage00-build`; all 20,700 records had zero differences in three comparisons and `MatrixSolution.out` matched byte-for-byte. The reviewer also built/linked `clean_bench_1` and `phobos_gravity`, and verified all seven dependency SHA pins/provenance. Implementer model: `gpt-6-luna` medium; reviewer model: `gpt-6-luna` high. Non-blocking finding: FFTW/NetCDF package versions are recorded but not enforced by CMake; deferred in `docs/cleanup/deferred-issues.md`. Stage 00 is accepted; no later stage has begun.
+
+## Stage 01 — hygiene
+
+- Generated-product change: removed tracked root `CMakeCache.txt` and `CMakeFiles/`; the cache was stale and pointed to `/home/alex/Documents/c++/Gravitational_Field`, not this checkout. Expanded `.gitignore` for standard CMake/compiler outputs while keeping the frozen `MatrixSolution.out` regression fixture explicitly trackable. The extensionless `testremove/TestEllipticity` is ASCII C source, not a binary, and remains under review for classification.
