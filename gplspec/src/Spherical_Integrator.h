@@ -1767,10 +1767,6 @@ class PoissonSphericalHarmonic {
    SPHVEC solve(const int &lval, const SPHVEC &vec_force) {
       assert(m_isInitialized && "Not initialized");
       assert(((lval < lmax + 1) && (lval > -1)) && "Incorrect l");
-      std::cout << "Rows: " << vec_force.rows()
-                << ". Columns: " << vec_force.cols() << std::endl;
-      std::cout << "Rows: " << vec_specelem[0].rows()
-                << ". Columns: " << vec_specelem[0].cols() << std::endl;
       auto vecsol = chol_solver.solve(vec_force);
 
       return vecsol;

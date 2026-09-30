@@ -916,10 +916,6 @@ Density3D::ReferentialOutputRotated(
    double beta = std::acos(tmp3 / sinphi);
    double gamma = std::atan2(tmp4, tmp5);
 
-   std::cout << "\ntmp1: " << tmp1 << ", tmp2: " << tmp2 << ", alpha: " << alpha
-             << "\n";
-
-   std::cout << "\n\n\n" << alpha << " " << beta << " " << gamma << "\n\n\n";
    // declare vector of matrices
    // int lmax_v = 2;
    // double theta_rot = std::numbers::pi_v<double> / 2.0;
@@ -928,7 +924,6 @@ Density3D::ReferentialOutputRotated(
        GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
                         GSHTrans::Single, GSHTrans::ColumnMajor>(
            _grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
-   std::cout << "Check 0\n";
    for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
       // temporary
       Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
@@ -957,7 +952,6 @@ Density3D::ReferentialOutputRotated(
 
    assert(vec_fullinformation.size() == this->Num_Elements());
 
-   std::cout << "Check 1\n";
    // outputting result
    // std::string pathtofile = "./work/cleanbench1.out";
    // std::string pathtofile = str_pathtofolder + "/MatrixSolutionRotated.out";
@@ -986,7 +980,6 @@ Density3D::ReferentialOutputRotated(
          return (l * (l + 1)) / 2 + m;
       }
    };
-   std::cout << "Check 2\n";
    // std::cout << "Hello pre hlm\n";
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -1021,7 +1014,6 @@ Density3D::ReferentialOutputRotated(
       }
    }
 
-   std::cout << "Check 3\n";
    // perform rotations
    //  double normfactor = this->PotentialNorm();
    std::vector<std::vector<std::vector<std::complex<double>>>> vec_output(
@@ -1058,7 +1050,6 @@ Density3D::ReferentialOutputRotated(
       }
    };
 
-   std::cout << "Check 4\n";
    for (int i = 0; i < nelem; ++i) {
 
       // transform to spatial
@@ -1094,7 +1085,6 @@ Density3D::ReferentialOutputRotated(
       file2 << std::endl;
    };
 
-   std::cout << "Check 5\n";
    {
 
       // transform to spatial
@@ -1171,10 +1161,6 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
    double beta = std::acos(tmp3 / sinphi);
    double gamma = std::atan2(tmp4, tmp5);
 
-   std::cout << "\ntmp1: " << tmp1 << ", tmp2: " << tmp2 << ", alpha: " << alpha
-             << "\n";
-
-   std::cout << "\n\n\n" << alpha << " " << beta << " " << gamma << "\n\n\n";
    // declare vector of matrices
    // int lmax_v = 2;
    // double theta_rot = std::numbers::pi_v<double> / 2.0;
@@ -1183,7 +1169,6 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
        GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
                         GSHTrans::Single, GSHTrans::ColumnMajor>(
            _grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
-   std::cout << "Check 0\n";
    for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
       // temporary
       Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
@@ -1456,10 +1441,6 @@ Density3D::PhysicalOutputRotated(
    double beta = std::acos(tmp3 / sinphi);
    double gamma = std::atan2(tmp4, tmp5);
 
-   std::cout << "\ntmp1: " << tmp1 << ", tmp2: " << tmp2 << ", alpha: " << alpha
-             << "\n";
-
-   std::cout << "\n\n\n" << alpha << " " << beta << " " << gamma << "\n\n\n";
    // declare vector of matrices
    // int lmax_v = 2;
    // double theta_rot = std::numbers::pi_v<double> / 2.0;
