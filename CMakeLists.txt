@@ -89,12 +89,40 @@ FetchContent_MakeAvailable(PlanetaryModel)
 FetchContent_MakeAvailable(GSHTRANS)
 FetchContent_MakeAvailable(TomographyModels)
 
+# The pinned FFTWpp and TomographyModels revisions define non-template
+# functions in headers without `inline`. Patch only this build's FetchContent
+# copies, leaving dependency repositories and pins intact.
+function(gplspec_apply_odr_patch source patch)
+  execute_process(
+    COMMAND git apply --check "${patch}"
+    WORKING_DIRECTORY "${source}"
+    RESULT_VARIABLE patch_check
+    OUTPUT_QUIET ERROR_QUIET)
+  if(patch_check EQUAL 0)
+    execute_process(
+      COMMAND git apply "${patch}"
+      WORKING_DIRECTORY "${source}"
+      RESULT_VARIABLE patch_result)
+    if(NOT patch_result EQUAL 0)
+      message(FATAL_ERROR "Failed to apply stage-02 patch: ${patch}")
+    endif()
+  endif()
+endfunction()
+gplspec_apply_odr_patch(
+  "${FFTWpp_SOURCE_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/stage02-fftwpp-odr.patch")
+gplspec_apply_odr_patch(
+  "${TomographyModels_SOURCE_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/stage02-tomographymodels-odr.patch")
+unset(_stage02_patch)
+
 # Set up the library
 add_library (gplspec INTERFACE)
 target_link_libraries(gplspec INTERFACE Eigen3::Eigen)
 # target_link_libraries(Gravitational_Field INTERFACE FFTWpp)
 target_link_libraries(gplspec INTERFACE GaussQuad)
 target_link_libraries(gplspec INTERFACE GSHTrans)
+target_link_libraries(gplspec INTERFACE FFTWpp PlanetaryModel TomographyModels)
 # target_link_libraries(gplspec INTERFACE PlanetaryModel)
 # target_link_libraries(gplspec INTERFACE GSHTRANS)
 # target_link_libraries(Gravitational_Field INTERFACE TomographyModels)
