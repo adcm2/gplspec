@@ -57,3 +57,7 @@
 - Dependency-only linkage/ODR commit: `49006f882550c79c8cd6a08739a2b547507a6124`, kept separate from the GPLSpec header repairs.
 
 - Fixed stage-02 source candidate: `944181c77a5a02003144b4945b492ba60993c56e`. The dependency-only commit precedes it at `49006f882550c79c8cd6a08739a2b547507a6124`; candidate is ready for independent Luna review.
+
+## User-requested review stop
+
+Stage 02 is committed but NOT accepted or integrated. The user requested cutting the independent review short; it must resume before acceptance. See `docs/cleanup/review-stage-02.md`. `cleanup/base` remains at accepted stage 01 (`62e5e315301de4b198edf7f6d4724fd47f364d56`). No later stage was started.

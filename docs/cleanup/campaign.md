@@ -20,3 +20,7 @@ Stages begin from the latest accepted `cleanup/base`. Accepted stage branches ar
 The frozen reference is source commit `4ef3a66c62d64408d99989dd51c3ccbdc46d0b0c`, using the dependency revisions in `baseline-manifest.md`. It covers homogeneous and layered spheres, analytic lateral tomography values, a smooth aspherical mapping, a mapping perturbation, full model intermediate arrays, deterministic complex matrix-free operator products, force vectors, solutions, and `MatrixSolution.out`.
 
 Repeated reference runs were byte-identical on the pinned compiler/dependency stack. Cross-stage checks use `rtol=1e-13` and `atol=1e-15`; no stage may relax these tolerances. The representative output file is compared byte-for-byte.
+
+## User-requested review stop
+
+Stage 02 is committed but NOT accepted or integrated. The user requested cutting the independent review short; it must resume before acceptance. See `docs/cleanup/review-stage-02.md`. `cleanup/base` remains at accepted stage 01 (`62e5e315301de4b198edf7f6d4724fd47f364d56`). No later stage was started.

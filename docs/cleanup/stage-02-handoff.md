@@ -9,3 +9,7 @@
 - Numerical differences: none observed. Deferred issue: dependencies still contain their upstream definitions; the reproducible stage-local CMake patch repairs only the private build copies.
 - Implementer model: `gpt-6-luna` medium. Independent Luna review: pending.
 - Stop boundary: after stage 02 review and integration, stop. Stages 03–07, the stage-05 Sol checkpoint, and GSHTrans modernization are not authorized by the user's latest instruction.
+
+## User-requested review stop
+
+Stage 02 is committed but NOT accepted or integrated. The user requested cutting the independent review short; it must resume before acceptance. See `docs/cleanup/review-stage-02.md`. `cleanup/base` remains at accepted stage 01 (`62e5e315301de4b198edf7f6d4724fd47f364d56`). No later stage was started.
