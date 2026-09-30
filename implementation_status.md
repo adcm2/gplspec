@@ -61,3 +61,5 @@
 ## User-requested review stop
 
 Stage 02 is committed but NOT accepted or integrated. The user requested cutting the independent review short; it must resume before acceptance. See `docs/cleanup/review-stage-02.md`. `cleanup/base` remains at accepted stage 01 (`62e5e315301de4b198edf7f6d4724fd47f364d56`). No later stage was started.
+
+Partial stage-02 review identified a potential blocker: dependency-patch skip behavior lacks the marker validation claimed in the records. See review-stage-02.md; unresolved at the user-requested stop.

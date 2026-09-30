@@ -10,3 +10,9 @@ The user explicitly requested that the independent review be cut short so they c
 - Resume from isolated `/tmp/gplspec-review-stage02`; review build directory `/tmp/gplspec-review02-independent`. Check existing evidence before restarting checks.
 - Review the seven dependency inline annotations, patch application safety/provenance, GPLSpec inline/include changes, public header coverage, and numerical preservation. Resolve any blocking findings before fast-forwarding `cleanup/base`.
 - Stop after stage 02. No stage 03–07 work, GSHTrans upgrade, or stage-05 Sol checkpoint is authorized.
+
+## Partial reviewer result received at stop
+
+Fresh independent configure, all four umbrella smoke targets, and the two-translation-unit build/run passed. The reviewer stopped all owned work and made no source changes.
+
+**Potential blocker to resolve on resume:** `CMakeLists.txt` function `gplspec_apply_odr_patch` skips a patch when `git apply --check` fails without verifying all seven inline markers. The handoff and implementation log claim marker validation exists. Distinguish an already-applied patch from partial/unexpected source mismatch and reconcile the documentation before acceptance. The provenance/math audit remains incomplete; no PASS verdict.
