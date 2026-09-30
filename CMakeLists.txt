@@ -30,70 +30,64 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Locate  FFTW3
 
 
-# add in Eigen3
+# Exact Eigen package used by the verified baseline; the source shim also
+# satisfies nested GSHTrans FetchContent calls without fetching another copy.
 include(FetchContent)
+find_package(Eigen3 3.4.0 EXACT CONFIG REQUIRED)
 FetchContent_Declare(
   Eigen3
-  GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-  GIT_TAG 3.4.1
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/eigen-system"
 )
-FetchContent_MakeAvailable(Eigen3)
 
-
-# set(CMAKE_MODULE_PATH "/usr/local/include/eigen/cmake/;${CMAKE_MODULE_PATH}")
-# find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(FFTW)
 
-
-# find_package (FFTWpp)
-include(FetchContent)
+# Declare the complete dependency closure before populating any project. This
+# ensures these immutable revisions win over transitive branch declarations.
+FetchContent_Declare(
+  NumericConcepts
+  GIT_REPOSITORY https://github.com/da380/NumericConcepts.git
+  GIT_TAG 888126b44a979fda5dcc9d0b11d80cb8b3f61b52
+)
 FetchContent_Declare(
   FFTWpp
-  GIT_REPOSITORY git@github.com:da380/FFTWpp
-  GIT_TAG main
+  GIT_REPOSITORY https://github.com/da380/FFTWpp.git
+  GIT_TAG 06cc1fb04c4398407839e637cb5414b179b0e9c3
 )
-FetchContent_MakeAvailable(FFTWpp)
-
-include(FetchContent)
 FetchContent_Declare(
   GaussQuad
-  GIT_REPOSITORY git@github.com:da380/GaussQuad
-  GIT_TAG main
+  GIT_REPOSITORY https://github.com/da380/GaussQuad.git
+  GIT_TAG fbe37c7eef93695317dbf9c48715110bf64c800f
 )
-FetchContent_MakeAvailable(GaussQuad)
-
-include(FetchContent)
-FetchContent_Declare(
-  PlanetaryModel
-  GIT_REPOSITORY git@github.com:da380/PlanetaryModel
-  GIT_TAG newdev
-)
-FetchContent_MakeAvailable(PlanetaryModel)
-
-include(FetchContent)
-FetchContent_Declare(
-  GSHTRANS
-  GIT_REPOSITORY git@github.com:adcm2/GSHTrans
-  GIT_TAG main
-)
-FetchContent_MakeAvailable(GSHTRANS)
-
-
-include(FetchContent)
-FetchContent_Declare(
-  TomographyModels
-  GIT_REPOSITORY git@github.com:adcm2/TomographyModels
-  GIT_TAG main
-)
-FetchContent_MakeAvailable(TomographyModels)
-
-include(FetchContent)
 FetchContent_Declare(
   Interpolation
-  GIT_REPOSITORY git@github.com:da380/Interpolation.git
-  GIT_TAG main
+  GIT_REPOSITORY https://github.com/da380/Interpolation.git
+  GIT_TAG 1557aad571ceac1899c2d3795696aa4047f41d8a
 )
+FetchContent_Declare(
+  PlanetaryModel
+  GIT_REPOSITORY https://github.com/da380/PlanetaryModel.git
+  GIT_TAG a801b9e9c2205c3b32daa745fd523d596a9d2ede
+)
+FetchContent_Declare(
+  GSHTRANS
+  GIT_REPOSITORY https://github.com/adcm2/GSHTrans.git
+  GIT_TAG f0a0e24a3579ceb7c99f8782328cae14bef195de
+)
+FetchContent_Declare(
+  TomographyModels
+  GIT_REPOSITORY https://github.com/adcm2/TomographyModels.git
+  GIT_TAG 97869aeea3f3d87901705db59b5de975960bd9e1
+)
+
+# Populate in the dependency order required by the interface targets.
+FetchContent_MakeAvailable(Eigen3)
+FetchContent_MakeAvailable(NumericConcepts)
+FetchContent_MakeAvailable(FFTWpp)
+FetchContent_MakeAvailable(GaussQuad)
 FetchContent_MakeAvailable(Interpolation)
+FetchContent_MakeAvailable(PlanetaryModel)
+FetchContent_MakeAvailable(GSHTRANS)
+FetchContent_MakeAvailable(TomographyModels)
 
 # Set up the library
 add_library (gplspec INTERFACE)
@@ -123,6 +117,10 @@ find_package(OpenMP REQUIRED)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     # We're in the root, define additional targets for developers.
     option(MY_PROJECT_BUILD_EXAMPLES   "whether or not examples should be built" ON)
+    option(GPLSPEC_BUILD_BASELINE_HARNESS "build deterministic stage-00 baseline harness" OFF)
+    if(GPLSPEC_BUILD_BASELINE_HARNESS)
+      add_subdirectory(tests)
+    endif()
     # option(MY_PROJECT_BUILD_TESTS      "whether or not tests should be built" ON)
 
 

@@ -1,0 +1,2 @@
+add_executable(stage00_reference stage00_reference.cpp)
+target_link_libraries(stage00_reference PRIVATE gplspec PlanetaryModel TomographyModels)
