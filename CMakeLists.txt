@@ -31,14 +31,22 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Locate  FFTW3
 
 
-# Exact Eigen package used by the verified baseline; the source shim also
-# satisfies nested GSHTrans FetchContent calls without fetching another copy.
+# Reuse a parent-provided Eigen target, or fetch the baseline version's headers.
+# Declare Eigen first so nested dependencies reuse the same source and target.
 include(FetchContent)
-find_package(Eigen3 3.4.0 EXACT CONFIG REQUIRED)
-FetchContent_Declare(
-  Eigen3
-  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/eigen-system"
-)
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
+if(TARGET Eigen3::Eigen)
+  FetchContent_Declare(Eigen3
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/eigen-system")
+else()
+  FetchContent_Declare(Eigen3
+    URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+    URL_HASH SHA256=8586084f71f9bde545ee7fa6d00288b264a2b7ac3607b974e54d13e7162c1c72
+    # Populate headers only; do not configure Eigen's own tests or install rules.
+    SOURCE_SUBDIR gplspec-header-only)
+endif()
 
 find_package(FFTW)
 
@@ -82,6 +90,11 @@ FetchContent_Declare(
 
 # Populate in the dependency order required by the interface targets.
 FetchContent_MakeAvailable(Eigen3)
+if(NOT TARGET Eigen3::Eigen)
+  add_library(Eigen3::Eigen INTERFACE IMPORTED GLOBAL)
+  set_target_properties(Eigen3::Eigen PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${eigen3_SOURCE_DIR}")
+endif()
 FetchContent_MakeAvailable(NumericConcepts)
 FetchContent_MakeAvailable(FFTWpp)
 FetchContent_MakeAvailable(GaussQuad)
