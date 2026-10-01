@@ -224,6 +224,41 @@ inline void ConstructMappingVectorGradient(
    }
 }
 
+
+// Form the perturbed Laplace tensor from the existing inverse-F, df, and
+// background Laplace tensor. Keep the original matrix-product/subtraction order.
+inline void ConstructPerturbedLaplaceTensor(
+    const Density3D &inp_model,
+    const std::vector<std::vector<std::vector<Eigen::Matrix3cd>>> &_vec_df,
+    std::vector<std::vector<std::vector<Eigen::Matrix3cd>>> &_vec_da,
+    std::size_t _num_layers, std::size_t nnode, std::size_t spatialsize) {
+   Eigen::Matrix3cd mat_metric = Eigen::Matrix3cd::Zero();
+   mat_metric(0, 2) = -1.0;
+   mat_metric(1, 1) = 1.0;
+   mat_metric(2, 0) = -1.0;
+
+   // loop through
+   for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
+
+   // finding 0-component derivative
+   for (int idxpoly = 0; idxpoly < nnode; ++idxpoly) {
+      for (int idxinner = 0; idxinner < spatialsize; ++idxinner) {
+         Eigen::Matrix3cd tmp1 =
+             inp_model.InverseF_Point(idxelem, idxpoly, idxinner) *
+             mat_metric * _vec_df[idxelem][idxpoly][idxinner];
+         _vec_da[idxelem][idxpoly][idxinner] +=
+             inp_model.LaplaceTensor_Point(idxelem, idxpoly, idxinner) *
+             (-tmp1(2, 0) + tmp1(1, 1) - tmp1(0, 2));
+         Eigen::Matrix3cd tmp2 =
+             tmp1 * mat_metric *
+             inp_model.LaplaceTensor_Point(idxelem, idxpoly, idxinner);
+         _vec_da[idxelem][idxpoly][idxinner] -= tmp2;
+         _vec_da[idxelem][idxpoly][idxinner] -= tmp2.transpose();
+      }
+   }
+   }
+}
+
 }  // namespace GeneralEarthModels::MappingPerturbationDetail
 
 #endif

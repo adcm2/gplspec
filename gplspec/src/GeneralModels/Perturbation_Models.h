@@ -201,33 +201,8 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
    mat_a0 = Eigen::Matrix3cd::Zero(3, 3);
    _vec_da = vvveceig(_num_layers,
                       vveceig(inp_model.qP().N(), veceig(spatialsize, mat_a0)));
-   {
-      Eigen::Matrix3cd mat_metric = Eigen::Matrix3cd::Zero();
-      mat_metric(0, 2) = -1.0;
-      mat_metric(1, 1) = 1.0;
-      mat_metric(2, 0) = -1.0;
-
-      // loop through
-      for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
-
-         // finding 0-component derivative
-         for (int idxpoly = 0; idxpoly < nnode; ++idxpoly) {
-            for (int idxinner = 0; idxinner < spatialsize; ++idxinner) {
-               Eigen::Matrix3cd tmp1 =
-                   inp_model.InverseF_Point(idxelem, idxpoly, idxinner) *
-                   mat_metric * _vec_df[idxelem][idxpoly][idxinner];
-               _vec_da[idxelem][idxpoly][idxinner] +=
-                   inp_model.LaplaceTensor_Point(idxelem, idxpoly, idxinner) *
-                   (-tmp1(2, 0) + tmp1(1, 1) - tmp1(0, 2));
-               Eigen::Matrix3cd tmp2 =
-                   tmp1 * mat_metric *
-                   inp_model.LaplaceTensor_Point(idxelem, idxpoly, idxinner);
-               _vec_da[idxelem][idxpoly][idxinner] -= tmp2;
-               _vec_da[idxelem][idxpoly][idxinner] -= tmp2.transpose();
-            }
-         }
-      }
-   }
+   MappingPerturbationDetail::ConstructPerturbedLaplaceTensor(
+       inp_model, _vec_df, _vec_da, _num_layers, nnode, spatialsize);
 };
 
 // radial map only
@@ -522,33 +497,8 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
    mat_a0 = Eigen::Matrix3cd::Zero(3, 3);
    _vec_da = vvveceig(_num_layers,
                       vveceig(inp_model.qP().N(), veceig(spatialsize, mat_a0)));
-   {
-      Eigen::Matrix3cd mat_metric = Eigen::Matrix3cd::Zero();
-      mat_metric(0, 2) = -1.0;
-      mat_metric(1, 1) = 1.0;
-      mat_metric(2, 0) = -1.0;
-
-      // loop through
-      for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
-
-         // finding 0-component derivative
-         for (int idxpoly = 0; idxpoly < nnode; ++idxpoly) {
-            for (int idxinner = 0; idxinner < spatialsize; ++idxinner) {
-               Eigen::Matrix3cd tmp1 =
-                   inp_model.InverseF_Point(idxelem, idxpoly, idxinner) *
-                   mat_metric * _vec_df[idxelem][idxpoly][idxinner];
-               _vec_da[idxelem][idxpoly][idxinner] +=
-                   inp_model.LaplaceTensor_Point(idxelem, idxpoly, idxinner) *
-                   (-tmp1(2, 0) + tmp1(1, 1) - tmp1(0, 2));
-               Eigen::Matrix3cd tmp2 =
-                   tmp1 * mat_metric *
-                   inp_model.LaplaceTensor_Point(idxelem, idxpoly, idxinner);
-               _vec_da[idxelem][idxpoly][idxinner] -= tmp2;
-               _vec_da[idxelem][idxpoly][idxinner] -= tmp2.transpose();
-            }
-         }
-      }
-   }
+   MappingPerturbationDetail::ConstructPerturbedLaplaceTensor(
+       inp_model, _vec_df, _vec_da, _num_layers, nnode, spatialsize);
 };
 
 }   // namespace GeneralEarthModels
