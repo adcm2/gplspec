@@ -3,6 +3,7 @@
 
 #include <random>
 #include "../Shared_Utilities.h"
+#include "Model_Construction_Utilities.h"
 namespace GeneralEarthModels {
 // template <class model>
 //    requires PlanetaryModel::BasicSphericalDensityModel<model, int, double>
@@ -292,7 +293,8 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
    // then need to find a
    auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
    // std::cout << "Got spatialsize\n";
-   _vec_h = vvvecdb(_num_layers, vvecdb(_q.N(), vecdb(spatialsize, 0.0)));
+   _vec_h = GPLSpec::model_detail::InitializeScalarFieldStorage(
+      _num_layers, _q.N(), spatialsize, 0.0);
    std::vector<double> vec_outerradius(spatialsize, 0.0);
    // std::vector<std::complex<double>> vec_outerrad(spatialsize, 0.0);
    // perform SH transform to get physical outer radius
@@ -383,7 +385,8 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
    }
    // // std::cout << "Hello pre j\n";
    // finding j
-   _vec_j = vvvecdb(_num_layers, vvecdb(_q.N(), vecdb(spatialsize, 0.0)));
+   _vec_j = GPLSpec::model_detail::InitializeScalarFieldStorage(
+      _num_layers, _q.N(), spatialsize, 0.0);
    {
       // declaring typenames
       using veccomp = std::vector<double>;
@@ -795,7 +798,8 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
    // need to actually fill out h
    // then need to find a
    auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
-   _vec_h = vvvecdb(_num_layers, vvecdb(_q.N(), vecdb(spatialsize, 0.0)));
+   _vec_h = GPLSpec::model_detail::InitializeScalarFieldStorage(
+      _num_layers, _q.N(), spatialsize, 0.0);
 
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -859,7 +863,8 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
    }
    // std::cout << "Hello pre j\n";
    // finding j
-   _vec_j = vvvecdb(_num_layers, vvecdb(_q.N(), vecdb(spatialsize, 0.0)));
+   _vec_j = GPLSpec::model_detail::InitializeScalarFieldStorage(
+      _num_layers, _q.N(), spatialsize, 0.0);
    {
       // declaring typenames
       using veccomp = std::vector<double>;
@@ -1269,8 +1274,10 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
    // need to actually fill out h
    // then need to find a
    auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
-   _vec_h = vvvecdb(_num_layers, vvecdb(_q.N(), vecdb(spatialsize, 0.0)));
-   _vec_j = vvvecdb(_num_layers, vvecdb(_q.N(), vecdb(spatialsize, 1.0)));
+   _vec_h = GPLSpec::model_detail::InitializeScalarFieldStorage(
+      _num_layers, _q.N(), spatialsize, 0.0);
+   _vec_j = GPLSpec::model_detail::InitializeScalarFieldStorage(
+      _num_layers, _q.N(), spatialsize, 1.0);
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
 
@@ -1789,7 +1796,8 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
    // std::cout << "Hello 2\n";
    // default h
    auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
-   _vec_h = vvvecdb(_num_layers, vvecdb(_q.N(), vecdb(spatialsize, 0.0)));
+   _vec_h = GPLSpec::model_detail::InitializeScalarFieldStorage(
+      _num_layers, _q.N(), spatialsize, 0.0);
    {
       _vec_j = std::vector<std::vector<std::vector<double>>>(
           _num_layers, std::vector<std::vector<double>>(
