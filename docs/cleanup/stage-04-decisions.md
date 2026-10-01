@@ -1,6 +1,6 @@
 # Stage 04 model-construction decisions
 
-| Category | Current assessment | Semantic boundary / validation
+| Category | Current assessment | Semantic boundary / validation |
 |---|---|---|
 | Mesh and quadrature setup | Extracted `InitializeModelDiscretization` for the four identical GLL quadrature, degree-2 transform grid, and polynomial-order assignments. The radial mesh calls remain constructor-specific. | `stage04_discretization_setup` compares original and shared quadrature points/weights, grid coordinates/extents, and polynomial order for multiple sizes. The constructors still call their respective `RadialMesh` overloads with original radius/model inputs.
 | Storage initialization | Extracted `GPLSpec::model_detail::InitializeScalarFieldStorage` and replaced seven identical nested allocations for mapping/Jacobian arrays, passing their existing zero/one initial values explicitly. | Preserves shape `(elements, quadrature nodes, spatial samples)` and each original initial value. `stage04_construction_storage` compares against the original nested initializer, including empty dimensions and zero/one/negative values. Full build, public-header checks, and examples pass; all three frozen 20,700-record comparisons have zero differences and representative output is byte-identical.
