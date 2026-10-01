@@ -4,6 +4,7 @@
 #include "../Pseudospectral_Matrix_Wrapper.h"
 #include "../Pseudospectral_Matrix_Wrapper3D.h"
 #include "../Radial_Tools.h"
+#include "../Shared_Utilities.h"
 #include "Earth_General_Models_1D.h"
 #include <GSHTrans/All>
 #include <GaussQuad/All>
@@ -107,13 +108,7 @@ FindForce(GeneralEarthModels::Density3D &inp_model) {
    // constants
    const double pi_db = 3.1415926535897932;
    double multfact = 4.0 * pi_db * inp_model.GravitationalConstant();
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
+   auto indexreal = &GPLSpec::detail::NonNegativeHarmonicIndex;
    // looping over elements
    for (int idxelem = 0; idxelem < nelem; ++idxelem) {
 
@@ -215,10 +210,9 @@ FindBoundaryPerturbationForce(GeneralEarthModels::Density3D &inp_model,
    auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
    auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
    auto rphys = [&inp_model](int idxelem, double x) {
-      return (inp_model.Node_Information().ElementWidth(idxelem) * x +
-              (inp_model.Node_Information().ElementUpperRadius(idxelem) +
-               inp_model.Node_Information().ElementLowerRadius(idxelem))) *
-             0.5;
+      return Radial_Tools::StandardIntervalMap(
+          x, inp_model.Node_Information().ElementLowerRadius(idxelem),
+          inp_model.Node_Information().ElementUpperRadius(idxelem));
    };
 
    //    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> _mat_gaussderiv;
@@ -408,10 +402,9 @@ AdvectiveBoundaryPerturbation(GeneralEarthModels::Density3D &inp_model,
    auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
    auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
    auto rphys = [&inp_model](int idxelem, double x) {
-      return (inp_model.Node_Information().ElementWidth(idxelem) * x +
-              (inp_model.Node_Information().ElementUpperRadius(idxelem) +
-               inp_model.Node_Information().ElementLowerRadius(idxelem))) *
-             0.5;
+      return Radial_Tools::StandardIntervalMap(
+          x, inp_model.Node_Information().ElementLowerRadius(idxelem),
+          inp_model.Node_Information().ElementUpperRadius(idxelem));
    };
 
    //    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> _mat_gaussderiv;
@@ -968,32 +961,19 @@ GravitationalSphericalIntegral(GeneralEarthModels::Density3D &inp_model) {
        std::vector<std::complex<double>>((lMax + 1) * (lMax + 1), 0.0));
 
    auto rphys = [&inp_model](int idxelem, double x) {
-      return (inp_model.Node_Information().ElementWidth(idxelem) * x +
-              (inp_model.Node_Information().ElementUpperRadius(idxelem) +
-               inp_model.Node_Information().ElementLowerRadius(idxelem))) *
-             0.5;
+      return Radial_Tools::StandardIntervalMap(
+          x, inp_model.Node_Information().ElementLowerRadius(idxelem),
+          inp_model.Node_Information().ElementUpperRadius(idxelem));
    };
    auto rscale = [&inp_model](int idxelem, double x) {
-      return ((1.0 -
-               inp_model.Node_Information().ElementLowerRadius(idxelem) /
-                   inp_model.Node_Information().ElementUpperRadius(idxelem)) *
-                  x +
-              (1.0 +
-               inp_model.Node_Information().ElementLowerRadius(idxelem) /
-                   inp_model.Node_Information().ElementUpperRadius(idxelem))) *
-             0.5;
+      return GPLSpec::detail::ScaledRadialNodeMap(
+          x, inp_model.Node_Information().ElementLowerRadius(idxelem) /
+                 inp_model.Node_Information().ElementUpperRadius(idxelem));
    };
    const double bigg_db = inp_model.GravitationalConstant();
    const double pi_db = 3.1415926535897932;
    // return 1.2;
    std::vector<std::complex<double>> vec_g(nelem + 1, 0.0);
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
    auto indexcomp = [](int l, int m) { return l * l + l + m; };
 
    // vector of vectors of vectors to hold information on density
@@ -1038,7 +1018,7 @@ GravitationalSphericalIntegral(GeneralEarthModels::Density3D &inp_model) {
                 inp_model.Node_Information().ElementLowerRadius(idxelem) /
                 inp_model.Node_Information().ElementUpperRadius(idxelem);
             auto rscaleint = [&myratio](double x) {
-               return ((1.0 - myratio) * x + (1.0 + myratio)) * 0.5;
+               return GPLSpec::detail::ScaledRadialNodeMap(x, myratio);
             };
             for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
                vec_f[idxelem + 1] +=
@@ -1085,10 +1065,9 @@ GravitationalSphericalIntegral(GeneralEarthModels::Density3D &inp_model) {
          }
          if (idxl == 0) {
             auto rscaleint = [&inp_model](double x) {
-               return ((inp_model.Node_Information().ElementWidth(0)) * x +
-                       (inp_model.Node_Information().ElementLowerRadius(0) +
-                        inp_model.Node_Information().ElementUpperRadius(0))) *
-                      0.5;
+               return Radial_Tools::StandardIntervalMap(
+                   x, inp_model.Node_Information().ElementLowerRadius(0),
+                   inp_model.Node_Information().ElementUpperRadius(0));
             };
             for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
                vec_g[0] += inp_model.q().W(idxnode) *

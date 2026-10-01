@@ -3,6 +3,7 @@
 
 #include "../Radial_Tools.h"
 #include "../Spectral_Element_Tools.h"
+#include "../Shared_Utilities.h"
 #include "../testtools.h"
 #include <GSHTrans/All>
 #include <GaussQuad/All>
@@ -217,16 +218,8 @@ General3D::General3D(const model &inp_model,
    }
 
    // finding _mat_gaussderiv
-   _mat_gaussderiv.resize(_poly_ord + 1, _poly_ord + 1);
-   {
-      auto pleg = Interpolation::LagrangePolynomial(_q.Points().begin(),
-                                                    _q.Points().end());
-      for (int idxi = 0; idxi < _poly_ord + 1; ++idxi) {
-         for (int idxj = 0; idxj < _poly_ord + 1; ++idxj) {
-            _mat_gaussderiv(idxi, idxj) = pleg.Derivative(idxi, _q.X(idxj));
-         }
-      }
-   }
+   _mat_gaussderiv =
+       GPLSpec::detail::GaussDerivativeMatrix(_q, _poly_ord);
 
    // finding the spectral element grid
    // _spectral_info =

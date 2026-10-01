@@ -1,6 +1,6 @@
 # GPLSpec cleanup campaign
 
-This campaign extracts existing GPLSpec/GSHTrans functionality while preserving numerical behavior and supported public interfaces. Numerical bug fixes, new GSHTrans capabilities, solver/discretization changes, optimizations, batching, real-field compression, and output refactoring are excluded. The user has updated the stopping boundary: complete and review stage 02, integrate it, then stop; stages 03–07 and the stage-05 Sol checkpoint are not authorized in this run.
+This campaign extracts existing GPLSpec/GSHTrans functionality while preserving numerical behavior and supported public interfaces. Numerical bug fixes, new GSHTrans capabilities, solver/discretization changes, optimizations, batching, real-field compression, and output refactoring are excluded. The user has resumed stages 03–05, followed by a cumulative independent Sol high review and a human-approved stop. Stages 06–07, GSHTrans modernization, performance work, and pushes remain outside scope.
 
 ## Stage status
 
@@ -9,11 +9,11 @@ This campaign extracts existing GPLSpec/GSHTrans functionality while preserving 
 | 00 Baseline | `cleanup/00-baseline` | Accepted after independent Luna review of `dece12e59f86de59978e6cccfe684e22b4fcb06e` | Pinned reproducible build, immutable original-source reference, repeatable five-fixture regression and output check |
 | 01 Hygiene | `cleanup/01-hygiene` | Accepted after independent Luna PASS at `3f7ccf46625d5b09d13d966c58573d437deb5c99` | Documented deletion/interface decisions; examples and baseline regressions pass; Luna approval |
 | 02 Headers | `cleanup/02-headers` | Accepted and integrated: reviewed candidate `3337718bdd0a5a5746cb833b1b5371ea392c215a` | Independent Luna high review passed; public include/link checks, examples, fail-closed patch guard, and frozen baseline regressions pass |
-| 03 Utilities | `cleanup/03-utilities` | Not authorized under current stop boundary | Focused old/new helper comparisons and baseline regressions pass; Luna approval |
-| 04 Models | `cleanup/04-models` | Not authorized under current stop boundary | Intermediate arrays and solutions match frozen baseline; public constructors remain compatible; Luna approval |
-| 05 Operators | `cleanup/05-operators` | Not authorized under current stop boundary | Direct operator/source/perturbation comparisons and baseline regressions pass; Luna approval, then cumulative Sol review |
+| 03 Utilities | `cleanup/03-utilities` | In progress from accepted base `287645fa51b54f980784ea5f98ff80fff83c8b8c` | Focused old/new helper comparisons, baseline regressions, independent Luna approval |
+| 04 Models | `cleanup/04-models` | Authorized after stage 03 review and integration | Intermediate arrays and solutions match frozen baseline; public constructors remain compatible; Luna approval |
+| 05 Operators | `cleanup/05-operators` | Authorized after stage 04 review and integration | Direct operator/source/perturbation comparisons and baseline regressions; Luna approval, then cumulative Sol high review |
 
-Stages begin from the latest accepted `cleanup/base`. Accepted stage branches are fast-forwarded only into `cleanup/base`. Keep `main` and `develop` unchanged, do not push, and stop after stage 02 is integrated. Each authorized stage requires its own fixed candidate commit and separate high-reasoning Luna review. No work beyond stage 02 is permitted under the current user instruction.
+Stages begin from the latest accepted `cleanup/base`. Accepted stage branches are fast-forwarded only into `cleanup/base`. Keep `main` and `develop` unchanged; do not push. Each stage requires a fixed candidate and separate independent Luna high review before integration into `cleanup/base`. After stage 05 passes, request one cumulative Sol high review and stop for the human-approved checkpoint. No work on stages 06–07 or GSHTrans modernization is authorized.
 
 ## Stage-00 comparison contract
 
@@ -21,6 +21,6 @@ The frozen reference is source commit `4ef3a66c62d64408d99989dd51c3ccbdc46d0b0c`
 
 Repeated reference runs were byte-identical on the pinned compiler/dependency stack. Cross-stage checks use `rtol=1e-13` and `atol=1e-15`; no stage may relax these tolerances. The representative output file is compared byte-for-byte.
 
-## Current integration boundary
+## Resumed campaign boundary
 
-Stage 02 passed independent review and was fast-forward integrated into `cleanup/base` through acceptance-record commit `535561a6ed58ae02832960ff75186209e13c5454`. The reviewed code candidate is `3337718bdd0a5a5746cb833b1b5371ea392c215a`. The campaign is stopped after stage 02; no later stage was started.
+Stage 02 passed independent review and was integrated. The user has since authorized stages 03–05, with separate Luna review/integration per stage, followed by cumulative Sol high review and a human checkpoint. The current writer is limited to stage 03 on `cleanup/03-utilities`; later stages remain gated.

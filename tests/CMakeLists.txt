@@ -18,3 +18,9 @@ if(BUILD_TESTING)
   add_test(NAME stage02_patch_application
     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_stage02_patch_application.py)
 endif()
+
+add_executable(stage03_utilities stage03_utilities.cpp)
+target_link_libraries(stage03_utilities PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage03_utilities COMMAND stage03_utilities)
+endif()

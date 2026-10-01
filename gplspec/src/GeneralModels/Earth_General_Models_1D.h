@@ -3,6 +3,7 @@
 
 #include "../Radial_Tools.h"
 #include "../Spectral_Element_Tools.h"
+#include "../Shared_Utilities.h"
 #include "../testtools.h"
 #include <GaussQuad/All>
 #include <Interpolation/All>
@@ -141,16 +142,8 @@ spherical_1D::spherical_1D(const model &inp_model,
        Radial_Tools::RadialMesh(inp_model, q, max_radial_step, maxrad);
 
    // finding _mat_gaussderiv
-   _mat_gaussderiv.resize(_poly_ord + 1, _poly_ord + 1);
-   {
-      auto pleg = Interpolation::LagrangePolynomial(_q.Points().begin(),
-                                                    _q.Points().end());
-      for (int idxi = 0; idxi < _poly_ord + 1; ++idxi) {
-         for (int idxj = 0; idxj < _poly_ord + 1; ++idxj) {
-            _mat_gaussderiv(idxi, idxj) = pleg.Derivative(idxi, _q.X(idxj));
-         }
-      }
-   }
+   _mat_gaussderiv =
+       GPLSpec::detail::GaussDerivativeMatrix(_q, _poly_ord);
 
    // find all model information
    _vec_density.resize(_num_layers);

@@ -4,6 +4,7 @@
 #include <string>
 #include <fstream>
 #include "../Radial_Tools.h"
+#include "../Shared_Utilities.h"
 #include "Earth_Density_Models_3D.h"
 #include <GSHTrans/All>
 
@@ -404,7 +405,7 @@ Density3D::RotateSliceToEquator(
       // temporary
       Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
       int rowidx = 0;
-      auto multval = std::sqrt((4.0 * 3.1415926535) / (2 * l + 1));
+      auto multval = GPLSpec::detail::RotationHarmonicNormalization(l);
 
       // fill out matrix
       for (int m = -l; m < l + 1; ++m) {
@@ -928,7 +929,7 @@ Density3D::ReferentialOutputRotated(
       // temporary
       Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
       int rowidx = 0;
-      auto multval = std::sqrt((4.0 * 3.1415926535) / (2 * l + 1));
+      auto multval = GPLSpec::detail::RotationHarmonicNormalization(l);
 
       // fill out matrix
       for (int m = -l; m < l + 1; ++m) {
@@ -973,13 +974,7 @@ Density3D::ReferentialOutputRotated(
        _num_layers, std::vector<std::vector<std::complex<double>>>(
                         _poly_ord + 1, std::vector<std::complex<double>>(
                                            coefficientnumberall, 0.0)));
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
+
    // std::cout << "Hello pre hlm\n";
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -994,23 +989,8 @@ Density3D::ReferentialOutputRotated(
          // looping over l,m values
          // std::size_t mycheckidx =
          //     (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         int idx = 0;
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            // deal with -ve m:
-            for (int idxm = -idxl; idxm < 0; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] =
-                   std::pow(-1.0, idxm) * std::conj(tmp_h[idxlm]);
-               ++idx;
-            }
-
-            //+ve m:
-            for (int idxm = 0; idxm < idxl + 1; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] = tmp_h[idxlm];
-               ++idx;
-            }
-         }
+         GPLSpec::detail::ExpandRealScalarCoefficients(
+             lMax, tmp_h, vec_hlm[idxelem][idxnode]);
       }
    }
 
@@ -1173,7 +1153,7 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
       // temporary
       Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
       int rowidx = 0;
-      auto multval = std::sqrt((4.0 * 3.1415926535) / (2 * l + 1));
+      auto multval = GPLSpec::detail::RotationHarmonicNormalization(l);
 
       // fill out matrix
       for (int m = -l; m < l + 1; ++m) {
@@ -1214,13 +1194,7 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
                         _poly_ord + 1, std::vector<std::complex<double>>(
                                            coefficientnumberall, 0.0)));
    auto vec_rholm = vec_hlm;
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
+
    // std::cout << "Hello pre hlm\n";
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -1251,26 +1225,10 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
          // looping over l,m values
          // std::size_t mycheckidx =
          //     (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         int idx = 0;
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            // deal with -ve m:
-            for (int idxm = -idxl; idxm < 0; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] =
-                   std::pow(-1.0, idxm) * std::conj(tmp_h[idxlm]);
-               vec_rholm[idxelem][idxnode][idx] =
-                   std::pow(-1.0, idxm) * std::conj(tmp_rho[idxlm]);
-               ++idx;
-            }
-
-            //+ve m:
-            for (int idxm = 0; idxm < idxl + 1; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] = tmp_h[idxlm];
-               vec_rholm[idxelem][idxnode][idx] = tmp_rho[idxlm];
-               ++idx;
-            }
-         }
+         GPLSpec::detail::ExpandRealScalarCoefficients(
+             lMax, tmp_h, vec_hlm[idxelem][idxnode]);
+         GPLSpec::detail::ExpandRealScalarCoefficients(
+             lMax, tmp_rho, vec_rholm[idxelem][idxnode]);
       }
    }
 
@@ -1453,7 +1411,7 @@ Density3D::PhysicalOutputRotated(
       // temporary
       Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
       int rowidx = 0;
-      auto multval = std::sqrt((4.0 * 3.1415926535) / (2 * l + 1));
+      auto multval = GPLSpec::detail::RotationHarmonicNormalization(l);
 
       // fill out matrix
       for (int m = -l; m < l + 1; ++m) {
@@ -1498,13 +1456,7 @@ Density3D::PhysicalOutputRotated(
        _num_layers, std::vector<std::vector<std::complex<double>>>(
                         _poly_ord + 1, std::vector<std::complex<double>>(
                                            coefficientnumberall, 0.0)));
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
+
    // std::cout << "Hello pre hlm\n";
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -1519,23 +1471,8 @@ Density3D::PhysicalOutputRotated(
          // looping over l,m values
          // std::size_t mycheckidx =
          //     (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         int idx = 0;
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            // deal with -ve m:
-            for (int idxm = -idxl; idxm < 0; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] =
-                   std::pow(-1.0, idxm) * std::conj(tmp_h[idxlm]);
-               ++idx;
-            }
-
-            //+ve m:
-            for (int idxm = 0; idxm < idxl + 1; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] = tmp_h[idxlm];
-               ++idx;
-            }
-         }
+         GPLSpec::detail::ExpandRealScalarCoefficients(
+             lMax, tmp_h, vec_hlm[idxelem][idxnode]);
       }
    }
 

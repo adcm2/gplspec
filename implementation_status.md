@@ -77,6 +77,51 @@ The user paused the initial independent review before acceptance; the pause was 
 - Original-source reference is durably retained at `build/cleanup-reference/stage00_reference`, mode 0555, SHA-256 `456d69bb388149ced74dc5078fe825e3d79193f64ad254ef13898ff2baf03308`. Source worktree was original commit `4ef3a66c62d64408d99989dd51c3ccbdc46d0b0c` plus only the accepted stage-00 build/harness overlay. All three frozen comparisons passed; expected CSV and output hashes did not change.
 - Stage 02 awaits coordinator fast-forward to `cleanup/base`. After integration, stop as the user directed. No later stages or stage-05 Sol checkpoint were started or are authorized.
 
-## Final stage-02 integration
+## Stage-02 integration (historical status)
 
-The coordinator fast-forwarded `cleanup/base` through `535561a6ed58ae02832960ff75186209e13c5454`, containing independently accepted code candidate `3337718bdd0a5a5746cb833b1b5371ea392c215a` and its review records. Stages 00–02 are accepted. Work stopped after stage 02; stages 03–07 and the Sol checkpoint were not started. This final commit only updates integration records.
+The coordinator fast-forwarded `cleanup/base` through `535561a6ed58ae02832960ff75186209e13c5454`, containing independently accepted code candidate `3337718bdd0a5a5746cb833b1b5371ea392c215a` and its review records. Stages 00–02 are accepted. The earlier stop after stage 02 was superseded by the later user authorization recorded below.
+
+
+## Resumed authorization — stage 03 only
+
+- User extended the campaign through stages 03–05, requiring separate Luna high review/integration after each stage, then consolidated Sol high review after stage 05 and a stop for the human-approved checkpoint. Stages 06–07, GSHTrans modernization, performance work, and pushes remain unauthorized. Actual implementer: `gpt-6-luna` medium; stage reviewer: independent `gpt-6-luna` high; final reviewer: `gpt-6-sol` high.
+- Stage 03 starts from clean accepted `cleanup/base` `287645fa51b54f980784ea5f98ff80fff83c8b8c` on newly created `cleanup/03-utilities`. Work is limited to shared utilities; do not start stage 04 until stage 03 independently passes and is integrated.
+- Initial inventory (no numerical code changed yet): repeated triangular harmonic-index lambdas appear in `Density_Model_Constructors.h`, `Density_Model_Return.h`, and `Gravity_Tools.h`; related candidate categories still require signature/body/layout comparison before extraction.
+
+- Stage-03 first code change: added internal `gplspec/src/Shared_Utilities.h` with explicit contracts for non-negative harmonic indexing, the legacy full real-scalar coefficient expansion, rotation normalization, reference-to-physical interval mapping, and Gauss derivative-matrix construction. No call sites have changed yet; each helper will be checked against copied original operations before replacement.
+
+- Stage-03 focused old/new test added before call-site edits: `tests/stage03_utilities.cpp` copies the original index, full/reduced conversion, rotation factor, radial interval map, and Gauss derivative-matrix loops as test references and compares exact values over degrees 0–12, GLL node counts 2–9, and interval endpoints/interior points. Registered as `stage03_utilities`; helper/call-site equivalence run is pending.
+
+- Stage-03 fixture adjustment: the pinned GaussQuad GLL constructor asserts that quadrature node count is greater than 2. Limited the derivative-matrix sweep to node counts 3–9 (the smallest supported order and higher values); this corrects a test-domain issue only.
+
+- Stage-03 harmonic utilities extraction: replaced the eight duplicated triangular-index lambdas with `NonNegativeHarmonicIndex`; replaced six manually repeated nonnegative-to-full real-scalar coefficient loops with `ExpandRealScalarCoefficients`; replaced four identical rotation normalization expressions with `RotationHarmonicNormalization`. The copied-original-operation test passed before call-site edits. Coefficient ordering, conjugation, phase expression, storage extents, and arithmetic order are retained. Post-edit compile/regression is pending.
+
+- Stage-03 formatting correction: removed only six whitespace-only blank lines left at the former local index-lambda sites; `git diff --check` is clean.
+
+- Stage-03 radial interval mapping extraction: made `GPLSpec::detail::StandardIntervalMap` the shared implementation. Existing `Radial_Tools::StandardIntervalMap` and `GravityFunctions::StandardIntervalMap` names remain as forwarding wrappers; the three equivalent physical-radius lambdas in `Gravity_Tools.h` now call the radial wrapper. Dimensionless `ScaledIntervalMap` and distinct `rscale` conventions remain unchanged. Focused wrapper/reference test and full regression are pending.
+
+- Stage-03 radial call-site change (partial logical group): four identical physical-radius lambdas in `Spherical_Integrator.h` and two in `testtools.h` now call the existing `GravityFunctions::StandardIntervalMap` wrapper; a separate `Gravity_Tools.h` first-element lambda did not match the scripted exact text and was left unchanged pending focused edit. No public signatures changed.
+
+- Stage-03 radial change note: the main edit applied the three `Gravity_Tools.h` `rphys` lambda replacements before a later exact-match assertion stopped on its separate `rscaleint` case; those three replacements are present and documented here. The distinct first-element `rscaleint` is being handled through the same physical-radius map after direct source inspection.
+
+- Stage-03 radial mapping completion: changed the remaining `Gravity_Tools.h` first-element `rscaleint` used for the physical radial node to the shared standard interval map; dimensionless `rscale` operations remain untouched.
+
+- Stage-03 derivative-matrix extraction, constructor group: replaced the four identical Gauss derivative-matrix loops in `Density_Model_Constructors.h` with the tested helper. The helper preserves the prior polynomial-order bounds, Eigen dynamic matrix type/layout, Lagrange derivative call order, and quadrature sample order. Focused and full numerical checks pending.
+
+- Stage-03 derivative-matrix extraction, model group: replaced the identical `spherical_1D` and `General3D` Gauss derivative builders with `GaussDerivativeMatrix`, adding direct internal-header includes. All six former builders now share the exact tested implementation; constructor and model interfaces are unchanged.
+
+- Stage-03 radial precision check: the original templated `rphys` lambdas accepted a `double` reference coordinate even when their edge vector type was `float`. Generalized only the internal helper to preserve usual mixed-type arithmetic promotions and routed those lambdas directly through it; legacy same-type public wrapper signatures are unchanged. Added a mixed float-edge/double-coordinate exact comparison.
+
+- Stage-03 formatting correction: aligned continuation indentation for the mixed-type interval helper calls; no behavior changed.
+
+- Stage-03 normalized radial mapping extraction: added `ScaledRadialNodeMap(x, inner/outer)` and routed the duplicate spherical/gravity `rscale` and `rscaleint` operations through it. Its ratio contract is distinct from `GravityFunctions::ScaledIntervalMap`; the latter and other dimensionless mappings remain untouched. The focused suite compares the helper exactly against the original expression over endpoints/interior nodes and several radius ratios.
+
+- Stage-03 include hygiene: added direct `Shared_Utilities.h` includes to `Spherical_Integrator.h` and `testtools.h`, both of which call its internal mapping helpers; no header use depends on Radial_Tools include order.
+
+- Stage-03 test robustness: replaced C `assert` checks with unconditional runtime checks so the focused old/new comparisons remain active in Release builds with `NDEBUG`.
+
+- Stage-03 dead-local cleanup: removed the now-unused triangular-index function pointer in `Gravity_Tools.h`; its only surviving reference was commented-out code and this local did not participate in indexing. Active force indexing continues to use the shared helper.
+
+- Stage-03 category inventory and deliberate non-consolidations are recorded in `docs/cleanup/stage-03-decisions.md` (harmonic indexing, full/reduced scalar conversion, radial mapping, repeated rotation normalization, and radial differentiation matrices). Distinct scaled-coordinate formulas, full signed harmonic indexing, and weak-form derivative products remain separate because their layout/units/operations differ.
+- Stage-03 final validation: `cmake -S . -B /tmp/gplspec-stage02-guard-build -DMY_PROJECT_BUILD_EXAMPLES=ON -DGPLSPEC_BUILD_BASELINE_HARNESS=ON`; `cmake --build /tmp/gplspec-stage02-guard-build -j2` passed all four public-header smoke targets, two-TU link, focused utility test, stage00 harness, and every example (clean_bench_1–10, phobos_gravity, phobos_gravity_perturbation, phobos_heterogeneous, wignertest, OutputZiheng). CTest `stage02_patch_application` and `stage03_utilities` both passed. `tests/run_stage00.sh /tmp/gplspec-stage02-guard-build/bin/stage00_reference` passed all three 20,700-record comparisons with zero changed components and byte-identical output; `stage02_header_link` ran; diff-check was clean. Frozen CSV/output hashes and durable original reference SHA-256 are unchanged.
+- No numerical differences were observed. Stage 03 is ready for fixed-candidate handoff and independent Luna review. Stage 04 has not started.

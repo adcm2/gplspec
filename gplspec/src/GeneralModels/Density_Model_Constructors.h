@@ -2,6 +2,7 @@
 #define DENSITY_EARTH_MODEL_CONSTRUCTORS_3D_H
 
 #include <random>
+#include "../Shared_Utilities.h"
 namespace GeneralEarthModels {
 // template <class model>
 //    requires PlanetaryModel::BasicSphericalDensityModel<model, int, double>
@@ -280,16 +281,8 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
    std::cout << "# layers: " << _num_layers << "\n";
    // std::cout << "Made node_data\n";
    // finding _mat_gaussderiv
-   _mat_gaussderiv.resize(_poly_ord + 1, _poly_ord + 1);
-   {
-      auto pleg = Interpolation::LagrangePolynomial(_q.Points().begin(),
-                                                    _q.Points().end());
-      for (int idxi = 0; idxi < _poly_ord + 1; ++idxi) {
-         for (int idxj = 0; idxj < _poly_ord + 1; ++idxj) {
-            _mat_gaussderiv(idxi, idxj) = pleg.Derivative(idxi, _q.X(idxj));
-         }
-      }
-   }
+   _mat_gaussderiv =
+       GPLSpec::detail::GaussDerivativeMatrix(_q, _poly_ord);
    // std::cout << "Made gauss_derivative\n";
    //////////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////////
@@ -369,13 +362,7 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
        _num_layers, std::vector<std::vector<std::complex<double>>>(
                         npoly + 1, std::vector<std::complex<double>>(
                                        coefficientnumberall, 0.0)));
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
+
    // std::cout << "Hello pre hlm\n";
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -390,23 +377,8 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
          // looping over l,m values
          // std::size_t mycheckidx =
          //     (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         int idx = 0;
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            // deal with -ve m:
-            for (int idxm = -idxl; idxm < 0; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] =
-                   std::pow(-1.0, idxm) * std::conj(tmp_h[idxlm]);
-               ++idx;
-            }
-
-            //+ve m:
-            for (int idxm = 0; idxm < idxl + 1; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] = tmp_h[idxlm];
-               ++idx;
-            }
-         }
+         GPLSpec::detail::ExpandRealScalarCoefficients(
+             lMax, tmp_h, vec_hlm[idxelem][idxnode]);
       }
    }
    // // std::cout << "Hello pre j\n";
@@ -813,16 +785,8 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
    std::cout << "The number of elements is: " << _num_layers << "\n";
 
    // finding _mat_gaussderiv
-   _mat_gaussderiv.resize(_poly_ord + 1, _poly_ord + 1);
-   {
-      auto pleg = Interpolation::LagrangePolynomial(_q.Points().begin(),
-                                                    _q.Points().end());
-      for (int idxi = 0; idxi < _poly_ord + 1; ++idxi) {
-         for (int idxj = 0; idxj < _poly_ord + 1; ++idxj) {
-            _mat_gaussderiv(idxi, idxj) = pleg.Derivative(idxi, _q.X(idxj));
-         }
-      }
-   }
+   _mat_gaussderiv =
+       GPLSpec::detail::GaussDerivativeMatrix(_q, _poly_ord);
 
    //////////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////////
@@ -874,13 +838,7 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
        _num_layers, std::vector<std::vector<std::complex<double>>>(
                         npoly + 1, std::vector<std::complex<double>>(
                                        coefficientnumberall, 0.0)));
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
+
    // std::cout << "Hello pre hlm\n";
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -895,23 +853,8 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
          // looping over l,m values
          // std::size_t mycheckidx =
          //     (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         int idx = 0;
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            // deal with -ve m:
-            for (int idxm = -idxl; idxm < 0; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] =
-                   std::pow(-1.0, idxm) * std::conj(tmp_h[idxlm]);
-               ++idx;
-            }
-
-            //+ve m:
-            for (int idxm = 0; idxm < idxl + 1; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] = tmp_h[idxlm];
-               ++idx;
-            }
-         }
+         GPLSpec::detail::ExpandRealScalarCoefficients(
+             lMax, tmp_h, vec_hlm[idxelem][idxnode]);
       }
    }
    // std::cout << "Hello pre j\n";
@@ -1316,16 +1259,8 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
    _num_layers = node_data.NumberOfElements();
 
    // finding _mat_gaussderiv
-   _mat_gaussderiv.resize(_poly_ord + 1, _poly_ord + 1);
-   {
-      auto pleg = Interpolation::LagrangePolynomial(_q.Points().begin(),
-                                                    _q.Points().end());
-      for (int idxi = 0; idxi < _poly_ord + 1; ++idxi) {
-         for (int idxj = 0; idxj < _poly_ord + 1; ++idxj) {
-            _mat_gaussderiv(idxi, idxj) = pleg.Derivative(idxi, _q.X(idxj));
-         }
-      }
-   }
+   _mat_gaussderiv =
+       GPLSpec::detail::GaussDerivativeMatrix(_q, _poly_ord);
 
    //////////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////////
@@ -1376,13 +1311,7 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
        _num_layers, std::vector<std::vector<std::complex<double>>>(
                         npoly + 1, std::vector<std::complex<double>>(
                                        coefficientnumberall, 0.0)));
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
+
 
    // std::cout << "Finding hlm\n";
    // fill out h from mapping
@@ -1398,23 +1327,8 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
          // looping over l,m values
          // std::size_t mycheckidx =
          //     (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         int idx = 0;
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            // deal with -ve m:
-            for (int idxm = -idxl; idxm < 0; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] =
-                   std::pow(-1.0, idxm) * std::conj(tmp_h[idxlm]);
-               ++idx;
-            }
-
-            //+ve m:
-            for (int idxm = 0; idxm < idxl + 1; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] = tmp_h[idxlm];
-               ++idx;
-            }
-         }
+         GPLSpec::detail::ExpandRealScalarCoefficients(
+             lMax, tmp_h, vec_hlm[idxelem][idxnode]);
       }
    }
    // std::cout << "Finding j\n";
@@ -1889,16 +1803,8 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
    }
    // std::cout << "Hello 3\n";
    // finding _mat_gaussderiv
-   _mat_gaussderiv.resize(_poly_ord + 1, _poly_ord + 1);
-   {
-      auto pleg = Interpolation::LagrangePolynomial(_q.Points().begin(),
-                                                    _q.Points().end());
-      for (int idxi = 0; idxi < _poly_ord + 1; ++idxi) {
-         for (int idxj = 0; idxj < _poly_ord + 1; ++idxj) {
-            _mat_gaussderiv(idxi, idxj) = pleg.Derivative(idxi, _q.X(idxj));
-         }
-      }
-   }
+   _mat_gaussderiv =
+       GPLSpec::detail::GaussDerivativeMatrix(_q, _poly_ord);
    // std::cout << "Hello 4\n";
    // finding the spectral element grid
    _spectral_info = SpectralElementTools::MatrixWeakForm(node_data, _q);
