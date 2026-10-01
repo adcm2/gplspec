@@ -11,3 +11,10 @@ endforeach()
 
 add_executable(stage02_header_link stage02_header_main.cpp stage02_header_peer.cpp)
 target_link_libraries(stage02_header_link PRIVATE gplspec)
+
+
+if(BUILD_TESTING)
+  find_package(PythonInterp 3 REQUIRED)
+  add_test(NAME stage02_patch_application
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_stage02_patch_application.py)
+endif()

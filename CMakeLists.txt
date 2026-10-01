@@ -5,6 +5,7 @@ cmake_minimum_required (VERSION 3.5)
 
 
 project(gplspec)
+include(CTest)
 # get_filename_component(Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
@@ -90,31 +91,17 @@ FetchContent_MakeAvailable(GSHTRANS)
 FetchContent_MakeAvailable(TomographyModels)
 
 # The pinned FFTWpp and TomographyModels revisions define non-template
-# functions in headers without `inline`. Patch only this build's FetchContent
-# copies, leaving dependency repositories and pins intact.
-function(gplspec_apply_odr_patch source patch)
-  execute_process(
-    COMMAND git apply --check "${patch}"
-    WORKING_DIRECTORY "${source}"
-    RESULT_VARIABLE patch_check
-    OUTPUT_QUIET ERROR_QUIET)
-  if(patch_check EQUAL 0)
-    execute_process(
-      COMMAND git apply "${patch}"
-      WORKING_DIRECTORY "${source}"
-      RESULT_VARIABLE patch_result)
-    if(NOT patch_result EQUAL 0)
-      message(FATAL_ERROR "Failed to apply stage-02 patch: ${patch}")
-    endif()
-  endif()
-endfunction()
+# functions in headers without `inline`. Patch only build-owned FetchContent
+# copies, and fail closed on partial/unexpected source state.
+include(cmake/ApplyPinnedOdrPatch.cmake)
 gplspec_apply_odr_patch(
   "${FFTWpp_SOURCE_DIR}"
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/stage02-fftwpp-odr.patch")
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/stage02-fftwpp-odr.patch"
+  "${CMAKE_BINARY_DIR}")
 gplspec_apply_odr_patch(
   "${TomographyModels_SOURCE_DIR}"
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/stage02-tomographymodels-odr.patch")
-unset(_stage02_patch)
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/stage02-tomographymodels-odr.patch"
+  "${CMAKE_BINARY_DIR}")
 
 # Set up the library
 add_library (gplspec INTERFACE)
