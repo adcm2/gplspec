@@ -1714,9 +1714,8 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
    _vec_h = GPLSpec::model_detail::InitializeScalarFieldStorage(
       _num_layers, _q.N(), spatialsize, 0.0);
    {
-      _vec_j = std::vector<std::vector<std::vector<double>>>(
-          _num_layers, std::vector<std::vector<double>>(
-                           _q.N(), std::vector<double>(spatialsize, 1.0)));
+      _vec_j = GPLSpec::model_detail::InitializeScalarFieldStorage(
+          _num_layers, _q.N(), spatialsize, 1.0);
       Eigen::Matrix3cd mat_a0;
       mat_a0 << 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0;
       _vec_a =
