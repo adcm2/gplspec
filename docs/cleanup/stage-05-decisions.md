@@ -17,3 +17,7 @@ The frozen stage-00 reference harness covers five fixtures and records full mode
 Direct 3D original-source and candidate harness CSVs are byte-identical at SHA-256 `ef20bd7e3016661c60903c290c74c599151fdfc0417443bcf81c4215401f105e`, covering operator action, source, perturbation tensors, and solutions; representative output files compare byte-for-byte. The frozen stage00 regression remains required and unchanged. Original build provenance and current substep inventory remain documented in `baseline-manifest.md` and this file.
 
 The full perturbation vector-gradient and perturbed-Laplace source audit is ongoing. The unused `Mapping_Tools::dxitodf` path is not treated as equivalent to the active `MappingPerturbation` constructor paths.
+
+## Completed extraction 1 — canonical tensor-vector contraction
+
+The 1D and 3D wrappers now call the small internal contraction helper. The copied-original-expression test is bit-exact for 1,000 deterministic dense complex cases. Candidate tests `stage05_tensor_contraction` and `stage05_1d_original_reference`, the stage02 patch guard, and the immutable three-comparison stage00 regression pass. Direct candidate-versus-original-source (4ef3a66) stage00 CSVs are byte-identical and their representative output files match; the 1D output fixture is frozen only from the original executable. This extraction did not alter scalar-gradient multipliers, radial quadrature weights, weak assembly, scatter-add, or boundary formulas.
