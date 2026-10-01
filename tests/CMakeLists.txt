@@ -65,3 +65,16 @@ if(BUILD_TESTING)
       $<TARGET_FILE:stage05_operator_reference>
       ${CMAKE_CURRENT_SOURCE_DIR}/reference/stage05-1d-original.csv)
 endif()
+
+add_executable(stage05_file_perturbation_reference
+  stage05_file_perturbation_reference.cpp)
+target_link_libraries(stage05_file_perturbation_reference PRIVATE
+  gplspec PlanetaryModel TomographyModels Interpolation GaussQuad)
+target_compile_definitions(stage05_file_perturbation_reference PRIVATE
+  GPLSPEC_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+if(BUILD_TESTING)
+  add_test(NAME stage05_file_perturbation_original_reference
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_stage05_file_perturbation_reference.sh
+      $<TARGET_FILE:stage05_file_perturbation_reference>
+      ${CMAKE_CURRENT_SOURCE_DIR}/reference/stage05-file-perturbation-original.csv)
+endif()
