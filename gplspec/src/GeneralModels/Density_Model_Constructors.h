@@ -802,34 +802,8 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
       _num_layers, _q.N(), spatialsize, 0.0);
 
    // fill out h from mapping
-   for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
-
-      int laynum = node_data.LayerNumber(idxelem);
-      // std::cout << "Layer number: " << laynum << "\n";
-      // looping through nodes
-      for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
-         auto radr = node_data.NodeRadius(idxelem, idxnode);
-         auto multfact = 1.0;
-         auto raduse = radr;
-
-         // check if within planet
-         if (radr > node_data.PlanetRadius()) {
-            raduse = node_data.PlanetRadius();
-            multfact = (node_data.OuterRadius() - radr) /
-                       (node_data.OuterRadius() - node_data.PlanetRadius());
-         }
-
-         // fill out h
-         int idxspatial = 0;
-         for (auto it : _grid.CoLatitudes()) {
-            for (auto ip : _grid.Longitudes()) {
-               _vec_h[idxelem][idxnode][idxspatial] =
-                   inp_map.RadialMapping(laynum)(raduse, it, ip) * multfact;
-               ++idxspatial;
-            }
-         }
-      }
-   }
+   GPLSpec::model_detail::PopulateRadialMappingGeometry(
+       node_data, _grid, inp_map, _num_layers, npoly, _vec_h);
 
    // finding hlm
    //  length of coefficients for YLM
@@ -1279,33 +1253,8 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
    _vec_j = GPLSpec::model_detail::InitializeScalarFieldStorage(
       _num_layers, _q.N(), spatialsize, 1.0);
    // fill out h from mapping
-   for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
-
-      int laynum = node_data.LayerNumber(idxelem);
-
-      // looping through nodes
-      for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
-         auto radr = node_data.NodeRadius(idxelem, idxnode);
-         auto multfact = 1.0;
-         auto raduse = radr;
-
-         // check if within planet
-         if (radr > node_data.PlanetRadius()) {
-            raduse = node_data.PlanetRadius();
-            multfact = (node_data.OuterRadius() - radr) /
-                       (node_data.OuterRadius() - node_data.PlanetRadius());
-         }
-
-         // fill out h
-         int idxspatial = 0;
-         for (auto it : _grid.CoLatitudes()) {
-            for (auto ip : _grid.Longitudes()) {
-               _vec_h[idxelem][idxnode][idxspatial++] =
-                   inp_map.RadialMapping(laynum)(raduse, it, ip) * multfact;
-            }
-         }
-      }
-   }
+   GPLSpec::model_detail::PopulateRadialMappingGeometry(
+       node_data, _grid, inp_map, _num_layers, npoly, _vec_h);
 
    // finding hlm
    //  length of coefficients for YLM
