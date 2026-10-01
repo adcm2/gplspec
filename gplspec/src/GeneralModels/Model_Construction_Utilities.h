@@ -2,9 +2,21 @@
 #define GPLSPEC_MODEL_CONSTRUCTION_UTILITIES_H
 
 #include <cstddef>
+#include <GaussQuad/All>
 #include <vector>
 
 namespace GPLSpec::model_detail {
+
+template <class TransformGrid>
+void InitializeModelDiscretization(
+    GaussQuad::Quadrature1D<double> &quadrature, TransformGrid &grid,
+    int &polynomial_order, int requested_polynomial_order, int l_max) {
+   quadrature =
+       GaussQuad::GaussLobattoLegendreQuadrature1D<double>(
+           requested_polynomial_order + 1);
+   grid = TransformGrid(l_max, 2);
+   polynomial_order = quadrature.N() - 1;
+}
 
 // Allocate an element/node/spatial scalar field with the requested initial value.
 inline std::vector<std::vector<std::vector<double>>> InitializeScalarFieldStorage(

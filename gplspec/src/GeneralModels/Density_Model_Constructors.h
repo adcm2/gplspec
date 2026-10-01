@@ -180,10 +180,8 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
                              std::pow(ilength_norm, 3.0)),
       potential_norm(std::pow(ilength_norm / itime_norm, 2.0)) {
 
-   _q = GaussQuad::GaussLobattoLegendreQuadrature1D<double>(npoly + 1);
-   _grid = Grid(lMax, 2);
-   // polynomial order
-   _poly_ord = _q.N() - 1;
+   GPLSpec::model_detail::InitializeModelDiscretization(
+       _q, _grid, _poly_ord, npoly, lMax);
 
    // now this constructor deals with reading in Phobos data in particular
    // find length of file
@@ -774,11 +772,9 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
                              std::pow(itime_norm, 2.0) /
                              std::pow(ilength_norm, 3.0)),
       potential_norm(std::pow(ilength_norm / itime_norm, 2.0)) {
-   _q = GaussQuad::GaussLobattoLegendreQuadrature1D<double>(npoly + 1);
+   GPLSpec::model_detail::InitializeModelDiscretization(
+       _q, _grid, _poly_ord, npoly, lMax);
 
-   _grid = Grid(lMax, 2);
-   // polynomial order
-   _poly_ord = _q.N() - 1;
 
    // find radial mesh
    node_data = Radial_Tools::RadialMesh(
@@ -1227,11 +1223,9 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
       potential_norm(
           std::pow(inp_model.LengthNorm() / inp_model.TimeNorm(), 2.0)) {
 
-   _q = GaussQuad::GaussLobattoLegendreQuadrature1D<double>(npoly + 1);
+   GPLSpec::model_detail::InitializeModelDiscretization(
+       _q, _grid, _poly_ord, npoly, lMax);
 
-   _grid = Grid(lMax, 2);
-   // polynomial order
-   _poly_ord = _q.N() - 1;
 
    // find radial mesh
    node_data = Radial_Tools::RadialMesh(inp_model, _q, max_radial_step, maxrad);
@@ -1702,15 +1696,13 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
       potential_norm(
           std::pow(inp_model.LengthNorm() / inp_model.TimeNorm(), 2.0)) {
 
-   _q = GaussQuad::GaussLobattoLegendreQuadrature1D<double>(npoly + 1);
+   GPLSpec::model_detail::InitializeModelDiscretization(
+       _q, _grid, _poly_ord, npoly, lMax);
 
    // std::cout << "Hello\n";
    // if (lMax > 1)
-   _grid = Grid(lMax, 2);
 
-   // polynomial order
-   _poly_ord = _q.N() - 1;
-   // std::cout << "Hello 1.1\n";
+      // std::cout << "Hello 1.1\n";
 
    // find radial mesh
    // std::cout << "Hello 1.2\n";
