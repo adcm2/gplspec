@@ -2,8 +2,8 @@
 
 - Fixed candidate: `3337718bdd0a5a5746cb833b1b5371ea392c215a`.
 - Starting accepted base: `62e5e315301de4b198edf7f6d4724fd47f364d56`.
-- Implementer: `gpt-6-luna` medium. Independent reviewer: Luna high.
-- Verdict: PASS for header organization, linkage, numerical preservation, and dependency patch safety. The candidate is ready for fast-forward integration into `cleanup/base`; stage 02 is not yet integrated in this record.
+- Implementer: `gpt-6-luna` medium. Independent reviewer: `gpt-6-luna` high.
+- Verdict: PASS for header organization, linkage, numerical preservation, and dependency patch safety. The candidate and acceptance records were fast-forward integrated into `cleanup/base` through `535561a6ed58ae02832960ff75186209e13c5454`. Work stopped after stage 02.
 
 The reviewer independently configured and built a fresh checkout in `/tmp/gplspec-review-stage02-final`. All four public umbrella smoke targets, `stage02_header_link`, and `stage00_reference` built; the two-translation-unit executable ran. The CTest dependency patch guard passed. The stage-00 runner passed all three comparisons over 20,700 records with zero differences and byte-identical representative output. Reconfiguring the same build succeeded, confirming already-patched source is recognized by the full reverse-patch check. `git diff --check` was clean. The seven dependency edits were exactly four `inline` additions in FFTWpp and three in TomographyModels; the reviewer also verified GPLSpec header edits were limited to the recorded `inline` additions and three direct includes.
 

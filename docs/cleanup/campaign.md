@@ -8,7 +8,7 @@ This campaign extracts existing GPLSpec/GSHTrans functionality while preserving 
 |---|---|---|---|
 | 00 Baseline | `cleanup/00-baseline` | Accepted after independent Luna review of `dece12e59f86de59978e6cccfe684e22b4fcb06e` | Pinned reproducible build, immutable original-source reference, repeatable five-fixture regression and output check |
 | 01 Hygiene | `cleanup/01-hygiene` | Accepted after independent Luna PASS at `3f7ccf46625d5b09d13d966c58573d437deb5c99` | Documented deletion/interface decisions; examples and baseline regressions pass; Luna approval |
-| 02 Headers | `cleanup/02-headers` | PASS: fixed candidate `3337718bdd0a5a5746cb833b1b5371ea392c215a`; awaiting coordinator fast-forward into `cleanup/base` | Independent Luna high review passed; public include/link checks, examples, fail-closed patch guard, and frozen baseline regressions pass |
+| 02 Headers | `cleanup/02-headers` | Accepted and integrated: reviewed candidate `3337718bdd0a5a5746cb833b1b5371ea392c215a` | Independent Luna high review passed; public include/link checks, examples, fail-closed patch guard, and frozen baseline regressions pass |
 | 03 Utilities | `cleanup/03-utilities` | Not authorized under current stop boundary | Focused old/new helper comparisons and baseline regressions pass; Luna approval |
 | 04 Models | `cleanup/04-models` | Not authorized under current stop boundary | Intermediate arrays and solutions match frozen baseline; public constructors remain compatible; Luna approval |
 | 05 Operators | `cleanup/05-operators` | Not authorized under current stop boundary | Direct operator/source/perturbation comparisons and baseline regressions pass; Luna approval, then cumulative Sol review |
@@ -23,4 +23,4 @@ Repeated reference runs were byte-identical on the pinned compiler/dependency st
 
 ## Current integration boundary
 
-Stage 02 has passed independent review and is awaiting fast-forward integration. `cleanup/base` remains at accepted stage 01 (`62e5e315301de4b198edf7f6d4724fd47f364d56`) until the coordinator integrates candidate `3337718bdd0a5a5746cb833b1b5371ea392c215a`. Stop after integration; no later stage is authorized.
+Stage 02 passed independent review and was fast-forward integrated into `cleanup/base` through acceptance-record commit `535561a6ed58ae02832960ff75186209e13c5454`. The reviewed code candidate is `3337718bdd0a5a5746cb833b1b5371ea392c215a`. The campaign is stopped after stage 02; no later stage was started.

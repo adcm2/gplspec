@@ -76,3 +76,7 @@ The user paused the initial independent review before acceptance; the pause was 
 - The initial review pause was at the user's request. On resumption, the reviewer found that failed forward-patch checks were silently skipped. Candidate `3337718` resolves this with complete forward/reverse validation, build-owned source path checks, and six success/rejection fixtures; rejected cases preserve source bytes. Patch context whitespace is preserved and the Git exception is limited to `cmake/patches/*.patch`.
 - Original-source reference is durably retained at `build/cleanup-reference/stage00_reference`, mode 0555, SHA-256 `456d69bb388149ced74dc5078fe825e3d79193f64ad254ef13898ff2baf03308`. Source worktree was original commit `4ef3a66c62d64408d99989dd51c3ccbdc46d0b0c` plus only the accepted stage-00 build/harness overlay. All three frozen comparisons passed; expected CSV and output hashes did not change.
 - Stage 02 awaits coordinator fast-forward to `cleanup/base`. After integration, stop as the user directed. No later stages or stage-05 Sol checkpoint were started or are authorized.
+
+## Final stage-02 integration
+
+The coordinator fast-forwarded `cleanup/base` through `535561a6ed58ae02832960ff75186209e13c5454`, containing independently accepted code candidate `3337718bdd0a5a5746cb833b1b5371ea392c215a` and its review records. Stages 00–02 are accepted. Work stopped after stage 02; stages 03–07 and the Sol checkpoint were not started. This final commit only updates integration records.
