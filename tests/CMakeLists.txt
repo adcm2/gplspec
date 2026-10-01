@@ -48,3 +48,20 @@ target_link_libraries(stage04_discretization_setup PRIVATE gplspec)
 if(BUILD_TESTING)
   add_test(NAME stage04_discretization_setup COMMAND stage04_discretization_setup)
 endif()
+
+add_executable(stage05_operator_reference stage05_operator_reference.cpp)
+target_link_libraries(stage05_operator_reference PRIVATE gplspec PlanetaryModel TomographyModels Interpolation GaussQuad)
+target_compile_definitions(stage05_operator_reference PRIVATE
+  GPLSPEC_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+
+add_executable(stage05_tensor_contraction stage05_tensor_contraction.cpp)
+target_link_libraries(stage05_tensor_contraction PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage05_tensor_contraction COMMAND stage05_tensor_contraction)
+endif()
+if(BUILD_TESTING)
+  add_test(NAME stage05_1d_original_reference
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_stage05_1d_reference.sh
+      $<TARGET_FILE:stage05_operator_reference>
+      ${CMAKE_CURRENT_SOURCE_DIR}/reference/stage05-1d-original.csv)
+endif()

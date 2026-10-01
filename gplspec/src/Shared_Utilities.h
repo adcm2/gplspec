@@ -58,6 +58,28 @@ inline double ScaledRadialNodeMap(double x, double inner_over_outer) {
    return ((1.0 - inner_over_outer) * x + (1.0 + inner_over_outer)) * 0.5;
 }
 
+// Contract a canonical 3x3 tensor with the (-,0,+) gradient slots. Keep the
+// legacy component signs and update order explicit; wrapper-specific scaling
+// and radial integration remain at their call sites.
+template <class Matrix, class Scalar, class OutputScalar>
+void ContractCanonicalTensorVector(
+    const Matrix &tensor, const Scalar &gradient_minus,
+    const Scalar &gradient_zero, const Scalar &gradient_plus,
+    OutputScalar &output_minus, OutputScalar &output_zero,
+    OutputScalar &output_plus) {
+   output_minus -= tensor(0, 0) * gradient_plus;
+   output_minus += tensor(0, 1) * gradient_zero;
+   output_minus -= tensor(0, 2) * gradient_minus;
+
+   output_zero -= tensor(1, 0) * gradient_plus;
+   output_zero += tensor(1, 1) * gradient_zero;
+   output_zero -= tensor(1, 2) * gradient_minus;
+
+   output_plus -= tensor(2, 0) * gradient_plus;
+   output_plus += tensor(2, 1) * gradient_zero;
+   output_plus -= tensor(2, 2) * gradient_minus;
+}
+
 // Construct the Gauss-point derivative matrix on the supplied quadrature.
 // polynomial_order is passed explicitly to preserve existing model loop bounds.
 template <class Quadrature>

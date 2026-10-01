@@ -318,35 +318,11 @@ struct generic_product_impl<MatrixReplacement3D<MRScalar>, Rhs, SparseShape,
                   //   spatial_qm[idxr] -=
                   //       _vec_a[idxelem][idxpoly][idxr](0, 0) *
                   //       spatial_nzp1[idxr];
-                  spatial_qm[idxr] -=
-                      lhs.matrix_A()[idxelem][idxpoly][idxr](0, 0) *
-                      spatial_nzp1[idxr];
-                  spatial_qm[idxr] +=
-                      lhs.matrix_A()[idxelem][idxpoly][idxr](0, 1) *
-                      spatial_nz0[idxr];
-                  spatial_qm[idxr] -=
-                      lhs.matrix_A()[idxelem][idxpoly][idxr](0, 2) *
-                      spatial_nzm1[idxr];
-
-                  spatial_q0[idxr] -=
-                      lhs.matrix_A()[idxelem][idxpoly][idxr](1, 0) *
-                      spatial_nzp1[idxr];
-                  spatial_q0[idxr] +=
-                      lhs.matrix_A()[idxelem][idxpoly][idxr](1, 1) *
-                      spatial_nz0[idxr];
-                  spatial_q0[idxr] -=
-                      lhs.matrix_A()[idxelem][idxpoly][idxr](1, 2) *
-                      spatial_nzm1[idxr];
-
-                  spatial_qp[idxr] -=
-                      lhs.matrix_A()[idxelem][idxpoly][idxr](2, 0) *
-                      spatial_nzp1[idxr];
-                  spatial_qp[idxr] +=
-                      lhs.matrix_A()[idxelem][idxpoly][idxr](2, 1) *
-                      spatial_nz0[idxr];
-                  spatial_qp[idxr] -=
-                      lhs.matrix_A()[idxelem][idxpoly][idxr](2, 2) *
-                      spatial_nzm1[idxr];
+                  GPLSpec::detail::ContractCanonicalTensorVector(
+                      lhs.matrix_A()[idxelem][idxpoly][idxr],
+                      spatial_nzm1[idxr], spatial_nz0[idxr],
+                      spatial_nzp1[idxr], spatial_qm[idxr], spatial_q0[idxr],
+                      spatial_qp[idxr]);
                }
             }
             // std::cout << "After multiplying through by matrix a\n\n";

@@ -464,17 +464,10 @@ struct generic_product_impl<MatrixReplacement<MRScalar>, Rhs, SparseShape,
                   MATRIX3 mat_a = lhs.mat_a(idxext, idxr);
                   // std::cout << "After declaration of mat_a: " << idxr <<
                   // "\n";
-                  spatial_qm[idxr] -= mat_a(0, 0) * spatial_nzp1[idxr];
-                  spatial_qm[idxr] += mat_a(0, 1) * spatial_nz0[idxr];
-                  spatial_qm[idxr] -= mat_a(0, 2) * spatial_nzm1[idxr];
-
-                  spatial_q0[idxr] -= mat_a(1, 0) * spatial_nzp1[idxr];
-                  spatial_q0[idxr] += mat_a(1, 1) * spatial_nz0[idxr];
-                  spatial_q0[idxr] -= mat_a(1, 2) * spatial_nzm1[idxr];
-
-                  spatial_qp[idxr] -= mat_a(2, 0) * spatial_nzp1[idxr];
-                  spatial_qp[idxr] += mat_a(2, 1) * spatial_nz0[idxr];
-                  spatial_qp[idxr] -= mat_a(2, 2) * spatial_nzm1[idxr];
+                  GPLSpec::detail::ContractCanonicalTensorVector(
+                      mat_a, spatial_nzm1[idxr], spatial_nz0[idxr],
+                      spatial_nzp1[idxr], spatial_qm[idxr], spatial_q0[idxr],
+                      spatial_qp[idxr]);
                }
             }
 
