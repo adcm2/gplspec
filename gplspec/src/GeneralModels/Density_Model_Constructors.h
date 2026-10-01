@@ -1631,16 +1631,6 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
       depth *= lengthnorm / 1000.0;
       return depth;
    };
-   auto colatitude_to_latitude = [](double colatitude) {
-      double pi_db = 3.1415926535897932384626433;
-      double latitude = pi_db / 2.0 - colatitude;
-      latitude *= 180.0 / pi_db;
-      return latitude;
-   };
-   auto longitude_to_degrees = [](double longitude) {
-      double multfact = 180.0 / 3.1415926535897932384626433;
-      return multfact * longitude;
-   };
 
    // density
    // find all model information
@@ -1670,24 +1660,8 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
          vecdb tmp_vec_level_density(spatialsize, density_1D);
          auto depth = rad_to_depth(rad_current, node_data.OuterRadius(),
                                    inp_model.LengthNorm());
-
-         // check within tomography model
-         if (depth > tomo_model.GetDepths()[0] &&
-             depth < tomo_model.GetDepths().back()) {
-
-            // loop over all gridpoints
-            int idxspatial = 0;
-            for (auto idxt : _grid.CoLatitudes()) {
-               auto latitude = colatitude_to_latitude(idxt);
-               for (auto idxp : _grid.Longitudes()) {
-                  auto longitude = longitude_to_degrees(idxp);
-                  tmp_vec_level_density[idxspatial] *=
-                      (1.0 + 0.005 * tomo_model.GetValueAt(depth, longitude,
-                                                           latitude));
-                  ++idxspatial;
-               }
-            }
-         }
+         GPLSpec::model_detail::ApplyReferentialTomographyDensityVariation(
+             tmp_vec_level_density, depth, tomo_model, _grid);
 
          tmp_density.push_back(tmp_vec_level_density);
       }
@@ -1774,16 +1748,6 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
       depth *= lengthnorm / 1000.0;
       return depth;
    };
-   auto colatitude_to_latitude = [](double colatitude) {
-      double pi_db = 3.1415926535897932384626433;
-      double latitude = pi_db / 2.0 - colatitude;
-      latitude *= 180.0 / pi_db;
-      return latitude;
-   };
-   auto longitude_to_degrees = [](double longitude) {
-      double multfact = 180.0 / 3.1415926535897932384626433;
-      return multfact * longitude;
-   };
 
    // density
    // find all model information
@@ -1810,25 +1774,8 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
          vecdb tmp_vec_level_density(spatialsize, density_1D);
          auto depth = rad_to_depth(rad_current, node_data.PlanetRadius(),
                                    inp_model.LengthNorm());
-
-         // check within tomography model
-         if (depth > tomo_model.GetDepths()[0] &&
-             depth < tomo_model.GetDepths().back()) {
-            // std::cout << rad_current << "\n";
-            // loop over all gridpoints
-            int idxspatial = 0;
-            for (auto idxt : _grid.CoLatitudes()) {
-               auto latitude = colatitude_to_latitude(idxt);
-               for (auto idxp : _grid.Longitudes()) {
-                  auto longitude = longitude_to_degrees(idxp);
-                  tmp_vec_level_density[idxspatial] *=
-                      (1.0 + 0.005 * tomo_model.GetValueAt(depth, longitude,
-                                                           latitude));
-                  // tmp_vec_level_density[idxspatial] *= 1.0;
-                  ++idxspatial;
-               }
-            }
-         }
+         GPLSpec::model_detail::ApplyReferentialTomographyDensityVariation(
+             tmp_vec_level_density, depth, tomo_model, _grid);
 
          tmp_density.push_back(tmp_vec_level_density);
       }

@@ -45,6 +45,28 @@ void PopulateRadialMappingGeometry(const RadialMesh &node_data,
    }
 }
 
+template <class Tomography, class TransformGrid>
+void ApplyReferentialTomographyDensityVariation(
+    std::vector<double> &density, double depth, const Tomography &tomography,
+    const TransformGrid &grid) {
+   if (depth > tomography.GetDepths()[0] &&
+       depth < tomography.GetDepths().back()) {
+      int idxspatial = 0;
+      for (auto idxt : grid.CoLatitudes()) {
+         double pi_db = 3.1415926535897932384626433;
+         auto latitude = pi_db / 2.0 - idxt;
+         latitude *= 180.0 / pi_db;
+         for (auto idxp : grid.Longitudes()) {
+            double multfact = 180.0 / 3.1415926535897932384626433;
+            auto longitude = multfact * idxp;
+            density[idxspatial] *=
+                (1.0 + 0.005 * tomography.GetValueAt(depth, longitude, latitude));
+            ++idxspatial;
+         }
+      }
+   }
+}
+
 }  // namespace GPLSpec::model_detail
 
 #endif
