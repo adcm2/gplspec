@@ -21,3 +21,5 @@ tests/run_stage00.sh /tmp/gplspec-cleanup-baseline/bin/stage00_reference
 ## Current checkpoint
 
 Stages 00–05 are integrated and recorded by annotated tag `gplspec-cleanup-stage05`. Independent Luna stage reviews and consolidated Sol review are complete (Sol: PASS WITH NON-BLOCKING FINDINGS). Work is stopped awaiting the requested human review and approval. Do not begin any later phase without explicit user authorization.
+
+Automated review addendum completed for `f0fa6920ccc9b53b1d000365fd6ff2f64b5ed700`: Sol high **PASS WITH NON-BLOCKING FINDINGS**; see `docs/cleanup/review-stage-05-sol-addendum.md`. Human review remains OPEN. The existing stage-05 tag stays at the earlier `83e1a9fb3021f40e6384278432f502baba40bcde`; do not move it. Do not commit unless explicitly requested and confirmed with the user. No later stage is authorized.
