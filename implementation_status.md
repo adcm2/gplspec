@@ -32,7 +32,9 @@
 
 - Independent stage-01 review: PASS at fixed candidate `3f7ccf46625d5b09d13d966c58573d437deb5c99`, reviewed against starting base `a73600de54652e4ac246f90f1de1c6f6eabf14a0`. Implementer model: `gpt-6-luna` medium; reviewer `/root/luna_review_01`, model `gpt-6-luna` high. Reviewer inspected deleted headers/includes/targets and retained public interfaces/reference routines; no findings. Independent build in `/tmp/gplspec-review-stage01-build` succeeded for all three targets; all three 20,700-record comparisons were exact, representative output byte-identical, and diff-check clean. Stage 01 accepted; stage 02 not started. Full verdict is in `docs/cleanup/review-stage-01.md`.
 
-## Stage 02 — header organization
+## Stage 02 — header organization (implementation chronology)
+
+The pending entries below record the implementation timeline and are superseded by the final review/status record at the end of this file.
 
 - Began from accepted integrated base `62e5e315301de4b198edf7f6d4724fd47f364d56` on `cleanup/02-headers`.
 - Added independent compile smoke sources for the four supported umbrella headers (`Core`, `GeneralModels`, `SimpleModels`, `All`) and a two-translation-unit `All` consumer to expose missing includes and header ODR violations. The first build is pending; numerical/library code has not yet been changed in this stage.
@@ -56,15 +58,21 @@
 
 - Dependency-only linkage/ODR commit: `49006f882550c79c8cd6a08739a2b547507a6124`, kept separate from the GPLSpec header repairs.
 
-- Fixed stage-02 source candidate: `944181c77a5a02003144b4945b492ba60993c56e`. The dependency-only commit precedes it at `49006f882550c79c8cd6a08739a2b547507a6124`; candidate is ready for independent Luna review.
+- Initial stage-02 candidate before the guard correction: `944181c77a5a02003144b4945b492ba60993c56e`; dependency-only commit `49006f882550c79c8cd6a08739a2b547507a6124` remains separate. Both are superseded by fixed candidate `3337718bdd0a5a5746cb833b1b5371ea392c215a`, which passed independent review.
 
-## User-requested review stop
+## Review pause and resolved finding (history)
 
-Stage 02 is committed but NOT accepted or integrated. The user requested cutting the independent review short; it must resume before acceptance. See `docs/cleanup/review-stage-02.md`. `cleanup/base` remains at accepted stage 01 (`62e5e315301de4b198edf7f6d4724fd47f364d56`). No later stage was started.
-
-Partial stage-02 review identified a potential blocker: dependency-patch skip behavior lacks the marker validation claimed in the records. See review-stage-02.md; unresolved at the user-requested stop.
+The user paused the initial independent review before acceptance; the pause was later lifted. The reviewer then found that dependency patch skip behavior needed full-state validation. This was resolved in `3337718bdd0a5a5746cb833b1b5371ea392c215a`, which passed the resumed independent review. Current verdict and evidence are in `docs/cleanup/review-stage-02.md`.
 
 - Guard correction (code change): replaced the permissive `git apply --check` skip with `cmake/ApplyPinnedOdrPatch.cmake`: apply only on a successful full forward check; skip only on a successful full reverse check; otherwise stop before writes. Canonical source paths must be below the current build's `_deps` directory. Added Python/CMake regression cases for pristine, fully patched, partial, unexpected, git-tool failure, and out-of-build source states; rejected-state source snapshots remain unchanged.
 - Patch-format validation (record): retained contextual unified-diff hunks because they provide drift protection; scoped Git's `blank-at-eol` check exception to `cmake/patches/*.patch` in `.gitattributes`. `git diff --check 62e5e31..HEAD` passes.
 - Restored original reference (record): detached worktree `/tmp/gplspec-stage02-original-ref` at original source `4ef3a66c62d64408d99989dd51c3ccbdc46d0b0c`; overlay consists only of CMakeLists/tests files from accepted stage-00 commit `dece12e59f86de59978e6cccfe684e22b4fcb06e` (including the recorded Eigen system shim). Build `/tmp/gplspec-stage02-original-build/bin/stage00_reference`, SHA-256 `456d69bb388149ced74dc5078fe825e3d79193f64ad254ef13898ff2baf03308`; all three frozen comparisons pass (20,700 records, zero differences) and representative output is byte-identical. Frozen CSV/output hashes remain `ef20bd7e3016661c60903c290c74c599151fdfc0417443bcf81c4215401f105e` and `a902254d3d416c55f103058c045a30036e7b5edd8b56166e086d43de4de13c3f`.
 - Guard validation: `python3 tests/test_stage02_patch_application.py` passes all six states. Fresh build `/tmp/gplspec-stage02-guard-build` configured; `stage00_reference` and `stage02_header_link` built; CTest `stage02_patch_application` passed; frozen runner passed all three comparisons and header-link executable ran successfully. The first CTest attempt exposed test registration under a subdirectory; moved `include(CTest)` to the top-level CMake file and confirmed CTest now discovers/runs the guard test.
+
+## Current stage-02 disposition
+
+- Independent review: PASS at fixed candidate `3337718bdd0a5a5746cb833b1b5371ea392c215a`, against accepted base `62e5e315301de4b198edf7f6d4724fd47f364d56`. Implementer model: `gpt-6-luna` medium; independent reviewer: Luna high. See `docs/cleanup/review-stage-02.md` for scope and evidence.
+- Review validation: fresh configure/build covered all four umbrella smoke targets, two-TU `stage02_header_link`, and `stage00_reference`; the link executable ran, CTest guard passed, same-build reconfigure passed, and the regression passed three comparisons (20,700 records, zero differences, byte-identical output). Diff-check was clean.
+- The initial review pause was at the user's request. On resumption, the reviewer found that failed forward-patch checks were silently skipped. Candidate `3337718` resolves this with complete forward/reverse validation, build-owned source path checks, and six success/rejection fixtures; rejected cases preserve source bytes. Patch context whitespace is preserved and the Git exception is limited to `cmake/patches/*.patch`.
+- Original-source reference is durably retained at `build/cleanup-reference/stage00_reference`, mode 0555, SHA-256 `456d69bb388149ced74dc5078fe825e3d79193f64ad254ef13898ff2baf03308`. Source worktree was original commit `4ef3a66c62d64408d99989dd51c3ccbdc46d0b0c` plus only the accepted stage-00 build/harness overlay. All three frozen comparisons passed; expected CSV and output hashes did not change.
+- Stage 02 awaits coordinator fast-forward to `cleanup/base`. After integration, stop as the user directed. No later stages or stage-05 Sol checkpoint were started or are authorized.
