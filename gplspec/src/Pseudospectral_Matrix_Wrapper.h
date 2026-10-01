@@ -16,6 +16,7 @@
 #include "GeneralModels/Earth_Density_Models_3D.h"
 #include "GeneralModels/Earth_General_Models_1D.h"
 #include "Radial_Tools.h"
+#include "Shared_Utilities.h"
 #include "Spherical_Integrator.h"
 
 template <typename MRScalar> class MatrixReplacement;
@@ -195,16 +196,8 @@ class MatrixReplacement : public Eigen::EigenBase<MatrixReplacement<MRScalar>> {
          _vec_gaussquadweights.push_back(q.W(idx));
       }
       _matlen = _nelem * _npoly + 1;
-      _mat_gaussderiv.resize(_npoly + 1, _npoly + 1);
-      {
-         auto pleg = Interpolation::LagrangePolynomial(_q.Points().begin(),
-                                                       _q.Points().end());
-         for (int idxi = 0; idxi < _npoly + 1; ++idxi) {
-            for (int idxj = 0; idxj < _npoly + 1; ++idxj) {
-               _mat_gaussderiv(idxi, idxj) = pleg.Derivative(idxi, _q.X(idxj));
-            }
-         }
-      }
+      _mat_gaussderiv =
+          GPLSpec::detail::GaussDerivativeMatrix(_q, _npoly);
    }
    const Quadrature q() const { return _q; }
    RealScalar polyderiv(int idxi, int idxj) const {
