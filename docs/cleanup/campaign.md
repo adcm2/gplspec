@@ -9,7 +9,7 @@ This campaign extracts existing GPLSpec/GSHTrans functionality while preserving 
 | 00 Baseline | `cleanup/00-baseline` | Accepted after independent Luna review of `dece12e59f86de59978e6cccfe684e22b4fcb06e` | Pinned reproducible build, immutable original-source reference, repeatable five-fixture regression and output check |
 | 01 Hygiene | `cleanup/01-hygiene` | Accepted after independent Luna PASS at `3f7ccf46625d5b09d13d966c58573d437deb5c99` | Documented deletion/interface decisions; examples and baseline regressions pass; Luna approval |
 | 02 Headers | `cleanup/02-headers` | Accepted and integrated: reviewed candidate `3337718bdd0a5a5746cb833b1b5371ea392c215a` | Independent Luna high review passed; public include/link checks, examples, fail-closed patch guard, and frozen baseline regressions pass |
-| 03 Utilities | `cleanup/03-utilities` | In progress from accepted base `287645fa51b54f980784ea5f98ff80fff83c8b8c` | Focused old/new helper comparisons, baseline regressions, independent Luna approval |
+| 03 Utilities | `cleanup/03-utilities` | Accepted after independent Luna high PASS at `f429202bf5318adbd46995aea75bf6f3140838cf`; awaiting coordinator fast-forward | Seven equivalent derivative builders included after review correction; focused comparisons and frozen regressions pass |
 | 04 Models | `cleanup/04-models` | Authorized after stage 03 review and integration | Intermediate arrays and solutions match frozen baseline; public constructors remain compatible; Luna approval |
 | 05 Operators | `cleanup/05-operators` | Authorized after stage 04 review and integration | Direct operator/source/perturbation comparisons and baseline regressions; Luna approval, then cumulative Sol high review |
 
@@ -23,4 +23,4 @@ Repeated reference runs were byte-identical on the pinned compiler/dependency st
 
 ## Resumed campaign boundary
 
-Stage 02 passed independent review and was integrated. The user has since authorized stages 03–05, with separate Luna review/integration per stage, followed by cumulative Sol high review and a human checkpoint. The current writer is limited to stage 03 on `cleanup/03-utilities`; later stages remain gated.
+Stage 02 passed independent review and was integrated. The user has since authorized stages 03–05, with separate Luna review/integration per stage, followed by cumulative Sol high review and a human checkpoint. Stage 03 passed independent review at `f429202bf5318adbd46995aea75bf6f3140838cf` against `287645fa51b54f980784ea5f98ff80fff83c8b8c`; it awaits coordinator fast-forward. Stage 04 remains gated on integration.
