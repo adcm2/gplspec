@@ -1,6 +1,6 @@
 # Consolidated stage 05 Sol review
 
-**Verdict: PASS — non-blocking findings only**
+**Verdict: PASS WITH NON-BLOCKING FINDINGS**
 
 - Reviewed code candidate: `20a5ef194a22c3d8e71ae0900a1b0f9ce57f5289`
 - Stage-05 documentation tip at review: `3b76dad4c0d16692d6f6670951298d78de77229c` (documentation only)
@@ -14,4 +14,4 @@ The review found the ordered arithmetic, signs, radial distinctions, Jacobian/re
 
 Non-blocking limitations: the retained 1D and 3D sesquilinear forms are not exactly equal, as documented from original source in `review-stage-05.md`; this behavior was characterized and not repaired. FFTW 3.3.10 and NetCDF 4.9.2 were recorded but are not enforced by current CMake package lookups. The finite fixtures and degree-2 perturbation probe establish equivalence for these tested cases, not an exhaustive guarantee across arbitrary degrees or platforms.
 
-Stages 00–05 have automated review acceptance pending coordinator fast-forward/tag. This review does not constitute human approval. After coordinator integration/tag, stop at the human checkpoint; no stage 06–07, GSHTrans modernization, performance work, or push is authorized.
+Stages 00–05 have passed their automated review gates and are integrated into `cleanup/base`. The annotated `gplspec-cleanup-stage05` tag identifies this checkpoint including final integration records. This review does not constitute human approval. Work is stopped at the human checkpoint; no stage 06–07, GSHTrans modernization, performance work, or push is authorized.

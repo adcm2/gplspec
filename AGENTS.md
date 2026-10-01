@@ -17,3 +17,7 @@ cmake -S . -B /tmp/gplspec-cleanup-baseline \
 cmake --build /tmp/gplspec-cleanup-baseline --target stage00_reference -j2
 tests/run_stage00.sh /tmp/gplspec-cleanup-baseline/bin/stage00_reference
 ```
+
+## Current checkpoint
+
+Stages 00–05 are integrated and recorded by annotated tag `gplspec-cleanup-stage05`. Independent Luna stage reviews and consolidated Sol review are complete (Sol: PASS WITH NON-BLOCKING FINDINGS). Work is stopped awaiting the requested human review and approval. Do not begin any later phase without explicit user authorization.
