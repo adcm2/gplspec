@@ -8,6 +8,93 @@
 #include "Earth_Density_Models_3D.h"
 #include <GSHTrans/All>
 
+namespace GPLSpec::detail {
+
+struct RotationOutputAngles {
+   double alpha;
+   double beta;
+   double gamma;
+};
+
+inline RotationOutputAngles
+RotationOutputAnglesFor(const std::vector<double> &vec_p1,
+                        const std::vector<double> &vec_p2) {
+   double theta1 = vec_p1[0];
+   double phi1 = vec_p1[1];
+   double theta2 = vec_p2[0];
+   double phi2 = vec_p2[1];
+   double cosphi = std::cos(theta2) * std::cos(theta1) +
+                   std::sin(theta2) * std::sin(theta1) * std::cos(phi2 - phi1);
+   double sinphi = std::sqrt(1 - cosphi * cosphi);
+   auto tmp1 = std::sin(theta2) * std::cos(theta1) * std::cos(phi2) -
+               std::cos(theta2) * std::sin(theta1) * std::cos(phi1);
+   auto tmp2 = std::cos(theta2) * std::sin(theta1) * std::sin(phi1) -
+               std::sin(theta2) * std::cos(theta1) * std::sin(phi2);
+   auto tmp3 = std::sin(theta2) * std::sin(theta1) * std::sin(phi2 - phi1);
+   auto tmp4 = -std::cos(theta1) * cosphi + std::cos(theta2);
+   auto tmp5 = std::cos(theta1) * sinphi;
+
+   if (std::abs(tmp1) < std::numeric_limits<double>::epsilon()) {
+      tmp1 = 0.0;
+   }
+   if (std::abs(tmp2) < std::numeric_limits<double>::epsilon()) {
+      tmp2 = 0.0;
+   }
+   if (std::abs(tmp4) < std::numeric_limits<double>::epsilon()) {
+      tmp4 = 0.0;
+   }
+   if (std::abs(tmp5) < std::numeric_limits<double>::epsilon()) {
+      tmp5 = 0.0;
+   }
+
+   double alpha = std::atan2(tmp1, tmp2);
+   double beta = std::acos(tmp3 / sinphi);
+   double gamma = std::atan2(tmp4, tmp5);
+   return {alpha, beta, gamma};
+}
+
+inline std::vector<Eigen::MatrixXcd>
+RotationOutputMatrices(int lMax, double alpha, double beta, double gamma) {
+   auto vec_wig = std::vector<Eigen::MatrixXcd>(lMax + 1);
+   auto wigtemp =
+       GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
+                        GSHTrans::Single, GSHTrans::ColumnMajor>(
+           lMax, lMax, lMax, beta);
+   for (int l = 0; l < lMax + 1; ++l) {
+      Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
+      auto multval = GPLSpec::detail::RotationHarmonicNormalization(l);
+      for (int m = -l; m < l + 1; ++m) {
+         auto dl = wigtemp[m];
+         for (int mp = -l; mp < l + 1; ++mp) {
+            std::complex<double> i1(0.0, 1.0);
+            auto tmpmult =
+                multval * exp(i1 * (static_cast<double>(m) * gamma +
+                                    static_cast<double>(mp) * alpha));
+            mat_tmp(m + l, mp + l) = dl[l, mp] * tmpmult;
+         }
+      }
+      vec_wig[l] = mat_tmp;
+   }
+   return vec_wig;
+}
+
+template <class Grid>
+inline void
+ForwardAndExpandRealScalarPair(
+    const Grid &grid, int lMax, const std::vector<double> &first_spatial,
+    const std::vector<double> &second_spatial,
+    std::vector<std::complex<double>> &first_nonnegative,
+    std::vector<std::complex<double>> &second_nonnegative,
+    std::vector<std::complex<double>> &first_full,
+    std::vector<std::complex<double>> &second_full) {
+   grid.ForwardTransformation(lMax, 0, first_spatial, first_nonnegative);
+   grid.ForwardTransformation(lMax, 0, second_spatial, second_nonnegative);
+   ExpandRealScalarCoefficients(lMax, first_nonnegative, first_full);
+   ExpandRealScalarCoefficients(lMax, second_nonnegative, second_full);
+}
+
+}   // namespace GPLSpec::detail
+
 namespace GeneralEarthModels {
 
 // info on nodes
@@ -393,38 +480,8 @@ Density3D::RotateSliceToEquator(
    double beta = std::acos(tmp3 / sinphi);
    double gamma = std::atan2(tmp4, tmp5);
 
-   // declare vector of matrices
-   // int lmax_v = 2;
-   // double theta_rot = std::numbers::pi_v<double> / 2.0;
-   auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
-   auto wigtemp =
-       GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
-                        GSHTrans::Single, GSHTrans::ColumnMajor>(
-           _grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
-   for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
-      // temporary
-      Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
-      int rowidx = 0;
-      auto multval = GPLSpec::detail::RotationHarmonicNormalization(l);
-
-      // fill out matrix
-      for (int m = -l; m < l + 1; ++m) {
-         // auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
-         auto dl = wigtemp[m];
-         // int colidx = 0;
-         for (int mp = -l; mp < l + 1; ++mp) {
-            std::complex<double> i1(0.0, 1.0);
-            auto tmpmult =
-                multval * exp(i1 * (static_cast<double>(m) * gamma +
-                                    static_cast<double>(mp) * alpha));
-            mat_tmp(m + l, mp + l) = dl[l, mp] * tmpmult;
-            // ++colidx;
-         }
-         // ++rowidx;
-      }
-      vec_wig[l] = mat_tmp;
-      // std::cout << "\n" << mat_tmp << "\n";
-   }
+   auto vec_wig = GPLSpec::detail::RotationOutputMatrices(
+       _grid.MaxDegree(), alpha, beta, gamma);
    int nelem = this->Num_Elements();
    // double normfactor = this->PotentialNorm();
    std::vector<std::vector<std::vector<std::complex<double>>>> vec_output(
@@ -884,71 +941,10 @@ Density3D::ReferentialOutputRotated(
     const std::vector<std::vector<std::vector<std::complex<double>>>>
         &vec_fullinformation) const {
 
-   // get rotation information
-   double theta1 = vec_p1[0];
-   double phi1 = vec_p1[1];
-   double theta2 = vec_p2[0];
-   double phi2 = vec_p2[1];
-   double cosphi = std::cos(theta2) * std::cos(theta1) +
-                   std::sin(theta2) * std::sin(theta1) * std::cos(phi2 - phi1);
-   double sinphi = std::sqrt(1 - cosphi * cosphi);
-   auto tmp1 = std::sin(theta2) * std::cos(theta1) * std::cos(phi2) -
-               std::cos(theta2) * std::sin(theta1) * std::cos(phi1);
-   auto tmp2 = std::cos(theta2) * std::sin(theta1) * std::sin(phi1) -
-               std::sin(theta2) * std::cos(theta1) * std::sin(phi2);
-   auto tmp3 = std::sin(theta2) * std::sin(theta1) * std::sin(phi2 - phi1);
-   auto tmp4 = -std::cos(theta1) * cosphi + std::cos(theta2);
-   auto tmp5 = std::cos(theta1) * sinphi;
-
-   if (std::abs(tmp1) < std::numeric_limits<double>::epsilon()) {
-      tmp1 = 0.0;
-   }
-   if (std::abs(tmp2) < std::numeric_limits<double>::epsilon()) {
-      tmp2 = 0.0;
-   }
-   if (std::abs(tmp4) < std::numeric_limits<double>::epsilon()) {
-      tmp4 = 0.0;
-   }
-   if (std::abs(tmp5) < std::numeric_limits<double>::epsilon()) {
-      tmp5 = 0.0;
-   }
-
-   double alpha = std::atan2(tmp1, tmp2);
-   double beta = std::acos(tmp3 / sinphi);
-   double gamma = std::atan2(tmp4, tmp5);
-
-   // declare vector of matrices
-   // int lmax_v = 2;
-   // double theta_rot = std::numbers::pi_v<double> / 2.0;
-   auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
-   auto wigtemp =
-       GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
-                        GSHTrans::Single, GSHTrans::ColumnMajor>(
-           _grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
-   for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
-      // temporary
-      Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
-      int rowidx = 0;
-      auto multval = GPLSpec::detail::RotationHarmonicNormalization(l);
-
-      // fill out matrix
-      for (int m = -l; m < l + 1; ++m) {
-         // auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
-         auto dl = wigtemp[m];
-         // int colidx = 0;
-         for (int mp = -l; mp < l + 1; ++mp) {
-            std::complex<double> i1(0.0, 1.0);
-            auto tmpmult =
-                multval * exp(i1 * (static_cast<double>(m) * gamma +
-                                    static_cast<double>(mp) * alpha));
-            mat_tmp(m + l, mp + l) = dl[l, mp] * tmpmult;
-            // ++colidx;
-         }
-         // ++rowidx;
-      }
-      vec_wig[l] = mat_tmp;
-      // std::cout << "\n" << mat_tmp << "\n";
-   }
+   auto rotation_angles = GPLSpec::detail::RotationOutputAnglesFor(vec_p1, vec_p2);
+   auto vec_wig = GPLSpec::detail::RotationOutputMatrices(
+       _grid.MaxDegree(), rotation_angles.alpha, rotation_angles.beta,
+       rotation_angles.gamma);
    int nelem = this->Num_Elements();
 
    assert(vec_fullinformation.size() == this->Num_Elements());
@@ -1108,66 +1104,10 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
                                      std::vector<double> &vec_p2,
                                      bool physical = false) const {
 
-   // get rotation information
-   double theta1 = vec_p1[0];
-   double phi1 = vec_p1[1];
-   double theta2 = vec_p2[0];
-   double phi2 = vec_p2[1];
-   double cosphi = std::cos(theta2) * std::cos(theta1) +
-                   std::sin(theta2) * std::sin(theta1) * std::cos(phi2 - phi1);
-   double sinphi = std::sqrt(1 - cosphi * cosphi);
-   auto tmp1 = std::sin(theta2) * std::cos(theta1) * std::cos(phi2) -
-               std::cos(theta2) * std::sin(theta1) * std::cos(phi1);
-   auto tmp2 = std::cos(theta2) * std::sin(theta1) * std::sin(phi1) -
-               std::sin(theta2) * std::cos(theta1) * std::sin(phi2);
-   auto tmp3 = std::sin(theta2) * std::sin(theta1) * std::sin(phi2 - phi1);
-   auto tmp4 = -std::cos(theta1) * cosphi + std::cos(theta2);
-   auto tmp5 = std::cos(theta1) * sinphi;
-
-   if (std::abs(tmp1) < std::numeric_limits<double>::epsilon()) {
-      tmp1 = 0.0;
-   }
-   if (std::abs(tmp2) < std::numeric_limits<double>::epsilon()) {
-      tmp2 = 0.0;
-   }
-   if (std::abs(tmp4) < std::numeric_limits<double>::epsilon()) {
-      tmp4 = 0.0;
-   }
-   if (std::abs(tmp5) < std::numeric_limits<double>::epsilon()) {
-      tmp5 = 0.0;
-   }
-
-   double alpha = std::atan2(tmp1, tmp2);
-   double beta = std::acos(tmp3 / sinphi);
-   double gamma = std::atan2(tmp4, tmp5);
-
-   // declare vector of matrices
-   // int lmax_v = 2;
-   // double theta_rot = std::numbers::pi_v<double> / 2.0;
-   auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
-   auto wigtemp =
-       GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
-                        GSHTrans::Single, GSHTrans::ColumnMajor>(
-           _grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
-   for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
-      // temporary
-      Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
-      int rowidx = 0;
-      auto multval = GPLSpec::detail::RotationHarmonicNormalization(l);
-
-      // fill out matrix
-      for (int m = -l; m < l + 1; ++m) {
-         auto dl = wigtemp[m];
-         for (int mp = -l; mp < l + 1; ++mp) {
-            std::complex<double> i1(0.0, 1.0);
-            auto tmpmult =
-                multval * exp(i1 * (static_cast<double>(m) * gamma +
-                                    static_cast<double>(mp) * alpha));
-            mat_tmp(m + l, mp + l) = dl[l, mp] * tmpmult;
-         }
-      }
-      vec_wig[l] = mat_tmp;
-   }
+   auto rotation_angles = GPLSpec::detail::RotationOutputAnglesFor(vec_p1, vec_p2);
+   auto vec_wig = GPLSpec::detail::RotationOutputMatrices(
+       _grid.MaxDegree(), rotation_angles.alpha, rotation_angles.beta,
+       rotation_angles.gamma);
    int nelem = this->Num_Elements();
 
    // assert(vec_fullinformation.size() == this->Num_Elements());
@@ -1219,16 +1159,9 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
             // }
          }
          // std::cout << "Check 2a " << idxelem << " " << idxnode << "\n";
-         _grid.ForwardTransformation(lMax, 0, _vec_h[idxelem][idxnode], tmp_h);
-         _grid.ForwardTransformation(lMax, 0, vec_denstmp, tmp_rho);
-
-         // looping over l,m values
-         // std::size_t mycheckidx =
-         //     (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         GPLSpec::detail::ExpandRealScalarCoefficients(
-             lMax, tmp_h, vec_hlm[idxelem][idxnode]);
-         GPLSpec::detail::ExpandRealScalarCoefficients(
-             lMax, tmp_rho, vec_rholm[idxelem][idxnode]);
+         GPLSpec::detail::ForwardAndExpandRealScalarPair(
+             _grid, lMax, _vec_h[idxelem][idxnode], vec_denstmp, tmp_h,
+             tmp_rho, vec_hlm[idxelem][idxnode], vec_rholm[idxelem][idxnode]);
       }
    }
 
@@ -1366,71 +1299,10 @@ Density3D::PhysicalOutputRotated(
     const std::vector<std::vector<std::vector<std::complex<double>>>>
         &vec_fullinformation) const {
 
-   // get rotation information
-   double theta1 = vec_p1[0];
-   double phi1 = vec_p1[1];
-   double theta2 = vec_p2[0];
-   double phi2 = vec_p2[1];
-   double cosphi = std::cos(theta2) * std::cos(theta1) +
-                   std::sin(theta2) * std::sin(theta1) * std::cos(phi2 - phi1);
-   double sinphi = std::sqrt(1 - cosphi * cosphi);
-   auto tmp1 = std::sin(theta2) * std::cos(theta1) * std::cos(phi2) -
-               std::cos(theta2) * std::sin(theta1) * std::cos(phi1);
-   auto tmp2 = std::cos(theta2) * std::sin(theta1) * std::sin(phi1) -
-               std::sin(theta2) * std::cos(theta1) * std::sin(phi2);
-   auto tmp3 = std::sin(theta2) * std::sin(theta1) * std::sin(phi2 - phi1);
-   auto tmp4 = -std::cos(theta1) * cosphi + std::cos(theta2);
-   auto tmp5 = std::cos(theta1) * sinphi;
-
-   if (std::abs(tmp1) < std::numeric_limits<double>::epsilon()) {
-      tmp1 = 0.0;
-   }
-   if (std::abs(tmp2) < std::numeric_limits<double>::epsilon()) {
-      tmp2 = 0.0;
-   }
-   if (std::abs(tmp4) < std::numeric_limits<double>::epsilon()) {
-      tmp4 = 0.0;
-   }
-   if (std::abs(tmp5) < std::numeric_limits<double>::epsilon()) {
-      tmp5 = 0.0;
-   }
-
-   double alpha = std::atan2(tmp1, tmp2);
-   double beta = std::acos(tmp3 / sinphi);
-   double gamma = std::atan2(tmp4, tmp5);
-
-   // declare vector of matrices
-   // int lmax_v = 2;
-   // double theta_rot = std::numbers::pi_v<double> / 2.0;
-   auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
-   auto wigtemp =
-       GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
-                        GSHTrans::Single, GSHTrans::ColumnMajor>(
-           _grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
-   for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
-      // temporary
-      Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
-      int rowidx = 0;
-      auto multval = GPLSpec::detail::RotationHarmonicNormalization(l);
-
-      // fill out matrix
-      for (int m = -l; m < l + 1; ++m) {
-         // auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
-         auto dl = wigtemp[m];
-         // int colidx = 0;
-         for (int mp = -l; mp < l + 1; ++mp) {
-            std::complex<double> i1(0.0, 1.0);
-            auto tmpmult =
-                multval * exp(i1 * (static_cast<double>(m) * gamma +
-                                    static_cast<double>(mp) * alpha));
-            mat_tmp(m + l, mp + l) = dl[l, mp] * tmpmult;
-            // ++colidx;
-         }
-         // ++rowidx;
-      }
-      vec_wig[l] = mat_tmp;
-      // std::cout << "\n" << mat_tmp << "\n";
-   }
+   auto rotation_angles = GPLSpec::detail::RotationOutputAnglesFor(vec_p1, vec_p2);
+   auto vec_wig = GPLSpec::detail::RotationOutputMatrices(
+       _grid.MaxDegree(), rotation_angles.alpha, rotation_angles.beta,
+       rotation_angles.gamma);
    int nelem = this->Num_Elements();
 
    assert(vec_fullinformation.size() == this->Num_Elements());

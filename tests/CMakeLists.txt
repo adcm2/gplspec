@@ -59,6 +59,23 @@ target_link_libraries(stage05_tensor_contraction PRIVATE gplspec)
 if(BUILD_TESTING)
   add_test(NAME stage05_tensor_contraction COMMAND stage05_tensor_contraction)
 endif()
+
+add_executable(stage06_output_helpers stage06_output_helpers.cpp)
+target_link_libraries(stage06_output_helpers PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage06_output_helpers COMMAND stage06_output_helpers)
+endif()
+
+add_executable(stage06_output_reference stage06_output_reference.cpp)
+target_link_libraries(stage06_output_reference PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage06_output_original_reference
+    COMMAND ${PYTHON_EXECUTABLE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/run_stage06_output_reference.py
+      $<TARGET_FILE:stage06_output_reference>
+      ${CMAKE_CURRENT_SOURCE_DIR}/reference/stage06-output-baseline.sha256)
+endif()
+
 if(BUILD_TESTING)
   add_test(NAME stage05_1d_original_reference
     COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_stage05_1d_reference.sh

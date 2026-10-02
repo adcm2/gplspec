@@ -682,7 +682,7 @@ FindGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
    Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
    // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
    std::cout << "Number of iterations: " << solver.iterations() << "\n";
-   std::cout << "Error: " << solver.tolerance() << "\n";
+   std::cout << "Requested tolerance: " << solver.tolerance() << "\n";
    // for (int idx = 0; idx < testsol.size(); ++idx) {
    //    testsol(idx) *= inp_model.PotentialNorm();
    // }
