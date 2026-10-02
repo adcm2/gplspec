@@ -4,144 +4,84 @@ permalink: /getting-started/
 ---
 
 # Getting started with gplspec
-gplspec is a header only library, consequently it does not require installation. Indeed, one only needs the header files to be able to include it. It is, however, dependent upon other libraries that we have developed, and consequently it is set up so that it can be included via CMake for ease. Although there is no requirement to use CMake the rest of this guide will describe how to include via CMake.
 
-## Prerequisites
+gplspec is a header-only C++ library. CMake supplies the pinned header dependencies and propagates the include and link requirements through the `gplspec` interface target. A supported CMake consumer must use C++23.
 
-Before including gplspec via CMake, ensure you have:
+## Requirements
 
-- **C++ Compiler**: C++20 support
-- **CMake**: Version 3.15 or later
-- **Git**: For cloning the repository
+- A C++23 compiler. The cleanup validation used GNU C++ 13.3.0.
+- CMake 3.28.3 for the recorded build and test workflow (the project declares a lower minimum, but older CMake versions are not covered by this validation).
+- Git for CMake FetchContent source dependencies.
+- OpenMP development support.
+- FFTW3 development libraries, including `fftw3` and `fftw3f`, plus headers (`fftw3l` is detected and linked when available).
+- NetCDF development headers and library, required by the pinned model dependencies.
+- Python 3 and Bash for the registered regression tests.
 
-### Optional Dependencies
+The stage-00 baseline's recorded system packages were Eigen 3.4.0, FFTW 3.3.10, and NetCDF 4.9.2. Stage 07 used Eigen 3.4.0 from the SHA-256-pinned source archive; a parent project may instead supply `Eigen3::Eigen`, which GPLSpec reuses. The recorded FFTW and NetCDF versions are test provenance, not CMake-enforced requirements. The seven Git dependencies are pinned to commits in [the baseline manifest](docs/cleanup/baseline-manifest.md).
 
-- **Doxygen**: For generating API documentation
-- **Graphviz**: For generating dependency diagrams in documentation
+## Build the examples
 
-## Testing gplspec
-If you wish to test gplspec before including it in larger projects you can clone the repository and run the examples. Steps to do this using CMake are given below.
-
-### 1. Cloning and building from GitHub
-
-```bash
+```sh
 git clone https://github.com/adcm2/gplspec.git
 cd gplspec
+git checkout b813285fc34b13e9d4868860ae0651eb405457f4
+cmake -S . -B build -DMY_PROJECT_BUILD_EXAMPLES=ON
+cmake --build build -j2
 ```
 
-### 2. Build the Project
+The executable is written to `build/bin/clean_bench_1`. Its working directory matters: this example writes under `./work/Bench1`. Run it from a disposable directory so its scientific output does not replace repository data:
 
-Create a build directory and configure with CMake, for example:
-
-```bash
-cmake -S . -B build
+```sh
+mkdir -p /tmp/gplspec-bench1-run/work/Bench1
+cd /tmp/gplspec-bench1-run
+/absolute/path/to/gplspec/build/bin/clean_bench_1
 ```
 
-Compile the project:
+## Run the cleanup regression suite
 
-```bash
-cmake --build build/
+The opt-in baseline harness enables the tests and their registered CTest checks:
+
+```sh
+cd /absolute/path/to/gplspec
+cmake -S . -B /tmp/gplspec-build \
+  -DMY_PROJECT_BUILD_EXAMPLES=ON \
+  -DGPLSPEC_BUILD_BASELINE_HARNESS=ON
+cmake --build /tmp/gplspec-build -j2
+ctest --test-dir /tmp/gplspec-build --output-on-failure
+tests/run_stage00.sh /tmp/gplspec-build/bin/stage00_reference
+/tmp/gplspec-build/bin/stage02_header_link
 ```
 
-### 3. Run the Examples
+The frozen stage-00 runner executes the candidate twice. It compares each 20,700-record output with the checked-in original-source reference using `rtol=1e-13` and `atol=1e-15`, compares the two runs to each other, and checks each representative output byte-for-byte. Never regenerate the frozen references as part of ordinary validation.
 
-Test your installation by running one of the included examples:
+## Use gplspec from another CMake project
 
-```bash
-./examples/clean_bench_1
-```
+Link the `gplspec` interface target so its C++ dependencies and include requirements propagate. Set C++23 on the consumer target. The current project calls `find_package(FFTW)` from its top-level CMake file, so a FetchContent parent must also expose gplspec's CMake module directory before making the dependency available. A parent-provided `Eigen3::Eigen` target is reused; otherwise gplspec fetches Eigen 3.4.0.
 
-### Project Structure
+```cmake
+cmake_minimum_required(VERSION 3.28)
+project(my_consumer LANGUAGES CXX)
 
-After building, the gplspec directory will look like this:
-
-```
-gplspec/
-├── src/                 # Source code
-├── examples/            # Example programs
-├── build/               # Build artifacts
-├── CMakeLists.txt       # CMake configuration
-└── README.md
-```
-
-## Including in larger projects
-
-### Fetching the content
-To include it in a program via CMake it is recommended that one fetches the repository from Git, ie include the following in your CMakeLists.txt file:
-```cmake 
 include(FetchContent)
-FetchContent_Declare(
-  gplspec
+FetchContent_Declare(gplspec
   GIT_REPOSITORY https://github.com/adcm2/gplspec.git
-  GIT_TAG main
-)
-FetchContent_MakeAvailable(gplspec)
-```
-### A simple program
-Once you have included the library and appropriately linked it to your executable you can include different parts or all of the library. For example to include all of the library:
+  GIT_TAG b813285fc34b13e9d4868860ae0651eb405457f4)
+FetchContent_GetProperties(gplspec)
+if(NOT gplspec_POPULATED)
+  FetchContent_Populate(gplspec)
+endif()
+list(APPEND CMAKE_MODULE_PATH "${gplspec_SOURCE_DIR}/cmake")
+if(NOT TARGET gplspec)
+  add_subdirectory("${gplspec_SOURCE_DIR}" "${gplspec_BINARY_DIR}")
+endif()
 
-```cpp
-// file: hello_gplspec.cpp
-#include <iostream>
-#include <gplspec/All>
-
-int main() {
-    std::cout << "Hello from gplspec!" << std::endl;
-    
-    // Create a simple test to verify the library is working
-    using namespace GeneralEarthModels;
-    
-    std::cout << "gplspec library loaded successfully!" << std::endl;
-    return 0;
-}
+add_executable(my_consumer main.cpp)
+target_link_libraries(my_consumer PRIVATE gplspec)
+target_compile_features(my_consumer PRIVATE cxx_std_23)
 ```
 
+The example pins the accepted stage-06 base used for stage 07, since the normal `main` branch does not yet contain this cleanup baseline. The parent remains responsible for providing the system FFTW and NetCDF development packages. The compiler include paths for any additional public headers should come from linking the `gplspec` target rather than manually listing dependency directories.
 
+## Known scope
 
-## Build Options
-
-### Debug Build
-
-For development and debugging:
-
-```bash
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-cmake --build build/
-```
-
-### Release Build
-
-For optimized performance:
-
-```bash
-cmake -DCMAKE_BUILD_TYPE=Release ..
-cmake --build build/
-```
-
-## Troubleshooting
-
-### Common Issues
-
-
-**Compilation errors:**
-- Ensure you're using a C++20 compatible compiler
-- Check that all dependencies are properly installed
-
-**Runtime errors:**
-- Verify that input data files (like PREM models) are in the correct location
-- Check file permissions for output directories
-
-## Next Steps
-
-Now that you have gplspec installed:
-
-1. **Learn the basics**: Read the [Core Concepts Tutorial]({{ '/tutorials/core-concepts/' | relative_url }})
-2. **See it in action**: Explore the [Benchmarks]({{ '/benchmark/' | relative_url }})
-3. **Deep dive**: Check the [API Reference]({{ '/api/' | relative_url }})
-
-## Getting Help
-
-If you encounter issues:
-
-- Review the [API documentation]({{ '/api/' | relative_url }})
-- Open an issue on the GitHub repository
+The cleanup preserves existing angle and density conventions, including the slice-rotation sign and one-sided epsilon checks. It also preserves the small Hermitian-form discrepancies recorded in the deferred-issues file. Validation covers finite deterministic fixtures and the recorded dependency/compiler stack; it does not establish behavior for every model, degree, or platform. Experimental sources under `experimental/` are preserved, excluded from production targets, and numerically unvalidated.

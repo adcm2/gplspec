@@ -1,25 +1,31 @@
 # GPLSpec cleanup campaign instructions
 
-The user has resumed the campaign through stage 05 and the independent Sol review. Implement stages 03–05 sequentially with a separate Luna review and integration after each stage, then obtain the consolidated Sol high review and stop for the human-approved checkpoint. Stages 06–07, GSHTrans modernization, performance work, and pushes remain unauthorized. Preserve the mathematical operations, public interfaces, output formats, and provenance described in `docs/cleanup/campaign.md`.
+## Scope and review gates
 
-Before each stage, start from the latest accepted `cleanup/base` commit and use its named `cleanup/NN-*` branch. Keep `main` and `develop` unchanged. Do not push. A stage advances only after its fixed candidate commit passes its independent Luna review. Do not start a stage before the preceding stage receives independent Luna approval and is integrated into cleanup/base. After stage 05 passes Luna review, obtain the independent Sol high review, integrate only if accepted, then stop for the human checkpoint. Do not begin stages 06–07, modernize GSHTrans, or start performance work.
+- Follow the latest explicit user authorization. Older status notes and stop boundaries are historical records and do not override a newer user instruction.
+- Keep changes within the currently approved phase and exact file scope. After each logical code, build, or documentation change, record what changed and its validation state in `implementation_status.md`.
+- Use one active writer. Freeze the candidate before independent review; reviewers inspect a fixed snapshot without editing it.
+- Preserve public interfaces, mathematical operations, solver behavior, coefficient conventions, and output formats unless a later approved proposal says otherwise.
+- Do not regenerate frozen numerical references, loosen tolerances, or claim broader scientific validation than the fixtures support.
+- Preserve every user-added file under `experimental/`. Do not move, rewrite, automatically build, or claim numerical validation of those experiments unless explicitly authorized.
+- Keep stage changes uncommitted and do not integrate, tag, push, or delete branches unless the user explicitly authorizes that close-out step.
 
-Keep one active implementation writer. Review the candidate in an isolated read-only worktree. Record each code/build change and validation result in `implementation_status.md`. Never regenerate the frozen stage-00 baseline from a later stage.
+## Cleanup provenance
 
-Implementation uses gpt-6-luna medium; each fixed stage candidate receives an independent gpt-6-luna high review. The cumulative stage-00–05 checkpoint receives gpt-6-sol high after stage 05. Preserve one active writer and keep reviewers isolated and read-only.
+`docs/cleanup/campaign.md`, `docs/cleanup/deferred-issues.md`, and `docs/cleanup/baseline-manifest.md` contain the campaign record, preserved observations, and dependency pins. Stage 00's source commit and its checked-in references are immutable. The tested system versions of Eigen, FFTW, and NetCDF are documented; only dependency revisions explicitly pinned by the build are enforced. Stage-07 evidence and review gates are in [docs/cleanup/stage-07-handoff.md](docs/cleanup/stage-07-handoff.md).
 
-Stage-00 baseline command:
+## Validation workflow
+
+Use a fresh out-of-source build for a new final-candidate validation. The standard command enables all examples and the baseline harness:
 
 ```sh
-cmake -S . -B /tmp/gplspec-cleanup-baseline \
-  -DMY_PROJECT_BUILD_EXAMPLES=OFF \
+cmake -S . -B /tmp/gplspec-build \
+  -DMY_PROJECT_BUILD_EXAMPLES=ON \
   -DGPLSPEC_BUILD_BASELINE_HARNESS=ON
-cmake --build /tmp/gplspec-cleanup-baseline --target stage00_reference -j2
-tests/run_stage00.sh /tmp/gplspec-cleanup-baseline/bin/stage00_reference
+cmake --build /tmp/gplspec-build -j2
+ctest --test-dir /tmp/gplspec-build --output-on-failure
+tests/run_stage00.sh /tmp/gplspec-build/bin/stage00_reference
+/tmp/gplspec-build/bin/stage02_header_link
 ```
 
-## Current checkpoint
-
-Stages 00–05 are integrated and recorded by annotated tag `gplspec-cleanup-stage05`. Independent Luna stage reviews and consolidated Sol review are complete (Sol: PASS WITH NON-BLOCKING FINDINGS). Work is stopped awaiting the requested human review and approval. Do not begin any later phase without explicit user authorization.
-
-Automated review addendum completed for `f0fa6920ccc9b53b1d000365fd6ff2f64b5ed700`: Sol high **PASS WITH NON-BLOCKING FINDINGS**; see `docs/cleanup/review-stage-05-sol-addendum.md`. Human review remains OPEN. The existing stage-05 tag stays at the earlier `83e1a9fb3021f40e6384278432f502baba40bcde`; do not move it. Do not commit unless explicitly requested and confirmed with the user. No later stage is authorized.
+Run representative applications from isolated working directories because they write scientific output files relative to the current directory. For changes that touch code, tests, build files, or validation provenance, record compiler and relevant dependency versions and compare the code/reference checksums before and after validation.
