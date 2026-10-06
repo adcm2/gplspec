@@ -1033,6 +1033,8 @@ Density3D::ReferentialOutputRotated(
       auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
       std::vector<std::complex<double>> vectmp(spatialsize),
           vechrot(spatialsize);
+      // Internal duplicated-radius rows use the preceding element's upper
+      // node, preserving the inner-side trace and endpoint behavior.
       if (i == 0) {
          _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
          _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);
@@ -1119,7 +1121,7 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
    auto file2 = std::ofstream(pathtofile);
    // int nelem = this->Num_Elements();
    // int nelem = this->node_data.NumberOfElements();
-   double normfactor = this->PotentialNorm();
+   double normfactor = this->DensityNorm();
    // get vec_hlm
    auto coefficientnumber = GSHTrans::GSHIndices<GSHTrans::NonNegative>(
                                 _grid.MaxDegree(), _grid.MaxDegree(), 0)
@@ -1214,6 +1216,9 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
       std::vector<std::complex<double>> vectmp(spatialsize),
           vechrot(spatialsize);
 
+      // Internal duplicated-radius density rows use the preceding element's
+      // upper node, the inner-side trace for plotting density through the
+      // surface. The first and final endpoints retain their existing nodes.
       if (i == 0) {
          _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
          _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);
@@ -1391,6 +1396,8 @@ Density3D::PhysicalOutputRotated(
       auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
       std::vector<std::complex<double>> vectmp(spatialsize),
           vechrot(spatialsize);
+      // Internal duplicated-radius rows use the preceding element's upper
+      // node, preserving the inner-side trace and endpoint behavior.
       if (i == 0) {
          _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
          _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);

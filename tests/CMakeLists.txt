@@ -1,3 +1,5 @@
+find_package(PythonInterp 3 REQUIRED)
+
 add_executable(stage00_reference stage00_reference.cpp)
 target_link_libraries(stage00_reference PRIVATE gplspec PlanetaryModel TomographyModels)
 
@@ -14,7 +16,6 @@ target_link_libraries(stage02_header_link PRIVATE gplspec)
 
 
 if(BUILD_TESTING)
-  find_package(PythonInterp 3 REQUIRED)
   add_test(NAME stage02_patch_application
     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_stage02_patch_application.py)
 endif()
@@ -95,3 +96,22 @@ if(BUILD_TESTING)
       $<TARGET_FILE:stage05_file_perturbation_reference>
       ${CMAKE_CURRENT_SOURCE_DIR}/reference/stage05-file-perturbation-original.csv)
 endif()
+
+add_executable(pr07_rotated_output pr07_rotated_output.cpp)
+target_link_libraries(pr07_rotated_output PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME pr07_rotated_output
+    COMMAND pr07_rotated_output ${CMAKE_CURRENT_BINARY_DIR}/pr07-rotated-output)
+endif()
+
+set(phobos_tutorial_source ${CMAKE_CURRENT_BINARY_DIR}/tutorial5_phobos.cpp)
+add_custom_command(
+  OUTPUT ${phobos_tutorial_source}
+  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/extract_tutorial_cpp.py
+          ${PROJECT_SOURCE_DIR}/_tutorials/tutorial5_phobos.md
+          ${phobos_tutorial_source}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/extract_tutorial_cpp.py
+          ${PROJECT_SOURCE_DIR}/_tutorials/tutorial5_phobos.md
+  VERBATIM)
+add_executable(tutorial5_phobos_compile ${phobos_tutorial_source})
+target_link_libraries(tutorial5_phobos_compile PRIVATE gplspec)

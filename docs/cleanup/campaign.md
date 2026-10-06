@@ -1,6 +1,6 @@
 # GPLSpec cleanup campaign
 
-The cleanup stages consolidate duplicated implementation while preserving public interfaces, mathematical operations, solver behavior, coefficient conventions, and output formats. No numerical correction, dependency upgrade, performance change, or GSHTrans modernization is part of this campaign.
+The original cleanup stages consolidate duplicated implementation while preserving public interfaces, mathematical operations, solver behavior, coefficient conventions, and output formats. A later PR 07 correction pass is documented separately in [pr-07-corrections.md](pr-07-corrections.md); its density-normalization correction is outside the earlier cleanup-equivalence claims. No dependency upgrade, performance change, or GSHTrans modernization is part of the cleanup campaign.
 
 ## Stage status
 
@@ -13,9 +13,9 @@ The cleanup stages consolidate duplicated implementation while preserving public
 | 04 Models | `cleanup/04-models`, `e352efcf09bcf0d0fbbbded62f1b218736e2fe79` | Accepted and integrated after independent review. |
 | 05 Operators | `cleanup/05-operators`, `20a5ef194a22c3d8e71ae0900a1b0f9ce57f5289` | Accepted and integrated; Luna PASS and Sol PASS WITH NON-BLOCKING FINDINGS. Later documentation/build-configuration closure is recorded in the Sol addendum. |
 | 06 Output | `cleanup/06-output`, `b813285fc34b13e9d4868860ae0651eb405457f4` | Human-approved and integrated into `cleanup/base`; paired transform helper retained unchanged. |
-| 07 Final | `cleanup/07-final`, starting at `b813285fc34b13e9d4868860ae0651eb405457f4` | Human-approved; close-out authorized and pending coordinator execution. Luna PASS; Sol PASS WITH NON-BLOCKING FINDINGS. Still uncommitted and not integrated. |
+| 07 Final | `cleanup/base`, `a9409aed3902bf1dd4262ff7cdb62287fd4ea2e1` | Accepted and integrated; annotated tag `gplspec-clean-baseline-v1` points here. Luna PASS; Sol PASS WITH NON-BLOCKING FINDINGS. |
 
-Earlier stage reports remain the detailed record of their individual diffs and reviews. Under the user's authorization, the coordinator fast-forwarded `cleanup/base` from `3045834c55c2906c1d6f60b660feb4e922618cae` to accepted stage-06 commit `b813285fc34b13e9d4868860ae0651eb405457f4`, then created `cleanup/07-final` from that base. `main` and `develop` were not changed.
+Earlier stage reports remain the detailed record of their individual diffs and reviews. The stage-07 close-out later fast-forwarded `cleanup/base` to `a9409aed3902bf1dd4262ff7cdb62287fd4ea2e1` and created annotated tag `gplspec-clean-baseline-v1` at that commit. Current local and remote `cleanup/base` resolve to the same commit; `main` and `develop` were not changed.
 
 ## Behavior and regression contract
 
@@ -31,4 +31,4 @@ Stage 06 extracted common output-angle and Wigner-matrix work, plus a paired sca
 
 Stage 07 reconciles user-facing build instructions and the accumulated campaign status. It does not modify production code, tests, build configuration, frozen references, or `experimental/`. The documentation records preserved Hermitian observations, angle and density conventions, finite fixture coverage, system dependency versions that are not enforced by CMake, and the setup required for embedded CMake consumers. The experiments under `experimental/`, including ellipticity calculations, remain untouched, excluded from builds, and numerically unvalidated.
 
-The exact candidate files, validation provenance, branch inventory, independent review verdicts, and deferred limitations are summarized in [stage-07-handoff.md](stage-07-handoff.md). The user approved the final diff and authorized the coordinator to commit stage 07, fast-forward `cleanup/base`, create the annotated baseline tag, push and verify, then clean up only the explicitly listed branches after ancestry checks. Those close-out actions are pending; unrelated remote archive and `cleanup-2026-10-01/*` branches are retained.
+The exact candidate files, validation provenance, branch inventory, independent review verdicts, and deferred limitations are summarized in [stage-07-handoff.md](stage-07-handoff.md). The user approved the final diff and authorized the coordinator to commit stage 07, fast-forward `cleanup/base`, create the annotated baseline tag, push and verify, then clean up only the explicitly listed branches after ancestry checks. The commit, tag, and push were completed; local and remote `cleanup/base` agree. Historical review inventories retain their capture-time state. Unrelated remote archive and `cleanup-2026-10-01/*` branches are retained.

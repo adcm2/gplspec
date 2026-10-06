@@ -16,7 +16,14 @@ The model data is taken from Willner 2014. The surface radius is given in terms 
 We also introduce the rotational functionality. The way that this is implemented is one specifies two points which are rotated onto the equator, with the first situated at the prime meridian. The potential can be outputted either in the original orientation or in a rotated manner. 
 
 ### Source code
+Build and run this example from the repository root so `modeldata/TABLEA1.DAT`
+resolves and the output paths are created under `work/Phobos/`.
+
 ```cpp
+#include <cmath>
+#include <filesystem>
+#include <string>
+#include <vector>
 #include <gplspec/All>
 
 int
@@ -47,8 +54,8 @@ main() {
        
  
    // coordinates for rotation
-   double theta1, theta2;
-   double phi1, phi2;
+   double theta1 = 1.2, theta2 = 1.2;
+   double phi1 = 0.2, phi2 = 2.0;
 
    // vectors containing theta,phi information
    std::vector<double> vec_ang1{theta1, phi1}, vec_ang2{theta2, phi2};
@@ -59,7 +66,7 @@ main() {
    // output test
    std::string pathtofolder1 = "./work/Phobos/Cartesian";
    std::string pathtofolder2 = "./work/Phobos/Spherical";
-   std::string pathtofolder3 = "./work/Phobos/Sensitivity";
+   std::string pathtofolder3 = "./work/Phobos/Referential";
    std::string pathtofile1 =
        pathtofolder2 + "/MatrixSolutionReferentialRotated.out";
    std::string pathtofile2 = pathtofolder2 + "/MatrixSolutionPhysical.out";
@@ -69,14 +76,18 @@ main() {
    std::string pathtofile5 =
        pathtofolder2 + "/ReferentialDensitySolutionRotated.out";
 
+   std::filesystem::create_directories(pathtofolder1);
+   std::filesystem::create_directories(pathtofolder2);
+   std::filesystem::create_directories(pathtofolder3);
+
    phobos.CartesianOutputAtElement(pathtofolder1, stdvec_potsol);
    phobos.PhysicalOutputAtElement(pathtofolder2, stdvec_potsol);
-   phobos.ReferentialOutputAtElement(pathtofolder3, stdvec_senskernel, true);
-   phobos.ReferentialOutputSlice(pathtofolder3, stdvec_senskernel, true);
+   phobos.ReferentialOutputAtElement(pathtofolder3, stdvec_potsol);
+   phobos.ReferentialOutputSlice(pathtofolder3, stdvec_potsol);
    phobos.PhysicalOutputSlice(pathtofolder2, stdvec_potsol);
    phobos.ReferentialOutputRotated(pathtofile1, vec_ang1, vec_ang2,
                                    stdvec_potsol);
-   phobos.PhysicalOutputRotated(pathtofile2, vec_ang12, vec_ang22,
+   phobos.PhysicalOutputRotated(pathtofile2, vec_ang1, vec_ang2,
                                 stdvec_potsol);
 
    return 0;
@@ -84,8 +95,5 @@ main() {
 
 
 ```
-
-
-
 
 
