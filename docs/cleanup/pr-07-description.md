@@ -5,7 +5,7 @@ This PR combines pre-baseline model/output behavior changes with a later source 
 ## Behavior changes before the cleanup baseline
 
 - Compared with `main` (`4fd6488`), rotated output at duplicated internal radii uses the inner-side trace: the preceding element's upper node. The first and final endpoints keep their prior element-side selection. For density plots this includes interior material through the surface, then exposes the vacuum endpoint. This behavior predates the cleanup baseline and is intentionally retained for plotting interior density up to the surface.
-- `clean_bench_2` changes mesh `maxstep` from `0.01` to `0.1`; the Phobos example changes requested solve tolerance from `1e-12` to `1e-6`. These change example resolution and solver stopping behavior relative to `main`.
+- `clean_bench_2` changes mesh `maxstep` from `0.01` to `0.1`; `phobos_gravity_perturbation.cpp` changes requested solve tolerance from `1e-12` to `1e-6`. These change example resolution and solver stopping behavior relative to `main`.
 - `MappingPerturbation` now explicitly zero-initializes its `_vec_da` matrices. This is an apparent initialization fix relative to `main`, not an equivalence-preserving extraction.
 - `OutputZiheng` and its checked-in radius-output data were added. The file has the expected three-field 359-by-720 grid shape; this structural check does not establish that the executable generated it or that its values are numerically validated.
 

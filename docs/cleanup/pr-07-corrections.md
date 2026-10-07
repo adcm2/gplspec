@@ -9,7 +9,7 @@ This correction pass follows the read-only full-PR review at `/tmp/gplspec-pr7-r
 - Added `tests/pr07_rotated_output.cpp`, which builds a two-layer jump with a vacuum exterior, a nonunit radial mapping/Jacobian, and `DensityNorm()=8` versus `PotentialNorm()=4`. It checks internal traces and endpoints in all rotated writers, continuous-potential output, density scale, and `rho_ref = J rho_phys`.
 - Added a build target that extracts and compiles the actual C++ fence from `_tutorials/tutorial5_phobos.md`. Its angle values and output paths are initialized, and its calls use declared vectors.
 - Moved the MathJax configuration before the asynchronous loader.
-- Corrected current Stage-07 campaign/handoff status to distinguish the historical review checkpoint from the completed close-out. The current local and remote `cleanup/base` resolve to `a9409aed3902bf1dd4262ff7cdb62287fd4ea2e1`; annotated tag `gplspec-clean-baseline-v1` points there.
+- Corrected current Stage-07 campaign/handoff status to distinguish the historical review checkpoint from the completed close-out. The historical stage-07 close-out commit is `a9409aed3902bf1dd4262ff7cdb62287fd4ea2e1`; annotated tag `gplspec-clean-baseline-v1` points there. Local and remote `cleanup/base` resolved to that commit at close-out.
 - Added [pr-07-description.md](pr-07-description.md), which separates behavior changes predating `4ef3a66` from the cleanup and correction pass and states the evidence limits.
 
 ## Validation
@@ -29,4 +29,4 @@ Luna v2 returned **PASS** after resolving one non-blocking documentation finding
 
 ## Evidence boundary
 
-The retained boundary convention predates the cleanup baseline. The stage-06 saved output fixture has unit normalization scales and a smooth model, so it cannot detect the density norm correction or establish compatibility with `main` at discontinuous interfaces. `clean_bench_2` resolution, the Phobos solve tolerance, and `_vec_da` zero-initialization are earlier behavior changes, not cleanup equivalence claims. `OutputZiheng` output is only structurally inspected. The experiments under `experimental/` remain untouched and unvalidated.
+The retained boundary convention predates the cleanup baseline. The stage-06 saved output fixture has unit normalization scales and a smooth model, so it cannot detect the density norm correction or establish compatibility with `main` at discontinuous interfaces. `clean_bench_2` resolution, the `phobos_gravity_perturbation.cpp` solve tolerance, and `_vec_da` zero-initialization are earlier behavior changes, not cleanup equivalence claims. `OutputZiheng` output is only structurally inspected. The experiments under `experimental/` remain untouched and unvalidated.
