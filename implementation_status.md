@@ -318,3 +318,8 @@ At the user's request, copied the historical ellipticity experiment, plotting sc
 - Starting from committed corrections `33bd2024fc1c427373d6d56c857d92917d1a8103`, clarified that `a9409aed3902bf1dd4262ff7cdb62287fd4ea2e1` identifies the historical stage-07 close-out rather than the current branch HEAD. Qualified the retained-branch statement as the cleanup-stage branch inventory.
 - Named `phobos_gravity_perturbation.cpp` explicitly as the example whose requested tolerance changed from `1e-12` to `1e-6` in the proposed PR description and correction handoff. Historical review reports and existing tags are preserved.
 - This is a documentation-only follow-up; no numerical rerun is needed. The user authorized a separate commit, branch push, and updating PR #7's description from the corrected draft, with no merge or further work.
+
+## PR 07 setup-pin correction — 2026-10-07
+
+- Updated both `getting-started.md` setup examples from stage-06 commit `b813285fc34b13e9d4868860ae0651eb405457f4` to reviewed commit `a77742f60fee305a1e058663e55e5ca62c2f3739`, and reconciled their explanation with the completed cleanup and PR corrections. This resolves the remaining Sol-high documentation finding.
+- Checked that the checkout and FetchContent pins match and ran `git diff --check`. Documentation-only change; no numerical rerun. Existing tags, historical reviews, and unrelated files are preserved. The user authorized committing and pushing this correction without merging.

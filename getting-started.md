@@ -24,7 +24,7 @@ The stage-00 baseline's recorded system packages were Eigen 3.4.0, FFTW 3.3.10, 
 ```sh
 git clone https://github.com/adcm2/gplspec.git
 cd gplspec
-git checkout b813285fc34b13e9d4868860ae0651eb405457f4
+git checkout a77742f60fee305a1e058663e55e5ca62c2f3739
 cmake -S . -B build -DMY_PROJECT_BUILD_EXAMPLES=ON
 cmake --build build -j2
 ```
@@ -65,7 +65,7 @@ project(my_consumer LANGUAGES CXX)
 include(FetchContent)
 FetchContent_Declare(gplspec
   GIT_REPOSITORY https://github.com/adcm2/gplspec.git
-  GIT_TAG b813285fc34b13e9d4868860ae0651eb405457f4)
+  GIT_TAG a77742f60fee305a1e058663e55e5ca62c2f3739)
 FetchContent_GetProperties(gplspec)
 if(NOT gplspec_POPULATED)
   FetchContent_Populate(gplspec)
@@ -80,7 +80,7 @@ target_link_libraries(my_consumer PRIVATE gplspec)
 target_compile_features(my_consumer PRIVATE cxx_std_23)
 ```
 
-The example pins the accepted stage-06 base used for stage 07, since the normal `main` branch does not yet contain this cleanup baseline. The parent remains responsible for providing the system FFTW and NetCDF development packages. The compiler include paths for any additional public headers should come from linking the `gplspec` target rather than manually listing dependency directories.
+Both setup examples pin the reviewed PR #7 commit `a77742f60fee305a1e058663e55e5ca62c2f3739`, which includes the completed cleanup and reviewed corrections, including density-output normalization. The parent remains responsible for providing the system FFTW and NetCDF development packages. The compiler include paths for any additional public headers should come from linking the `gplspec` target rather than manually listing dependency directories.
 
 ## Known scope
 
