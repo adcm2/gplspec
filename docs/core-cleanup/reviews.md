@@ -27,6 +27,8 @@ The reviewer found that Stage 1C's solver plan required “meaningful nonzero it
 
 **Stage 1B independent Luna re-review: PASS.** The reviewer verified the minimum-two-iteration criterion, independent residual contract, and existing-call transform parity scope. No remaining findings. The coordinator acceptance update follows the reviewed documentation snapshot.
 
+**Cumulative evidence correction:** The preceding implementation-response wording records the Stage 1B plan at the time, not a completed direct transform-parity test. Stage 1C provides indirect frozen whole-workflow behavior coverage; it does not directly call GSHTrans forward/inverse methods or assert coefficient range/indexing, spin, normalization, or sign/conjugation. Add and review that focused direct parity gate before introducing any Phase 3 transform adapter. No Phase 1 numerical test is added for this correction.
+
 
 ## Stage 1C — initial Luna review
 
@@ -54,3 +56,30 @@ The initial build-time evidence timed only the `phase1_performance` target after
 **Stage 1D rereview: substantive PASS.** The sole documentation finding was a stale sentence in `phase-1.md` that still described target-only build timing. It now reports the measured clean-first all-target Release build (70 steps, 3:41.47, 980,376 KiB peak RSS); no rebuild was needed.
 
 **Stage 1D final independent Luna re-review: PASS.** Full clean build evidence and the aligned summary resolve all findings. No further runtime or numerical rerun was needed. Coordinator acceptance follows the reviewed candidate.
+
+
+## Stage 1E — Phase 1 decision package
+
+The package in `docs/core-cleanup/phase-1.md` consolidates the accepted Stage 1A–1D inventory, architecture proposal, correctness baseline and bounded performance evidence, with explicit limitations, user decisions and later-phase gates. Checkpoint commits are recorded there: base `ac62330e1a43d06f2d4d2c64492817fd7cc6c740`; 1A `31e75c18f4b52ad1855ae425249a8c2b264ac5a9`; 1B `b68bb219e94eac50ecc145c9eb6388ac5fb61f57`; 1C `22306e257c64240f4b0536abdf1ea49f0e2cb326`; 1D `a491da647efa2baa827224ea53d21a616701adf9`.
+
+**Stage 1E independent Luna review: PASS** on the prior frozen package snapshot. **Cumulative Sol-high review: BLOCKED** on two documentation/evidence reconciliations; no production regression was found and no runtime rerun was requested.
+
+1. The tracked PREM500/S40RTS fixture constructs a model and checks a nonzero complex operator action; it does not solve that fixture. Earlier zero-iteration wording had no saved provenance. The independent 3-iteration/residual evidence belongs to the separate mapped model.
+2. Direct GSHTrans transform/index parity was promised in the plan and described as checked in the Stage 1B implementation record, but no direct parity test exists. Stage 1C provides indirect frozen whole-workflow coverage only. Make direct checks of range/indexing, spin, normalization, sign/conjugation and grid conventions a required gate before any Phase 3 transform adapter.
+
+The review also requested precision that all 30 timed public calls report 3 iterations while independent residuals were recomputed in five per-process diagnostics; the clean-build 980,376 KiB figure is GNU `/usr/bin/time -v` maximum RSS, not aggregate concurrent `-j2` worker memory; and the 96-row content manifest is a Stage 1C snapshot, not a final Phase 1 manifest. These clarifications are included in the evidence summary. The accepted prior Luna snapshot and this documentation-only response are distinct; affected Luna review and Sol-high re-review remain pending. No Phase 1 PASS is claimed. Phase 2 remains unauthorized pending explicit user approval.
+
+### Final affected reviews and phase acceptance
+
+**Independent Luna affected re-review: PASS, no remaining findings. Cumulative Sol-high affected re-review: PASS, no remaining blocking findings.** Sol verified both evidence corrections, the iteration/residual distinction, and the non-aggregate build-memory label. The cumulative source, test, CI, raw-data and scope assessment remains applicable; no numerical rerun was required. Hosted CI remains unrun, direct transform parity is a pre-adapter gate, and other scientific/performance limitations remain explicit in the decision package.
+
+The fixed Sol-reviewed candidate was HEAD `a491da647efa2baa827224ea53d21a616701adf9` plus these four documentation hashes:
+
+| Path | SHA-256 |
+|---|---|
+| `docs/core-cleanup/phase-1.md` | `a84cf5867e7ea448c9f200bc57801900562c0117f0e7c537e8436b90ef40c2ca` |
+| `docs/core-cleanup/reviews.md` | `fd544e3b36fd451304d03310001669fb2337997c02bec85edf27a0af9a97c4a8` |
+| `implementation_status.md` | `c6fbd3640aec68e6a928960c6fcc4ecfcdb611abe4ccb532ba4e4ad082bbdda6` |
+| `docs/core-cleanup/evidence/README.md` | `55ad25ed0a9dfdaceb60a45bd020d8f1b6e899fd814ab507f522ceea4a458b87` |
+
+The coordinator verified those hashes before updating only the campaign status, this review record and `implementation_status.md` to record final acceptance. This small post-review record delta is separate from the reviewed snapshot and does not alter tests, source, inputs or numerical evidence. Stage 1E is accepted for local commit; the Phase 1 human-review checkpoint remains open. No Phase 2 work, push, merge or tag change is authorized.
