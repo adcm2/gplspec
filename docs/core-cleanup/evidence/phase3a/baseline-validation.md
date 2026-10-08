@@ -1,0 +1,11 @@
+# Phase 3A baseline validation
+
+Source is the clean detached checkout `/tmp/gplspec-phase3-baseline` at `15582edab8112dbb63e0101be5b26f5135298644`. The protected input/output/reference/experimental manifest is `/tmp/gplspec-phase3-protected.json`; do not modify those files. The fresh out-of-source build is `/tmp/gplspec-phase3-baseline-release`, configured as Release with examples and the baseline harness enabled, GNU C++ 13.3.0, CMake 3.28.3, system FFTW 3.3.10, NetCDF 4.9.2, OpenMP 4.5, and the exact pinned dependency source revisions from the Phase 2 build copied into this build's private `_deps` tree. No dependency pin or repository input was changed.
+
+The configure command enabled `MY_PROJECT_BUILD_EXAMPLES=ON` and `GPLSPEC_BUILD_BASELINE_HARNESS=ON`. `cmake --build /tmp/gplspec-phase3-baseline-release -j2` completed successfully. `ctest --test-dir /tmp/gplspec-phase3-baseline-release --output-on-failure` passed 14/14 tests in 21.19 seconds; its transcript is `baseline-ctest.log`.
+
+`bash tests/run_stage00.sh /tmp/gplspec-phase3-baseline-release/bin/stage00_reference` passed three 20,700-record comparisons at unchanged `rtol=1e-13`, `atol=1e-15`, with zero changed components and byte-identical `MatrixSolution.out`; see `baseline-stage00.log`.
+
+The existing `stage1c_file_tomography_solver` executable was run with the baseline checkout as its working directory; its diagnostic is `baseline-file-check.log`. It constructs the tracked PREM500/S40RTS file-backed model and verifies a finite, nonzero complex operator action. It then solves a distinct smooth mapped homogeneous model in 3 iterations at requested tolerance `1e-6`, with Eigen-reported error `1.62767e-7` and independently recomputed relative residual `1.62767e-7`. This is not a file-backed solve; Stage 3A.2 must add one without substituting the mapped fixture.
+
+For the candidate at the same base commit, `/tmp/gplspec-phase3-candidate-release` was configured Release with examples off and the baseline harness on. `stage3a_harmonic_contract` built and ran successfully. The targeted candidate CTest run passed both `stage3a_harmonic_contract` and `stage1c_external_consumer` (2/2); the consumer now includes and constructs GPLSpec models in both source translation units. Transcript: `candidate-ctest.log`. These focused checks do not claim the full candidate tree has been built.

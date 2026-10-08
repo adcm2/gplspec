@@ -40,6 +40,12 @@ if(BUILD_TESTING)
     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_stage02_patch_application.py)
 endif()
 
+add_executable(stage3a_harmonic_contract stage3a_harmonic_contract.cpp)
+target_link_libraries(stage3a_harmonic_contract PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage3a_harmonic_contract COMMAND stage3a_harmonic_contract)
+endif()
+
 add_executable(stage03_utilities stage03_utilities.cpp)
 target_link_libraries(stage03_utilities PRIVATE gplspec)
 if(BUILD_TESTING)
