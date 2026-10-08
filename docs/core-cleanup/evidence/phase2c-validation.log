@@ -1,0 +1,41 @@
+GPLSpec Phase 2C documentation/scaffolding validation
+Date: 2026-10-08
+Candidate source checkout: /home/adcm2/Documents/Research/Projects/gplspec
+Base: d4d250a2c4a5861fbffad35ca23966a3f50658f8
+Scope: documentation, navigation label, removal of two unused project-owned CMake find modules
+
+Documentation/source audit
+--------------------------
+- Read the changed documentation and checked every Markdown relative-file link in README.md, index.md, getting-started.md, api.md, benchmark.md, tutorials.md, and docs/core-cleanup/phase-2.md: 0 missing targets.
+- Checked the documented program paths and prompts against examples/clean_bench_1.cpp through clean_bench_10.cpp, examples/phobos_gravity.cpp, phobos_heterogeneous.cpp, phobos_gravity_perturbation.cpp, and OutputZiheng.cpp, plus their work/ plot readers. Output names/directories and each Phobos plot script's consumed paths are recorded in benchmark.md; the distinct producers for rotated-coordinate paths are called out. No producer or consumer was edited.
+- Active-project search found no find_package(CHOLMOD) or find_package(LAPACKE) call. In the pinned Eigen source tree, find_package(CHOLMOD) occurs only in test/CMakeLists.txt and bench/spbench/CMakeLists.txt; GPLSpec configures Eigen's gplspec-header-only source subdirectory. Eigen also carries its own cmake/FindCHOLMOD.cmake. No LAPACKE caller was found in the configured source tree.
+- Git provenance: both removed project modules were introduced by a2e9528 (Initial); exact pre-removal copies are available with `git show d4d250a2c4a5861fbffad35ca23966a3f50658f8:cmake/FindCHOLMOD.cmake` and the corresponding FindLAPACKE path.
+- `jekyll --version`: unavailable (`jekyll: command not found`), so site rendering was not run.
+
+Build integration after removal
+-------------------------------
+- `cmake -S . -B /tmp/gplspec-phase2-build -DCMAKE_BUILD_TYPE=Release -DMY_PROJECT_BUILD_EXAMPLES=ON -DGPLSPEC_BUILD_BASELINE_HARNESS=ON`: PASS; CMake 3.28.3 configured and generated. The existing CMP0148 developer warning from FindPythonInterp remains.
+- `cmake -S tests/external_consumer -B /tmp/gplspec-phase2-build/tests/external-consumer-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DGPLSPEC_SOURCE_DIR=/home/adcm2/Documents/Research/Projects/gplspec -DGPLSPEC_EIGEN_INCLUDE_DIR=/tmp/gplspec-phase2-build/_deps/eigen3-src`: PASS.
+- Built and ran `stage02_header_link`: PASS.
+- Built and ran `external_consumer`: PASS.
+- `ctest --test-dir /tmp/gplspec-phase2-build --output-on-failure -R '^stage1c_external_consumer$'`: 1/1 passed. The full 14-test suite and Stage 00 frozen comparison were validated in Stage 2B; they were not rerun for this documentation/finder-module stage.
+
+Preservation and diff checks
+----------------------------
+- Original protected manifest has 132 paths; excluding the three CMake files intentionally changed in Stage 2B, all other 129 protected paths still match their Phase 2A hashes.
+- All 36 tracked production umbrella/header paths match the post-2B/pre-2C hashes.
+- `git status` shows no Stage 2C modifications under gplspec/, examples/, work/, modeldata/, tests/reference/, experimental/, or benchfigures/ (the sole reported examples/CMakeLists.txt status is the already accepted Stage 2B build edit); saved outputs/figures remain untouched.
+- The final Phobos consumer-path documentation edit was followed by a repeat Markdown relative-file-link audit: 0 missing targets.
+- `git diff --check`: PASS.
+
+No clean_bench or Phobos runtime workflow, plot, or paper-reproduction campaign was executed in Stage 2C.
+
+
+Initial independent Luna review correction (documentation-only)
+---------------------------------------------------------------
+The first Stage 2C review was BLOCKED on three factual groups: clean_bench_3 equivalent-sphere density was inverted; OutputZiheng's separate modeldata/prem.200.no integral input/constructor was omitted; and four Phobos plot rows listed inactive or overwritten path alternatives rather than active final file reads. Corrected benchmark.md accordingly. No numerical source, build file, model input, output, frozen reference, or plot consumer changed. Repeated Markdown relative-file-link audit: 0 missing targets. `git diff --check`: PASS.
+
+
+Stage 2C review resolution
+--------------------------
+Independent Luna re-review: PASS. All three factual corrections were source-verified and no new blockers were reported. Exact scope/verdict is in docs/core-cleanup/phase-2-reviews.md.

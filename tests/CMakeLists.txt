@@ -1,7 +1,7 @@
 find_package(PythonInterp 3 REQUIRED)
 
 add_executable(stage00_reference stage00_reference.cpp)
-target_link_libraries(stage00_reference PRIVATE gplspec PlanetaryModel TomographyModels)
+target_link_libraries(stage00_reference PRIVATE gplspec)
 
 add_executable(stage1c_file_tomography_solver stage1c_file_tomography_solver.cpp)
 target_link_libraries(stage1c_file_tomography_solver PRIVATE gplspec)
@@ -71,7 +71,7 @@ if(BUILD_TESTING)
 endif()
 
 add_executable(stage05_operator_reference stage05_operator_reference.cpp)
-target_link_libraries(stage05_operator_reference PRIVATE gplspec PlanetaryModel TomographyModels Interpolation GaussQuad)
+target_link_libraries(stage05_operator_reference PRIVATE gplspec Interpolation)
 target_compile_definitions(stage05_operator_reference PRIVATE
   GPLSPEC_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 
@@ -107,7 +107,7 @@ endif()
 add_executable(stage05_file_perturbation_reference
   stage05_file_perturbation_reference.cpp)
 target_link_libraries(stage05_file_perturbation_reference PRIVATE
-  gplspec PlanetaryModel TomographyModels Interpolation GaussQuad)
+  gplspec Interpolation)
 target_compile_definitions(stage05_file_perturbation_reference PRIVATE
   GPLSPEC_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 if(BUILD_TESTING)

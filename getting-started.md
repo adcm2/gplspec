@@ -3,85 +3,68 @@ title: "Getting Started"
 permalink: /getting-started/
 ---
 
-# Getting started with gplspec
+# Getting started
 
-gplspec is a header-only C++ library. CMake supplies the pinned header dependencies and propagates the include and link requirements through the `gplspec` interface target. A supported CMake consumer must use C++23.
+`gplspec` is a header-only C++ library. Link the CMake interface target named `gplspec`; it supplies the public include paths, pinned header dependencies, and C++23 compile feature. The project currently declares CMake 3.20 as its minimum. There is no install/export package yet, so add the checkout as a subdirectory.
 
-## Requirements
+## Build examples and regression checks
 
-- A C++23 compiler. The cleanup validation used GNU C++ 13.3.0.
-- CMake 3.28.3 for the recorded build and test workflow (the project declares a lower minimum, but older CMake versions are not covered by this validation).
-- Git for CMake FetchContent source dependencies.
-- OpenMP development support.
-- FFTW3 development libraries, including `fftw3` and `fftw3f`, plus headers (`fftw3l` is detected and linked when available).
-- NetCDF development headers and library, required by the pinned model dependencies.
-- Python 3 and Bash for the registered regression tests.
+Requirements are CMake 3.20 or newer, a C++23 compiler, Git, OpenMP development support, FFTW3 development files (`fftw3` and `fftw3f`; `fftw3l` is used when available), NetCDF development files, Python 3, and Bash. CMake fetches the Git-pinned header dependencies. Eigen 3.4.0 is fetched unless the parent project already defines `Eigen3::Eigen`.
 
-The stage-00 baseline's recorded system packages were Eigen 3.4.0, FFTW 3.3.10, and NetCDF 4.9.2. Stage 07 used Eigen 3.4.0 from the SHA-256-pinned source archive; a parent project may instead supply `Eigen3::Eigen`, which GPLSpec reuses. The recorded FFTW and NetCDF versions are test provenance, not CMake-enforced requirements. The seven Git dependencies are pinned to commits in [the baseline manifest](docs/cleanup/baseline-manifest.md).
+The recorded Phase 2 validation used CMake 3.28.3, GNU C/C++ 13.3, Eigen 3.4.0, FFTW 3.3.10, and NetCDF 4.9.2. Those are evidence provenance, not enforced exact versions beyond the pinned source revisions.
 
-## Build the examples
+These commands describe the current working tree. Until the Phase 2 changes are published, a fresh clone of the public default branch may not contain this target-level build contract.
 
 ```sh
-git clone https://github.com/adcm2/gplspec.git
-cd gplspec
-git checkout a77742f60fee305a1e058663e55e5ca62c2f3739
+cd /path/to/current/gplspec-checkout
 cmake -S . -B build -DMY_PROJECT_BUILD_EXAMPLES=ON
 cmake --build build -j2
 ```
 
-The executable is written to `build/bin/clean_bench_1`. Its working directory matters: this example writes under `./work/Bench1`. Run it from a disposable directory so its scientific output does not replace repository data:
+To configure the registered test harness as well:
 
 ```sh
-mkdir -p /tmp/gplspec-bench1-run/work/Bench1
-cd /tmp/gplspec-bench1-run
+cmake -S . -B build-tests \
+  -DMY_PROJECT_BUILD_EXAMPLES=ON \
+  -DGPLSPEC_BUILD_BASELINE_HARNESS=ON
+cmake --build build-tests -j2
+ctest --test-dir build-tests --output-on-failure
+```
+
+The fixed Stage 00 runner and header-link smoke check are separate commands:
+
+```sh
+tests/run_stage00.sh /absolute/path/to/gplspec/build-tests/bin/stage00_reference
+/absolute/path/to/gplspec/build-tests/bin/stage02_header_link
+```
+
+The Stage 00 runner compares three 20,700-record outputs with frozen references, using `rtol=1e-13` and `atol=1e-15`, and checks representative output bytes. Do not regenerate those references during ordinary validation. The regression suite is bounded evidence for its listed fixtures; it does not validate every example, model, or platform. See [workflow and output contracts](benchmark.md).
+
+## Consume the current checkout from another CMake project
+
+This recipe uses the current checkout as a subdirectory. The consumer links only `gplspec`; the target propagates C++23 and GPLSpec's dependency include/link requirements. GPLSpec's top-level CMake handles its own FFTW module lookup, so the parent does not edit `CMAKE_MODULE_PATH`.
+
+```cmake
+cmake_minimum_required(VERSION 3.20)
+project(my_consumer LANGUAGES CXX)
+
+add_subdirectory("/absolute/path/to/gplspec" gplspec-build)
+add_executable(my_consumer main.cpp)
+target_link_libraries(my_consumer PRIVATE gplspec)
+```
+
+CMake fetches GPLSpec's pinned sources unless compatible dependency targets/sources are already provided through the supported parent configuration. The tracked [external consumer check](tests/external_consumer/CMakeLists.txt) exercises subdirectory integration with parent-provided Eigen and checks that the target supplies language and module requirements.
+
+The old website recipe pinned immutable PR #7 commit `a77742f60fee305a1e058663e55e5ca62c2f3739`; that revision predates the current target propagation. It is historical and is not a recipe for this working tree.
+
+## Run an example safely
+
+Executables use paths relative to their process working directory. For example, `clean_bench_1` writes to `work/Bench1`; create that directory and run from a disposable working directory:
+
+```sh
+mkdir -p /tmp/gplspec-run/work/Bench1
+cd /tmp/gplspec-run
 /absolute/path/to/gplspec/build/bin/clean_bench_1
 ```
 
-## Run the cleanup regression suite
-
-The opt-in baseline harness enables the tests and their registered CTest checks:
-
-```sh
-cd /absolute/path/to/gplspec
-cmake -S . -B /tmp/gplspec-build \
-  -DMY_PROJECT_BUILD_EXAMPLES=ON \
-  -DGPLSPEC_BUILD_BASELINE_HARNESS=ON
-cmake --build /tmp/gplspec-build -j2
-ctest --test-dir /tmp/gplspec-build --output-on-failure
-tests/run_stage00.sh /tmp/gplspec-build/bin/stage00_reference
-/tmp/gplspec-build/bin/stage02_header_link
-```
-
-The frozen stage-00 runner executes the candidate twice. It compares each 20,700-record output with the checked-in original-source reference using `rtol=1e-13` and `atol=1e-15`, compares the two runs to each other, and checks each representative output byte-for-byte. Never regenerate the frozen references as part of ordinary validation.
-
-## Use gplspec from another CMake project
-
-Link the `gplspec` interface target so its C++ dependencies and include requirements propagate. Set C++23 on the consumer target. The current project calls `find_package(FFTW)` from its top-level CMake file, so a FetchContent parent must also expose gplspec's CMake module directory before making the dependency available. A parent-provided `Eigen3::Eigen` target is reused; otherwise gplspec fetches Eigen 3.4.0.
-
-```cmake
-cmake_minimum_required(VERSION 3.28)
-project(my_consumer LANGUAGES CXX)
-
-include(FetchContent)
-FetchContent_Declare(gplspec
-  GIT_REPOSITORY https://github.com/adcm2/gplspec.git
-  GIT_TAG a77742f60fee305a1e058663e55e5ca62c2f3739)
-FetchContent_GetProperties(gplspec)
-if(NOT gplspec_POPULATED)
-  FetchContent_Populate(gplspec)
-endif()
-list(APPEND CMAKE_MODULE_PATH "${gplspec_SOURCE_DIR}/cmake")
-if(NOT TARGET gplspec)
-  add_subdirectory("${gplspec_SOURCE_DIR}" "${gplspec_BINARY_DIR}")
-endif()
-
-add_executable(my_consumer main.cpp)
-target_link_libraries(my_consumer PRIVATE gplspec)
-target_compile_features(my_consumer PRIVATE cxx_std_23)
-```
-
-Both setup examples pin the reviewed PR #7 commit `a77742f60fee305a1e058663e55e5ca62c2f3739`, which includes the completed cleanup and reviewed corrections, including density-output normalization. The parent remains responsible for providing the system FFTW and NetCDF development packages. The compiler include paths for any additional public headers should come from linking the `gplspec` target rather than manually listing dependency directories.
-
-## Known scope
-
-The cleanup preserves existing angle and density conventions, including the slice-rotation sign and one-sided epsilon checks. It also preserves the small Hermitian-form discrepancies recorded in the deferred-issues file. Validation covers finite deterministic fixtures and the recorded dependency/compiler stack; it does not establish behavior for every model, degree, or platform. Experimental sources under `experimental/` are preserved, excluded from production targets, and numerically unvalidated.
+The examples do not create their output directories. File-backed examples also expect the tracked `modeldata/` paths relative to the working directory; arrange those inputs in an isolated run directory before launching. Some examples read values from stdin. The [workflow map](benchmark.md) lists each program's prompts, inputs, output paths, and plot consumers. Building an executable does not run or validate its scientific workflow.
