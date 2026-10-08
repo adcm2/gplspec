@@ -323,3 +323,14 @@ At the user's request, copied the historical ellipticity experiment, plotting sc
 
 - Updated both `getting-started.md` setup examples from stage-06 commit `b813285fc34b13e9d4868860ae0651eb405457f4` to reviewed commit `a77742f60fee305a1e058663e55e5ca62c2f3739`, and reconciled their explanation with the completed cleanup and PR corrections. This resolves the remaining Sol-high documentation finding.
 - Checked that the checkout and FetchContent pins match and ran `git diff --check`. Documentation-only change; no numerical rerun. Existing tags, historical reviews, and unrelated files are preserved. The user authorized committing and pushing this correction without merging.
+
+
+## Phase 1 core-cleanup campaign — Stage 1A
+
+- Scope clarification: the explicit 2026-10-08 request authorizes Phase 1 with local commits only after independent stage acceptance; this supersedes historical stop notes in `docs/cleanup/`. No push, merge, tag change, history rewrite, branch deletion or Phase 2 is authorized. `AGENTS.md` now points to the active phase record and current review gate.
+- Inventory: added `docs/core-cleanup/phase-1.md` with the tracked-area disposition, umbrella/dependency map, tracked caller classes, input/reference/generated-output distinctions, scientific boundary distinctions, external-consumer questions and Stage 1A uncertainties. No source, tests, data, references, experiments or outputs were modified.
+- Snapshot: branch `refactor/core-cleanup`, base `ac62330e1a43d06f2d4d2c64492817fd7cc6c740`; worktree was clean at inspection. Stage 1A documentation candidate is frozen for independent review. Validation was a read-only tracked-file/CMake/include/caller inspection; no build or tests were run.
+
+- Stage 1A review response: the initial independent Luna review was BLOCKED because the inventory omitted the mesh alignment invariant; it also requested representative routine-to-caller paths. Updated `docs/core-cleanup/phase-1.md`: every input-model `UpperRadius` is emitted as an element node, with possible additional element boundaries inside each layer, as shown by `Radial_Tools::node_info`; added named `Density3D`, `TestTools`, and `Gravity_Tools` callers. Re-review is pending; this is not a PASS or stage acceptance. Generalized `AGENTS.md` to require review before advancing each stage. No source or numerical files changed.
+
+- Stage 1A independent Luna re-review passed after the mesh-invariant clarification and concrete caller map. Coordinator recorded acceptance; documentation-only diff check passed. Stage 1B may now proceed under the authorized workflow.

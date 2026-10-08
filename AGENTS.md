@@ -2,6 +2,8 @@
 
 ## Scope and review gates
 
+For the Phase 1 core-cleanup campaign authorized on 2026-10-08, follow `docs/core-cleanup/phase-1.md` and the latest explicit user request. That authorization supersedes historical stop notes in `docs/cleanup/`; it permits local commits of independently accepted stages and requires a stop for user review after Phase 1. It does not authorize pushes, merges, tag changes, history rewriting, branch deletion, or Phase 2. Freeze each stage candidate for independent review before accepting it and advancing to the next stage.
+
 - Follow the latest explicit user authorization. Older status notes and stop boundaries are historical records and do not override a newer user instruction.
 - Keep changes within the currently approved phase and exact file scope. After each logical code, build, or documentation change, record what changed and its validation state in `implementation_status.md`.
 - Use one active writer. Freeze the candidate before independent review; reviewers inspect a fixed snapshot without editing it.
