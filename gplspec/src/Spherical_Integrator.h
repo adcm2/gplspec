@@ -10,6 +10,8 @@
 #include <PlanetaryModel/All>
 // #include <TomographyModels/All>
 #include "SphericalGeometryPreconditioner.h"
+#include "Shared_Utilities.h"
+#include "Radial_Tools.h"
 #include <FFTWpp/Ranges>
 #include <GSHTrans/All>
 #include <TomographyModels/All>
@@ -31,7 +33,7 @@ namespace GravityFunctions {
 template <typename FLOAT>
 FLOAT
 StandardIntervalMap(const FLOAT &x, const FLOAT &x1, const FLOAT &x2) {
-   return ((x2 - x1) * x + (x1 + x2)) * 0.5;
+   return GPLSpec::detail::StandardIntervalMap(x, x1, x2);
 };
 
 // return scaled x for if needed
@@ -226,9 +228,9 @@ PotentialSolver1D(const sphericalmodel<FLOAT, int> &mymodel,
    // double scdiff = rad_scale / mymodel.OuterRadius();
 
    auto rphys = [&vec_noderadii](int idxelem, double x) {
-      return ((vec_noderadii[idxelem + 1] - vec_noderadii[idxelem]) * x +
-              (vec_noderadii[idxelem + 1] + vec_noderadii[idxelem])) *
-             0.5;
+      return GPLSpec::detail::StandardIntervalMap(
+          x, vec_noderadii[idxelem],
+          vec_noderadii[idxelem + 1]);
    };
    const double bigg_db = 6.6743 * std::pow(10.0, -11.0);
    const double pi_db = 3.1415926535;
@@ -353,14 +355,13 @@ PotentialIntegrator3D(
        std::vector<std::complex<FLOAT>>((lMax + 1) * (lMax + 1), 0.0));
 
    auto rphys = [&vec_noderadii](int idxelem, double x) {
-      return ((vec_noderadii[idxelem + 1] - vec_noderadii[idxelem]) * x +
-              (vec_noderadii[idxelem + 1] + vec_noderadii[idxelem])) *
-             0.5;
+      return GPLSpec::detail::StandardIntervalMap(
+          x, vec_noderadii[idxelem],
+          vec_noderadii[idxelem + 1]);
    };
    auto rscale = [&vec_noderadii](int idxelem, double x) {
-      return ((1.0 - vec_noderadii[idxelem] / vec_noderadii[idxelem + 1]) * x +
-              (1.0 + vec_noderadii[idxelem] / vec_noderadii[idxelem + 1])) *
-             0.5;
+      return GPLSpec::detail::ScaledRadialNodeMap(
+          x, vec_noderadii[idxelem] / vec_noderadii[idxelem + 1]);
    };
    const double bigg_db = 6.6743 * std::pow(10.0, -11.0);
    const double pi_db = 3.1415926535;
@@ -377,7 +378,7 @@ PotentialIntegrator3D(
          for (int idxelem = 0; idxelem < nelem; ++idxelem) {
             auto myratio = vec_noderadii[idxelem] / vec_noderadii[idxelem + 1];
             auto rscaleint = [&myratio](double x) {
-               return ((1.0 - myratio) * x + (1.0 + myratio)) * 0.5;
+               return GPLSpec::detail::ScaledRadialNodeMap(x, myratio);
             };
             for (int idxpoly = 0; idxpoly < npoly + 1; ++idxpoly) {
                vec_f[idxelem + 1] +=
@@ -422,9 +423,8 @@ PotentialIntegrator3D(
          }
          if (idxl == 0) {
             auto rscaleint = [&vec_noderadii](double x) {
-               return ((vec_noderadii[1] - vec_noderadii[0]) * x +
-                       (vec_noderadii[1] + vec_noderadii[0])) *
-                      0.5;
+               return GPLSpec::detail::StandardIntervalMap(
+                   x, vec_noderadii[0], vec_noderadii[1]);
             };
             for (int idxpoly = 0; idxpoly < npoly + 1; ++idxpoly) {
                vec_g[0] += q.W(idxpoly) * vec_denslm[idxpoly][0] *
@@ -479,9 +479,9 @@ TomographyModelTransform(
    // std::cout << "lmax: " << lMax << ", nMax: " << nMax << std::endl;
 
    auto rphys = [&vec_noderadii](int idxelem, double x) {
-      return ((vec_noderadii[idxelem + 1] - vec_noderadii[idxelem]) * x +
-              (vec_noderadii[idxelem + 1] + vec_noderadii[idxelem])) *
-             0.5;
+      return GPLSpec::detail::StandardIntervalMap(
+          x, vec_noderadii[idxelem],
+          vec_noderadii[idxelem + 1]);
    };
 
    // Make a random coefficient.
@@ -563,9 +563,9 @@ TomographyModelTransformReferential(
    // std::cout << "lmax: " << lMax << ", nMax: " << nMax << std::endl;
 
    auto rphys = [&vec_noderadii](int idxelem, double x) {
-      return ((vec_noderadii[idxelem + 1] - vec_noderadii[idxelem]) * x +
-              (vec_noderadii[idxelem + 1] + vec_noderadii[idxelem])) *
-             0.5;
+      return GPLSpec::detail::StandardIntervalMap(
+          x, vec_noderadii[idxelem],
+          vec_noderadii[idxelem + 1]);
    };
 
    // Make a random coefficient.
@@ -1767,10 +1767,6 @@ class PoissonSphericalHarmonic {
    SPHVEC solve(const int &lval, const SPHVEC &vec_force) {
       assert(m_isInitialized && "Not initialized");
       assert(((lval < lmax + 1) && (lval > -1)) && "Incorrect l");
-      std::cout << "Rows: " << vec_force.rows()
-                << ". Columns: " << vec_force.cols() << std::endl;
-      std::cout << "Rows: " << vec_specelem[0].rows()
-                << ". Columns: " << vec_specelem[0].cols() << std::endl;
       auto vecsol = chol_solver.solve(vec_force);
 
       return vecsol;

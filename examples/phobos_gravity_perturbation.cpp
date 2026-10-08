@@ -39,10 +39,14 @@ main() {
    using MRange = GSHTrans::All;
    using NRange = GSHTrans::All;
    using Grid = GSHTrans::GaussLegendreGrid<double, MRange, NRange>;
+   timer1.start();
    Density3D phobosfull(scaledensity, pathtofile, npoly, lMax, lengthnorm,
                         timenorm, massnorm, 0.1, 1.5, 0);
+   timer1.stop("Time to construct full model");
+   timer1.start();
    Density3D phobos(scaledensity, pathtofile, lsmall, npoly, lMax, lengthnorm,
                     timenorm, massnorm, 0.1, 1.5, 0);
+   timer1.stop("Time to construct small model");
 
    /////////////////////////////////////////////////////////////////////////////
    // exact
@@ -50,7 +54,7 @@ main() {
    // get gravitational field
    timer1.start();
    auto stdvec_potsol =
-       FindGravitationalPotential(phobosfull, std::pow(10.0, -12.0));
+       FindGravitationalPotential(phobosfull, std::pow(10.0, -6.0));
    timer1.stop("Time for gravity with full model");
 
    timer1.start();

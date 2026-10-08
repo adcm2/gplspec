@@ -1,0 +1,44 @@
+diff --git a/FFTWpp/src/Core.h b/FFTWpp/src/Core.h
+index c19ff7d..c9f1975 100644
+--- a/FFTWpp/src/Core.h
++++ b/FFTWpp/src/Core.h
+@@ -121,7 +121,7 @@ using vector = std::vector<T, Allocator<T>>;
+  * `fftwl_cleanup` to release all wisdom, threads, and other global data for all
+  * precisions. It should be called once when your program is finished with FFTW.
+  */
+-void CleanUp() {
++inline void CleanUp() {
+   fftwf_cleanup();
+   fftw_cleanup();
+   fftwl_cleanup();
+diff --git a/FFTWpp/src/Wisdom.h b/FFTWpp/src/Wisdom.h
+index 209b5a7..2a68208 100644
+--- a/FFTWpp/src/Wisdom.h
++++ b/FFTWpp/src/Wisdom.h
+@@ -29,7 +29,7 @@ namespace FFTWpp {
+  * about. The function will assert if the file cannot be written to.
+  * @param filename The path to the file where wisdom will be saved.
+  */
+-void ExportWisdom(const std::string& filename) {
++inline void ExportWisdom(const std::string& filename) {
+   int io = fftw_export_wisdom_to_filename(filename.c_str());
+   assert(io == 0);
+ }
+@@ -42,7 +42,7 @@ void ExportWisdom(const std::string& filename) {
+  * read.
+  * @param filename The path to the file from which to load wisdom.
+  */
+-void ImportWisdom(const std::string& filename) {
++inline void ImportWisdom(const std::string& filename) {
+   int io = fftw_import_wisdom_from_filename(filename.c_str());
+   assert(io == 0);
+ }
+@@ -54,7 +54,7 @@ void ImportWisdom(const std::string& filename) {
+  * or long double (`fftwl_plan`) precisions. To forget all wisdom, one
+  * must call `fftwf_forget_wisdom()` and `fftwl_forget_wisdom()` separately.
+  */
+-void ForgetWisdom() { fftw_forget_wisdom(); }
++inline void ForgetWisdom() { fftw_forget_wisdom(); }
+ 
+ /**
+  * @brief Generates wisdom for complex-to-complex, real-to-complex, or

@@ -1,0 +1,22 @@
+{
+  "source_repository": "https://github.com/adcm2/Gravitational_Field",
+  "source_commit": "50a0264427d6de7f1fef4ef340932b3c2f361241",
+  "files": [
+    {
+      "path": "examples/ellipticity_test.cpp",
+      "sha256": "e1b74ac71cf5e429755458b4c7f98ab7bcb8854882df4c97317364e23c43e3bb"
+    },
+    {
+      "path": "work/ellipticityplot.py",
+      "sha256": "92b513ceff51f48d39f65968954b64fa63f8b3ac47b0ee57a88ae8aa57e722d5"
+    },
+    {
+      "path": "Gravitational_Field/TestEllipticity",
+      "sha256": "b21a0fa55513b3e18f3885c855bf07bfc3b61f3189ad878fb563f47528695019"
+    },
+    {
+      "path": "Gravitational_Field/src/ellipticitytools.h",
+      "sha256": "7882ea79f76712d0e900ccc56778f16a215e37f6ba081a36c6fa804755d9f23f"
+    }
+  ]
+}

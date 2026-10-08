@@ -1,0 +1,3 @@
+# Unified-diff context may intentionally retain whitespace from pinned upstream
+# source. Do not normalize it: git apply uses this context to reject drift.
+cmake/patches/*.patch whitespace=-blank-at-eol

@@ -4,8 +4,96 @@
 #include <string>
 #include <fstream>
 #include "../Radial_Tools.h"
+#include "../Shared_Utilities.h"
 #include "Earth_Density_Models_3D.h"
 #include <GSHTrans/All>
+
+namespace GPLSpec::detail {
+
+struct RotationOutputAngles {
+   double alpha;
+   double beta;
+   double gamma;
+};
+
+inline RotationOutputAngles
+RotationOutputAnglesFor(const std::vector<double> &vec_p1,
+                        const std::vector<double> &vec_p2) {
+   double theta1 = vec_p1[0];
+   double phi1 = vec_p1[1];
+   double theta2 = vec_p2[0];
+   double phi2 = vec_p2[1];
+   double cosphi = std::cos(theta2) * std::cos(theta1) +
+                   std::sin(theta2) * std::sin(theta1) * std::cos(phi2 - phi1);
+   double sinphi = std::sqrt(1 - cosphi * cosphi);
+   auto tmp1 = std::sin(theta2) * std::cos(theta1) * std::cos(phi2) -
+               std::cos(theta2) * std::sin(theta1) * std::cos(phi1);
+   auto tmp2 = std::cos(theta2) * std::sin(theta1) * std::sin(phi1) -
+               std::sin(theta2) * std::cos(theta1) * std::sin(phi2);
+   auto tmp3 = std::sin(theta2) * std::sin(theta1) * std::sin(phi2 - phi1);
+   auto tmp4 = -std::cos(theta1) * cosphi + std::cos(theta2);
+   auto tmp5 = std::cos(theta1) * sinphi;
+
+   if (std::abs(tmp1) < std::numeric_limits<double>::epsilon()) {
+      tmp1 = 0.0;
+   }
+   if (std::abs(tmp2) < std::numeric_limits<double>::epsilon()) {
+      tmp2 = 0.0;
+   }
+   if (std::abs(tmp4) < std::numeric_limits<double>::epsilon()) {
+      tmp4 = 0.0;
+   }
+   if (std::abs(tmp5) < std::numeric_limits<double>::epsilon()) {
+      tmp5 = 0.0;
+   }
+
+   double alpha = std::atan2(tmp1, tmp2);
+   double beta = std::acos(tmp3 / sinphi);
+   double gamma = std::atan2(tmp4, tmp5);
+   return {alpha, beta, gamma};
+}
+
+inline std::vector<Eigen::MatrixXcd>
+RotationOutputMatrices(int lMax, double alpha, double beta, double gamma) {
+   auto vec_wig = std::vector<Eigen::MatrixXcd>(lMax + 1);
+   auto wigtemp =
+       GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
+                        GSHTrans::Single, GSHTrans::ColumnMajor>(
+           lMax, lMax, lMax, beta);
+   for (int l = 0; l < lMax + 1; ++l) {
+      Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
+      auto multval = GPLSpec::detail::RotationHarmonicNormalization(l);
+      for (int m = -l; m < l + 1; ++m) {
+         auto dl = wigtemp[m];
+         for (int mp = -l; mp < l + 1; ++mp) {
+            std::complex<double> i1(0.0, 1.0);
+            auto tmpmult =
+                multval * exp(i1 * (static_cast<double>(m) * gamma +
+                                    static_cast<double>(mp) * alpha));
+            mat_tmp(m + l, mp + l) = dl[l, mp] * tmpmult;
+         }
+      }
+      vec_wig[l] = mat_tmp;
+   }
+   return vec_wig;
+}
+
+template <class Grid>
+inline void
+ForwardAndExpandRealScalarPair(
+    const Grid &grid, int lMax, const std::vector<double> &first_spatial,
+    const std::vector<double> &second_spatial,
+    std::vector<std::complex<double>> &first_nonnegative,
+    std::vector<std::complex<double>> &second_nonnegative,
+    std::vector<std::complex<double>> &first_full,
+    std::vector<std::complex<double>> &second_full) {
+   grid.ForwardTransformation(lMax, 0, first_spatial, first_nonnegative);
+   grid.ForwardTransformation(lMax, 0, second_spatial, second_nonnegative);
+   ExpandRealScalarCoefficients(lMax, first_nonnegative, first_full);
+   ExpandRealScalarCoefficients(lMax, second_nonnegative, second_full);
+}
+
+}   // namespace GPLSpec::detail
 
 namespace GeneralEarthModels {
 
@@ -392,38 +480,8 @@ Density3D::RotateSliceToEquator(
    double beta = std::acos(tmp3 / sinphi);
    double gamma = std::atan2(tmp4, tmp5);
 
-   // declare vector of matrices
-   // int lmax_v = 2;
-   // double theta_rot = std::numbers::pi_v<double> / 2.0;
-   auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
-   auto wigtemp =
-       GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
-                        GSHTrans::Single, GSHTrans::ColumnMajor>(
-           _grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
-   for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
-      // temporary
-      Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
-      int rowidx = 0;
-      auto multval = std::sqrt((4.0 * 3.1415926535) / (2 * l + 1));
-
-      // fill out matrix
-      for (int m = -l; m < l + 1; ++m) {
-         // auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
-         auto dl = wigtemp[m];
-         // int colidx = 0;
-         for (int mp = -l; mp < l + 1; ++mp) {
-            std::complex<double> i1(0.0, 1.0);
-            auto tmpmult =
-                multval * exp(i1 * (static_cast<double>(m) * gamma +
-                                    static_cast<double>(mp) * alpha));
-            mat_tmp(m + l, mp + l) = dl[l, mp] * tmpmult;
-            // ++colidx;
-         }
-         // ++rowidx;
-      }
-      vec_wig[l] = mat_tmp;
-      // std::cout << "\n" << mat_tmp << "\n";
-   }
+   auto vec_wig = GPLSpec::detail::RotationOutputMatrices(
+       _grid.MaxDegree(), alpha, beta, gamma);
    int nelem = this->Num_Elements();
    // double normfactor = this->PotentialNorm();
    std::vector<std::vector<std::vector<std::complex<double>>>> vec_output(
@@ -883,81 +941,14 @@ Density3D::ReferentialOutputRotated(
     const std::vector<std::vector<std::vector<std::complex<double>>>>
         &vec_fullinformation) const {
 
-   // get rotation information
-   double theta1 = vec_p1[0];
-   double phi1 = vec_p1[1];
-   double theta2 = vec_p2[0];
-   double phi2 = vec_p2[1];
-   double cosphi = std::cos(theta2) * std::cos(theta1) +
-                   std::sin(theta2) * std::sin(theta1) * std::cos(phi2 - phi1);
-   double sinphi = std::sqrt(1 - cosphi * cosphi);
-   auto tmp1 = std::sin(theta2) * std::cos(theta1) * std::cos(phi2) -
-               std::cos(theta2) * std::sin(theta1) * std::cos(phi1);
-   auto tmp2 = std::cos(theta2) * std::sin(theta1) * std::sin(phi1) -
-               std::sin(theta2) * std::cos(theta1) * std::sin(phi2);
-   auto tmp3 = std::sin(theta2) * std::sin(theta1) * std::sin(phi2 - phi1);
-   auto tmp4 = -std::cos(theta1) * cosphi + std::cos(theta2);
-   auto tmp5 = std::cos(theta1) * sinphi;
-
-   if (std::abs(tmp1) < std::numeric_limits<double>::epsilon()) {
-      tmp1 = 0.0;
-   }
-   if (std::abs(tmp2) < std::numeric_limits<double>::epsilon()) {
-      tmp2 = 0.0;
-   }
-   if (std::abs(tmp4) < std::numeric_limits<double>::epsilon()) {
-      tmp4 = 0.0;
-   }
-   if (std::abs(tmp5) < std::numeric_limits<double>::epsilon()) {
-      tmp5 = 0.0;
-   }
-
-   double alpha = std::atan2(tmp1, tmp2);
-   double beta = std::acos(tmp3 / sinphi);
-   double gamma = std::atan2(tmp4, tmp5);
-
-   std::cout << "\ntmp1: " << tmp1 << ", tmp2: " << tmp2 << ", alpha: " << alpha
-             << "\n";
-
-   std::cout << "\n\n\n" << alpha << " " << beta << " " << gamma << "\n\n\n";
-   // declare vector of matrices
-   // int lmax_v = 2;
-   // double theta_rot = std::numbers::pi_v<double> / 2.0;
-   auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
-   auto wigtemp =
-       GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
-                        GSHTrans::Single, GSHTrans::ColumnMajor>(
-           _grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
-   std::cout << "Check 0\n";
-   for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
-      // temporary
-      Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
-      int rowidx = 0;
-      auto multval = std::sqrt((4.0 * 3.1415926535) / (2 * l + 1));
-
-      // fill out matrix
-      for (int m = -l; m < l + 1; ++m) {
-         // auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
-         auto dl = wigtemp[m];
-         // int colidx = 0;
-         for (int mp = -l; mp < l + 1; ++mp) {
-            std::complex<double> i1(0.0, 1.0);
-            auto tmpmult =
-                multval * exp(i1 * (static_cast<double>(m) * gamma +
-                                    static_cast<double>(mp) * alpha));
-            mat_tmp(m + l, mp + l) = dl[l, mp] * tmpmult;
-            // ++colidx;
-         }
-         // ++rowidx;
-      }
-      vec_wig[l] = mat_tmp;
-      // std::cout << "\n" << mat_tmp << "\n";
-   }
+   auto rotation_angles = GPLSpec::detail::RotationOutputAnglesFor(vec_p1, vec_p2);
+   auto vec_wig = GPLSpec::detail::RotationOutputMatrices(
+       _grid.MaxDegree(), rotation_angles.alpha, rotation_angles.beta,
+       rotation_angles.gamma);
    int nelem = this->Num_Elements();
 
    assert(vec_fullinformation.size() == this->Num_Elements());
 
-   std::cout << "Check 1\n";
    // outputting result
    // std::string pathtofile = "./work/cleanbench1.out";
    // std::string pathtofile = str_pathtofolder + "/MatrixSolutionRotated.out";
@@ -979,14 +970,7 @@ Density3D::ReferentialOutputRotated(
        _num_layers, std::vector<std::vector<std::complex<double>>>(
                         _poly_ord + 1, std::vector<std::complex<double>>(
                                            coefficientnumberall, 0.0)));
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
-   std::cout << "Check 2\n";
+
    // std::cout << "Hello pre hlm\n";
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -1001,27 +985,11 @@ Density3D::ReferentialOutputRotated(
          // looping over l,m values
          // std::size_t mycheckidx =
          //     (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         int idx = 0;
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            // deal with -ve m:
-            for (int idxm = -idxl; idxm < 0; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] =
-                   std::pow(-1.0, idxm) * std::conj(tmp_h[idxlm]);
-               ++idx;
-            }
-
-            //+ve m:
-            for (int idxm = 0; idxm < idxl + 1; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] = tmp_h[idxlm];
-               ++idx;
-            }
-         }
+         GPLSpec::detail::ExpandRealScalarCoefficients(
+             lMax, tmp_h, vec_hlm[idxelem][idxnode]);
       }
    }
 
-   std::cout << "Check 3\n";
    // perform rotations
    //  double normfactor = this->PotentialNorm();
    std::vector<std::vector<std::vector<std::complex<double>>>> vec_output(
@@ -1058,7 +1026,6 @@ Density3D::ReferentialOutputRotated(
       }
    };
 
-   std::cout << "Check 4\n";
    for (int i = 0; i < nelem; ++i) {
 
       // transform to spatial
@@ -1066,9 +1033,17 @@ Density3D::ReferentialOutputRotated(
       auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
       std::vector<std::complex<double>> vectmp(spatialsize),
           vechrot(spatialsize);
-      _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
-      _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);
-
+      // Internal duplicated-radius rows use the preceding element's upper
+      // node, preserving the inner-side trace and endpoint behavior.
+      if (i == 0) {
+         _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
+         _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);
+      } else {
+         _grid.InverseTransformation(
+             lmax, 0, vec_output[i - 1][this->Poly_Order()], vectmp);
+         _grid.InverseTransformation(
+             lmax, 0, vec_roth[i - 1][this->Poly_Order()], vechrot);
+      }
       // output
       int idxspatial = 0;
       for (auto it : _grid.CoLatitudes()) {
@@ -1088,7 +1063,6 @@ Density3D::ReferentialOutputRotated(
       file2 << std::endl;
    };
 
-   std::cout << "Check 5\n";
    {
 
       // transform to spatial
@@ -1132,71 +1106,10 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
                                      std::vector<double> &vec_p2,
                                      bool physical = false) const {
 
-   // get rotation information
-   double theta1 = vec_p1[0];
-   double phi1 = vec_p1[1];
-   double theta2 = vec_p2[0];
-   double phi2 = vec_p2[1];
-   double cosphi = std::cos(theta2) * std::cos(theta1) +
-                   std::sin(theta2) * std::sin(theta1) * std::cos(phi2 - phi1);
-   double sinphi = std::sqrt(1 - cosphi * cosphi);
-   auto tmp1 = std::sin(theta2) * std::cos(theta1) * std::cos(phi2) -
-               std::cos(theta2) * std::sin(theta1) * std::cos(phi1);
-   auto tmp2 = std::cos(theta2) * std::sin(theta1) * std::sin(phi1) -
-               std::sin(theta2) * std::cos(theta1) * std::sin(phi2);
-   auto tmp3 = std::sin(theta2) * std::sin(theta1) * std::sin(phi2 - phi1);
-   auto tmp4 = -std::cos(theta1) * cosphi + std::cos(theta2);
-   auto tmp5 = std::cos(theta1) * sinphi;
-
-   if (std::abs(tmp1) < std::numeric_limits<double>::epsilon()) {
-      tmp1 = 0.0;
-   }
-   if (std::abs(tmp2) < std::numeric_limits<double>::epsilon()) {
-      tmp2 = 0.0;
-   }
-   if (std::abs(tmp4) < std::numeric_limits<double>::epsilon()) {
-      tmp4 = 0.0;
-   }
-   if (std::abs(tmp5) < std::numeric_limits<double>::epsilon()) {
-      tmp5 = 0.0;
-   }
-
-   double alpha = std::atan2(tmp1, tmp2);
-   double beta = std::acos(tmp3 / sinphi);
-   double gamma = std::atan2(tmp4, tmp5);
-
-   std::cout << "\ntmp1: " << tmp1 << ", tmp2: " << tmp2 << ", alpha: " << alpha
-             << "\n";
-
-   std::cout << "\n\n\n" << alpha << " " << beta << " " << gamma << "\n\n\n";
-   // declare vector of matrices
-   // int lmax_v = 2;
-   // double theta_rot = std::numbers::pi_v<double> / 2.0;
-   auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
-   auto wigtemp =
-       GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
-                        GSHTrans::Single, GSHTrans::ColumnMajor>(
-           _grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
-   std::cout << "Check 0\n";
-   for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
-      // temporary
-      Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
-      int rowidx = 0;
-      auto multval = std::sqrt((4.0 * 3.1415926535) / (2 * l + 1));
-
-      // fill out matrix
-      for (int m = -l; m < l + 1; ++m) {
-         auto dl = wigtemp[m];
-         for (int mp = -l; mp < l + 1; ++mp) {
-            std::complex<double> i1(0.0, 1.0);
-            auto tmpmult =
-                multval * exp(i1 * (static_cast<double>(m) * gamma +
-                                    static_cast<double>(mp) * alpha));
-            mat_tmp(m + l, mp + l) = dl[l, mp] * tmpmult;
-         }
-      }
-      vec_wig[l] = mat_tmp;
-   }
+   auto rotation_angles = GPLSpec::detail::RotationOutputAnglesFor(vec_p1, vec_p2);
+   auto vec_wig = GPLSpec::detail::RotationOutputMatrices(
+       _grid.MaxDegree(), rotation_angles.alpha, rotation_angles.beta,
+       rotation_angles.gamma);
    int nelem = this->Num_Elements();
 
    // assert(vec_fullinformation.size() == this->Num_Elements());
@@ -1208,7 +1121,7 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
    auto file2 = std::ofstream(pathtofile);
    // int nelem = this->Num_Elements();
    // int nelem = this->node_data.NumberOfElements();
-   double normfactor = this->PotentialNorm();
+   double normfactor = this->DensityNorm();
    // get vec_hlm
    auto coefficientnumber = GSHTrans::GSHIndices<GSHTrans::NonNegative>(
                                 _grid.MaxDegree(), _grid.MaxDegree(), 0)
@@ -1223,13 +1136,7 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
                         _poly_ord + 1, std::vector<std::complex<double>>(
                                            coefficientnumberall, 0.0)));
    auto vec_rholm = vec_hlm;
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
+
    // std::cout << "Hello pre hlm\n";
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -1254,32 +1161,9 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
             // }
          }
          // std::cout << "Check 2a " << idxelem << " " << idxnode << "\n";
-         _grid.ForwardTransformation(lMax, 0, _vec_h[idxelem][idxnode], tmp_h);
-         _grid.ForwardTransformation(lMax, 0, vec_denstmp, tmp_rho);
-
-         // looping over l,m values
-         // std::size_t mycheckidx =
-         //     (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         int idx = 0;
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            // deal with -ve m:
-            for (int idxm = -idxl; idxm < 0; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] =
-                   std::pow(-1.0, idxm) * std::conj(tmp_h[idxlm]);
-               vec_rholm[idxelem][idxnode][idx] =
-                   std::pow(-1.0, idxm) * std::conj(tmp_rho[idxlm]);
-               ++idx;
-            }
-
-            //+ve m:
-            for (int idxm = 0; idxm < idxl + 1; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] = tmp_h[idxlm];
-               vec_rholm[idxelem][idxnode][idx] = tmp_rho[idxlm];
-               ++idx;
-            }
-         }
+         GPLSpec::detail::ForwardAndExpandRealScalarPair(
+             _grid, lMax, _vec_h[idxelem][idxnode], vec_denstmp, tmp_h,
+             tmp_rho, vec_hlm[idxelem][idxnode], vec_rholm[idxelem][idxnode]);
       }
    }
 
@@ -1331,8 +1215,19 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
       auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
       std::vector<std::complex<double>> vectmp(spatialsize),
           vechrot(spatialsize);
-      _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
-      _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);
+
+      // Internal duplicated-radius density rows use the preceding element's
+      // upper node, the inner-side trace for plotting density through the
+      // surface. The first and final endpoints retain their existing nodes.
+      if (i == 0) {
+         _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
+         _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);
+      } else {
+         _grid.InverseTransformation(
+             lmax, 0, vec_output[i - 1][this->Poly_Order()], vectmp);
+         _grid.InverseTransformation(
+             lmax, 0, vec_roth[i - 1][this->Poly_Order()], vechrot);
+      }
 
       // output
       int idxspatial = 0;
@@ -1409,75 +1304,10 @@ Density3D::PhysicalOutputRotated(
     const std::vector<std::vector<std::vector<std::complex<double>>>>
         &vec_fullinformation) const {
 
-   // get rotation information
-   double theta1 = vec_p1[0];
-   double phi1 = vec_p1[1];
-   double theta2 = vec_p2[0];
-   double phi2 = vec_p2[1];
-   double cosphi = std::cos(theta2) * std::cos(theta1) +
-                   std::sin(theta2) * std::sin(theta1) * std::cos(phi2 - phi1);
-   double sinphi = std::sqrt(1 - cosphi * cosphi);
-   auto tmp1 = std::sin(theta2) * std::cos(theta1) * std::cos(phi2) -
-               std::cos(theta2) * std::sin(theta1) * std::cos(phi1);
-   auto tmp2 = std::cos(theta2) * std::sin(theta1) * std::sin(phi1) -
-               std::sin(theta2) * std::cos(theta1) * std::sin(phi2);
-   auto tmp3 = std::sin(theta2) * std::sin(theta1) * std::sin(phi2 - phi1);
-   auto tmp4 = -std::cos(theta1) * cosphi + std::cos(theta2);
-   auto tmp5 = std::cos(theta1) * sinphi;
-
-   if (std::abs(tmp1) < std::numeric_limits<double>::epsilon()) {
-      tmp1 = 0.0;
-   }
-   if (std::abs(tmp2) < std::numeric_limits<double>::epsilon()) {
-      tmp2 = 0.0;
-   }
-   if (std::abs(tmp4) < std::numeric_limits<double>::epsilon()) {
-      tmp4 = 0.0;
-   }
-   if (std::abs(tmp5) < std::numeric_limits<double>::epsilon()) {
-      tmp5 = 0.0;
-   }
-
-   double alpha = std::atan2(tmp1, tmp2);
-   double beta = std::acos(tmp3 / sinphi);
-   double gamma = std::atan2(tmp4, tmp5);
-
-   std::cout << "\ntmp1: " << tmp1 << ", tmp2: " << tmp2 << ", alpha: " << alpha
-             << "\n";
-
-   std::cout << "\n\n\n" << alpha << " " << beta << " " << gamma << "\n\n\n";
-   // declare vector of matrices
-   // int lmax_v = 2;
-   // double theta_rot = std::numbers::pi_v<double> / 2.0;
-   auto vec_wig = std::vector<Eigen::MatrixXcd>(_grid.MaxDegree() + 1);
-   auto wigtemp =
-       GSHTrans::Wigner<double, GSHTrans::Ortho, GSHTrans::All, GSHTrans::All,
-                        GSHTrans::Single, GSHTrans::ColumnMajor>(
-           _grid.MaxDegree(), _grid.MaxDegree(), _grid.MaxDegree(), beta);
-   for (int l = 0; l < _grid.MaxDegree() + 1; ++l) {
-      // temporary
-      Eigen::MatrixXcd mat_tmp = Eigen::MatrixXcd::Zero(2 * l + 1, 2 * l + 1);
-      int rowidx = 0;
-      auto multval = std::sqrt((4.0 * 3.1415926535) / (2 * l + 1));
-
-      // fill out matrix
-      for (int m = -l; m < l + 1; ++m) {
-         // auto wigtemp = GSHTrans::Wigner(l, l, m, beta);
-         auto dl = wigtemp[m];
-         // int colidx = 0;
-         for (int mp = -l; mp < l + 1; ++mp) {
-            std::complex<double> i1(0.0, 1.0);
-            auto tmpmult =
-                multval * exp(i1 * (static_cast<double>(m) * gamma +
-                                    static_cast<double>(mp) * alpha));
-            mat_tmp(m + l, mp + l) = dl[l, mp] * tmpmult;
-            // ++colidx;
-         }
-         // ++rowidx;
-      }
-      vec_wig[l] = mat_tmp;
-      // std::cout << "\n" << mat_tmp << "\n";
-   }
+   auto rotation_angles = GPLSpec::detail::RotationOutputAnglesFor(vec_p1, vec_p2);
+   auto vec_wig = GPLSpec::detail::RotationOutputMatrices(
+       _grid.MaxDegree(), rotation_angles.alpha, rotation_angles.beta,
+       rotation_angles.gamma);
    int nelem = this->Num_Elements();
 
    assert(vec_fullinformation.size() == this->Num_Elements());
@@ -1503,13 +1333,7 @@ Density3D::PhysicalOutputRotated(
        _num_layers, std::vector<std::vector<std::complex<double>>>(
                         _poly_ord + 1, std::vector<std::complex<double>>(
                                            coefficientnumberall, 0.0)));
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
+
    // std::cout << "Hello pre hlm\n";
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -1524,23 +1348,8 @@ Density3D::PhysicalOutputRotated(
          // looping over l,m values
          // std::size_t mycheckidx =
          //     (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         int idx = 0;
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            // deal with -ve m:
-            for (int idxm = -idxl; idxm < 0; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] =
-                   std::pow(-1.0, idxm) * std::conj(tmp_h[idxlm]);
-               ++idx;
-            }
-
-            //+ve m:
-            for (int idxm = 0; idxm < idxl + 1; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] = tmp_h[idxlm];
-               ++idx;
-            }
-         }
+         GPLSpec::detail::ExpandRealScalarCoefficients(
+             lMax, tmp_h, vec_hlm[idxelem][idxnode]);
       }
    }
 
@@ -1587,8 +1396,17 @@ Density3D::PhysicalOutputRotated(
       auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
       std::vector<std::complex<double>> vectmp(spatialsize),
           vechrot(spatialsize);
-      _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
-      _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);
+      // Internal duplicated-radius rows use the preceding element's upper
+      // node, preserving the inner-side trace and endpoint behavior.
+      if (i == 0) {
+         _grid.InverseTransformation(lmax, 0, vec_output[i][0], vectmp);
+         _grid.InverseTransformation(lmax, 0, vec_roth[i][0], vechrot);
+      } else {
+         _grid.InverseTransformation(
+             lmax, 0, vec_output[i - 1][this->Poly_Order()], vectmp);
+         _grid.InverseTransformation(
+             lmax, 0, vec_roth[i - 1][this->Poly_Order()], vechrot);
+      }
 
       // output
       int idxspatial = 0;

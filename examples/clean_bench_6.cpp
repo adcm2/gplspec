@@ -39,29 +39,6 @@ main() {
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
    // declare model and find the potential
-   // mapping class
-   // class inp_map {
-   //  public:
-   //    inp_map() {};
-   //    inp_map(const double h, const double r) : _h{h}, _prad{r} {};
-   //    auto RadialMapping(int i) const {
-   //       auto lambdamap = [hmult = _h, pr = _prad](double r, double theta,
-   //                                                 double phi) {
-   //          double rscale = r / pr;
-   //          // return hmult * std::sin(theta) * std::sin(phi) * r * (1.0 -
-   //          // rscale);
-   //          return hmult * std::sin(theta) * std::cos(theta) * std::sin(phi)
-   //          *
-   //                 r * (1.0 - rscale);
-   //       };
-   //       return lambdamap;
-   //    }
-
-   //  private:
-   //    double _h = 0.0;
-   //    double _prad = 1.0;
-   // };
-
    h = 2;
    lmax = 20;
 
@@ -90,15 +67,6 @@ main() {
        FindGravitationalPotential(testtomo, std::pow(10.0, -14.0));
    timer1.stop("Time for 3D");
 
-   //    std::cout << "lm components at 0\n\n";
-   //    int mycount = 0;
-   //    for (auto idx : stdvec_potsol[0][0]) {
-   //       ++mycount;
-   //       if (std::abs(idx) > std::pow(10.0, -15.0)) {
-   //          std::cout << "Damn: " << mycount << " " << idx << "\n";
-   //       }
-   //    }
-   //    std::cout << "\n\n";
    // solution using spherical integration method:
    timer1.start();
    auto vec_integral_potential = GravitationalSphericalIntegral(testtomo);
@@ -126,10 +94,6 @@ main() {
    testtomo.ReferentialOutputAtElement(pathtofolderlm, stdvec_potsol);
    testtomo.OutputAtElement(pathtofolderlm, vec_integral_potential);
    testtomo.ReferentialOutputAtElement(pathtofolderlm, stdvec_senskernel, true);
-   //  equivalent_sphere.OutputAtElement(pathtofolder, inp_radii2,
-   //  vec_exactsol2);
-
-   //    testprem.OutputAtElement(pathtofolder, vec_exactsol);
 
    return 0;
 }

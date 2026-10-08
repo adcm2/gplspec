@@ -2,6 +2,8 @@
 #define DENSITY_EARTH_MODEL_CONSTRUCTORS_3D_H
 
 #include <random>
+#include "../Shared_Utilities.h"
+#include "Model_Construction_Utilities.h"
 namespace GeneralEarthModels {
 // template <class model>
 //    requires PlanetaryModel::BasicSphericalDensityModel<model, int, double>
@@ -178,10 +180,8 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
                              std::pow(ilength_norm, 3.0)),
       potential_norm(std::pow(ilength_norm / itime_norm, 2.0)) {
 
-   _q = GaussQuad::GaussLobattoLegendreQuadrature1D<double>(npoly + 1);
-   _grid = Grid(lMax, 2);
-   // polynomial order
-   _poly_ord = _q.N() - 1;
+   GPLSpec::model_detail::InitializeModelDiscretization(
+       _q, _grid, _poly_ord, npoly, lMax);
 
    // now this constructor deals with reading in Phobos data in particular
    // find length of file
@@ -280,16 +280,8 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
    std::cout << "# layers: " << _num_layers << "\n";
    // std::cout << "Made node_data\n";
    // finding _mat_gaussderiv
-   _mat_gaussderiv.resize(_poly_ord + 1, _poly_ord + 1);
-   {
-      auto pleg = Interpolation::LagrangePolynomial(_q.Points().begin(),
-                                                    _q.Points().end());
-      for (int idxi = 0; idxi < _poly_ord + 1; ++idxi) {
-         for (int idxj = 0; idxj < _poly_ord + 1; ++idxj) {
-            _mat_gaussderiv(idxi, idxj) = pleg.Derivative(idxi, _q.X(idxj));
-         }
-      }
-   }
+   _mat_gaussderiv =
+       GPLSpec::detail::GaussDerivativeMatrix(_q, _poly_ord);
    // std::cout << "Made gauss_derivative\n";
    //////////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////////
@@ -299,7 +291,8 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
    // then need to find a
    auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
    // std::cout << "Got spatialsize\n";
-   _vec_h = vvvecdb(_num_layers, vvecdb(_q.N(), vecdb(spatialsize, 0.0)));
+   _vec_h = GPLSpec::model_detail::InitializeScalarFieldStorage(
+      _num_layers, _q.N(), spatialsize, 0.0);
    std::vector<double> vec_outerradius(spatialsize, 0.0);
    // std::vector<std::complex<double>> vec_outerrad(spatialsize, 0.0);
    // perform SH transform to get physical outer radius
@@ -369,13 +362,7 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
        _num_layers, std::vector<std::vector<std::complex<double>>>(
                         npoly + 1, std::vector<std::complex<double>>(
                                        coefficientnumberall, 0.0)));
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
+
    // std::cout << "Hello pre hlm\n";
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -390,28 +377,14 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
          // looping over l,m values
          // std::size_t mycheckidx =
          //     (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         int idx = 0;
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            // deal with -ve m:
-            for (int idxm = -idxl; idxm < 0; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] =
-                   std::pow(-1.0, idxm) * std::conj(tmp_h[idxlm]);
-               ++idx;
-            }
-
-            //+ve m:
-            for (int idxm = 0; idxm < idxl + 1; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] = tmp_h[idxlm];
-               ++idx;
-            }
-         }
+         GPLSpec::detail::ExpandRealScalarCoefficients(
+             lMax, tmp_h, vec_hlm[idxelem][idxnode]);
       }
    }
    // // std::cout << "Hello pre j\n";
    // finding j
-   _vec_j = vvvecdb(_num_layers, vvecdb(_q.N(), vecdb(spatialsize, 0.0)));
+   _vec_j = GPLSpec::model_detail::InitializeScalarFieldStorage(
+      _num_layers, _q.N(), spatialsize, 0.0);
    {
       // declaring typenames
       using veccomp = std::vector<double>;
@@ -799,11 +772,9 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
                              std::pow(itime_norm, 2.0) /
                              std::pow(ilength_norm, 3.0)),
       potential_norm(std::pow(ilength_norm / itime_norm, 2.0)) {
-   _q = GaussQuad::GaussLobattoLegendreQuadrature1D<double>(npoly + 1);
+   GPLSpec::model_detail::InitializeModelDiscretization(
+       _q, _grid, _poly_ord, npoly, lMax);
 
-   _grid = Grid(lMax, 2);
-   // polynomial order
-   _poly_ord = _q.N() - 1;
 
    // find radial mesh
    node_data = Radial_Tools::RadialMesh(
@@ -813,16 +784,8 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
    std::cout << "The number of elements is: " << _num_layers << "\n";
 
    // finding _mat_gaussderiv
-   _mat_gaussderiv.resize(_poly_ord + 1, _poly_ord + 1);
-   {
-      auto pleg = Interpolation::LagrangePolynomial(_q.Points().begin(),
-                                                    _q.Points().end());
-      for (int idxi = 0; idxi < _poly_ord + 1; ++idxi) {
-         for (int idxj = 0; idxj < _poly_ord + 1; ++idxj) {
-            _mat_gaussderiv(idxi, idxj) = pleg.Derivative(idxi, _q.X(idxj));
-         }
-      }
-   }
+   _mat_gaussderiv =
+       GPLSpec::detail::GaussDerivativeMatrix(_q, _poly_ord);
 
    //////////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////////
@@ -831,37 +794,12 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
    // need to actually fill out h
    // then need to find a
    auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
-   _vec_h = vvvecdb(_num_layers, vvecdb(_q.N(), vecdb(spatialsize, 0.0)));
+   _vec_h = GPLSpec::model_detail::InitializeScalarFieldStorage(
+      _num_layers, _q.N(), spatialsize, 0.0);
 
    // fill out h from mapping
-   for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
-
-      int laynum = node_data.LayerNumber(idxelem);
-      // std::cout << "Layer number: " << laynum << "\n";
-      // looping through nodes
-      for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
-         auto radr = node_data.NodeRadius(idxelem, idxnode);
-         auto multfact = 1.0;
-         auto raduse = radr;
-
-         // check if within planet
-         if (radr > node_data.PlanetRadius()) {
-            raduse = node_data.PlanetRadius();
-            multfact = (node_data.OuterRadius() - radr) /
-                       (node_data.OuterRadius() - node_data.PlanetRadius());
-         }
-
-         // fill out h
-         int idxspatial = 0;
-         for (auto it : _grid.CoLatitudes()) {
-            for (auto ip : _grid.Longitudes()) {
-               _vec_h[idxelem][idxnode][idxspatial] =
-                   inp_map.RadialMapping(laynum)(raduse, it, ip) * multfact;
-               ++idxspatial;
-            }
-         }
-      }
-   }
+   GPLSpec::model_detail::PopulateRadialMappingGeometry(
+       node_data, _grid, inp_map, _num_layers, npoly, _vec_h);
 
    // finding hlm
    //  length of coefficients for YLM
@@ -874,13 +812,7 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
        _num_layers, std::vector<std::vector<std::complex<double>>>(
                         npoly + 1, std::vector<std::complex<double>>(
                                        coefficientnumberall, 0.0)));
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
+
    // std::cout << "Hello pre hlm\n";
    // fill out h from mapping
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
@@ -895,28 +827,14 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
          // looping over l,m values
          // std::size_t mycheckidx =
          //     (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         int idx = 0;
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            // deal with -ve m:
-            for (int idxm = -idxl; idxm < 0; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] =
-                   std::pow(-1.0, idxm) * std::conj(tmp_h[idxlm]);
-               ++idx;
-            }
-
-            //+ve m:
-            for (int idxm = 0; idxm < idxl + 1; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] = tmp_h[idxlm];
-               ++idx;
-            }
-         }
+         GPLSpec::detail::ExpandRealScalarCoefficients(
+             lMax, tmp_h, vec_hlm[idxelem][idxnode]);
       }
    }
    // std::cout << "Hello pre j\n";
    // finding j
-   _vec_j = vvvecdb(_num_layers, vvecdb(_q.N(), vecdb(spatialsize, 0.0)));
+   _vec_j = GPLSpec::model_detail::InitializeScalarFieldStorage(
+      _num_layers, _q.N(), spatialsize, 0.0);
    {
       // declaring typenames
       using veccomp = std::vector<double>;
@@ -1305,27 +1223,17 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
       potential_norm(
           std::pow(inp_model.LengthNorm() / inp_model.TimeNorm(), 2.0)) {
 
-   _q = GaussQuad::GaussLobattoLegendreQuadrature1D<double>(npoly + 1);
+   GPLSpec::model_detail::InitializeModelDiscretization(
+       _q, _grid, _poly_ord, npoly, lMax);
 
-   _grid = Grid(lMax, 2);
-   // polynomial order
-   _poly_ord = _q.N() - 1;
 
    // find radial mesh
    node_data = Radial_Tools::RadialMesh(inp_model, _q, max_radial_step, maxrad);
    _num_layers = node_data.NumberOfElements();
 
    // finding _mat_gaussderiv
-   _mat_gaussderiv.resize(_poly_ord + 1, _poly_ord + 1);
-   {
-      auto pleg = Interpolation::LagrangePolynomial(_q.Points().begin(),
-                                                    _q.Points().end());
-      for (int idxi = 0; idxi < _poly_ord + 1; ++idxi) {
-         for (int idxj = 0; idxj < _poly_ord + 1; ++idxj) {
-            _mat_gaussderiv(idxi, idxj) = pleg.Derivative(idxi, _q.X(idxj));
-         }
-      }
-   }
+   _mat_gaussderiv =
+       GPLSpec::detail::GaussDerivativeMatrix(_q, _poly_ord);
 
    //////////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////////
@@ -1334,36 +1242,13 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
    // need to actually fill out h
    // then need to find a
    auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
-   _vec_h = vvvecdb(_num_layers, vvecdb(_q.N(), vecdb(spatialsize, 0.0)));
-   _vec_j = vvvecdb(_num_layers, vvecdb(_q.N(), vecdb(spatialsize, 1.0)));
+   _vec_h = GPLSpec::model_detail::InitializeScalarFieldStorage(
+      _num_layers, _q.N(), spatialsize, 0.0);
+   _vec_j = GPLSpec::model_detail::InitializeScalarFieldStorage(
+      _num_layers, _q.N(), spatialsize, 1.0);
    // fill out h from mapping
-   for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
-
-      int laynum = node_data.LayerNumber(idxelem);
-
-      // looping through nodes
-      for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
-         auto radr = node_data.NodeRadius(idxelem, idxnode);
-         auto multfact = 1.0;
-         auto raduse = radr;
-
-         // check if within planet
-         if (radr > node_data.PlanetRadius()) {
-            raduse = node_data.PlanetRadius();
-            multfact = (node_data.OuterRadius() - radr) /
-                       (node_data.OuterRadius() - node_data.PlanetRadius());
-         }
-
-         // fill out h
-         int idxspatial = 0;
-         for (auto it : _grid.CoLatitudes()) {
-            for (auto ip : _grid.Longitudes()) {
-               _vec_h[idxelem][idxnode][idxspatial++] =
-                   inp_map.RadialMapping(laynum)(raduse, it, ip) * multfact;
-            }
-         }
-      }
-   }
+   GPLSpec::model_detail::PopulateRadialMappingGeometry(
+       node_data, _grid, inp_map, _num_layers, npoly, _vec_h);
 
    // finding hlm
    //  length of coefficients for YLM
@@ -1376,13 +1261,7 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
        _num_layers, std::vector<std::vector<std::complex<double>>>(
                         npoly + 1, std::vector<std::complex<double>>(
                                        coefficientnumberall, 0.0)));
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
+
 
    // std::cout << "Finding hlm\n";
    // fill out h from mapping
@@ -1398,23 +1277,8 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
          // looping over l,m values
          // std::size_t mycheckidx =
          //     (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         int idx = 0;
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            // deal with -ve m:
-            for (int idxm = -idxl; idxm < 0; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] =
-                   std::pow(-1.0, idxm) * std::conj(tmp_h[idxlm]);
-               ++idx;
-            }
-
-            //+ve m:
-            for (int idxm = 0; idxm < idxl + 1; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               vec_hlm[idxelem][idxnode][idx] = tmp_h[idxlm];
-               ++idx;
-            }
-         }
+         GPLSpec::detail::ExpandRealScalarCoefficients(
+             lMax, tmp_h, vec_hlm[idxelem][idxnode]);
       }
    }
    // std::cout << "Finding j\n";
@@ -1761,16 +1625,6 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
       depth *= lengthnorm / 1000.0;
       return depth;
    };
-   auto colatitude_to_latitude = [](double colatitude) {
-      double pi_db = 3.1415926535897932384626433;
-      double latitude = pi_db / 2.0 - colatitude;
-      latitude *= 180.0 / pi_db;
-      return latitude;
-   };
-   auto longitude_to_degrees = [](double longitude) {
-      double multfact = 180.0 / 3.1415926535897932384626433;
-      return multfact * longitude;
-   };
 
    // density
    // find all model information
@@ -1800,24 +1654,8 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
          vecdb tmp_vec_level_density(spatialsize, density_1D);
          auto depth = rad_to_depth(rad_current, node_data.OuterRadius(),
                                    inp_model.LengthNorm());
-
-         // check within tomography model
-         if (depth > tomo_model.GetDepths()[0] &&
-             depth < tomo_model.GetDepths().back()) {
-
-            // loop over all gridpoints
-            int idxspatial = 0;
-            for (auto idxt : _grid.CoLatitudes()) {
-               auto latitude = colatitude_to_latitude(idxt);
-               for (auto idxp : _grid.Longitudes()) {
-                  auto longitude = longitude_to_degrees(idxp);
-                  tmp_vec_level_density[idxspatial] *=
-                      (1.0 + 0.005 * tomo_model.GetValueAt(depth, longitude,
-                                                           latitude));
-                  ++idxspatial;
-               }
-            }
-         }
+         GPLSpec::model_detail::ApplyReferentialTomographyDensityVariation(
+             tmp_vec_level_density, depth, tomo_model, _grid);
 
          tmp_density.push_back(tmp_vec_level_density);
       }
@@ -1858,15 +1696,13 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
       potential_norm(
           std::pow(inp_model.LengthNorm() / inp_model.TimeNorm(), 2.0)) {
 
-   _q = GaussQuad::GaussLobattoLegendreQuadrature1D<double>(npoly + 1);
+   GPLSpec::model_detail::InitializeModelDiscretization(
+       _q, _grid, _poly_ord, npoly, lMax);
 
    // std::cout << "Hello\n";
    // if (lMax > 1)
-   _grid = Grid(lMax, 2);
 
-   // polynomial order
-   _poly_ord = _q.N() - 1;
-   // std::cout << "Hello 1.1\n";
+      // std::cout << "Hello 1.1\n";
 
    // find radial mesh
    // std::cout << "Hello 1.2\n";
@@ -1875,11 +1711,11 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
    // std::cout << "Hello 2\n";
    // default h
    auto spatialsize = _grid.Longitudes().size() * _grid.CoLatitudes().size();
-   _vec_h = vvvecdb(_num_layers, vvecdb(_q.N(), vecdb(spatialsize, 0.0)));
+   _vec_h = GPLSpec::model_detail::InitializeScalarFieldStorage(
+      _num_layers, _q.N(), spatialsize, 0.0);
    {
-      _vec_j = std::vector<std::vector<std::vector<double>>>(
-          _num_layers, std::vector<std::vector<double>>(
-                           _q.N(), std::vector<double>(spatialsize, 1.0)));
+      _vec_j = GPLSpec::model_detail::InitializeScalarFieldStorage(
+          _num_layers, _q.N(), spatialsize, 1.0);
       Eigen::Matrix3cd mat_a0;
       mat_a0 << 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0;
       _vec_a =
@@ -1889,16 +1725,8 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
    }
    // std::cout << "Hello 3\n";
    // finding _mat_gaussderiv
-   _mat_gaussderiv.resize(_poly_ord + 1, _poly_ord + 1);
-   {
-      auto pleg = Interpolation::LagrangePolynomial(_q.Points().begin(),
-                                                    _q.Points().end());
-      for (int idxi = 0; idxi < _poly_ord + 1; ++idxi) {
-         for (int idxj = 0; idxj < _poly_ord + 1; ++idxj) {
-            _mat_gaussderiv(idxi, idxj) = pleg.Derivative(idxi, _q.X(idxj));
-         }
-      }
-   }
+   _mat_gaussderiv =
+       GPLSpec::detail::GaussDerivativeMatrix(_q, _poly_ord);
    // std::cout << "Hello 4\n";
    // finding the spectral element grid
    _spectral_info = SpectralElementTools::MatrixWeakForm(node_data, _q);
@@ -1910,16 +1738,6 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
       double depth = outerradius - radius;
       depth *= lengthnorm / 1000.0;
       return depth;
-   };
-   auto colatitude_to_latitude = [](double colatitude) {
-      double pi_db = 3.1415926535897932384626433;
-      double latitude = pi_db / 2.0 - colatitude;
-      latitude *= 180.0 / pi_db;
-      return latitude;
-   };
-   auto longitude_to_degrees = [](double longitude) {
-      double multfact = 180.0 / 3.1415926535897932384626433;
-      return multfact * longitude;
    };
 
    // density
@@ -1947,25 +1765,8 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
          vecdb tmp_vec_level_density(spatialsize, density_1D);
          auto depth = rad_to_depth(rad_current, node_data.PlanetRadius(),
                                    inp_model.LengthNorm());
-
-         // check within tomography model
-         if (depth > tomo_model.GetDepths()[0] &&
-             depth < tomo_model.GetDepths().back()) {
-            // std::cout << rad_current << "\n";
-            // loop over all gridpoints
-            int idxspatial = 0;
-            for (auto idxt : _grid.CoLatitudes()) {
-               auto latitude = colatitude_to_latitude(idxt);
-               for (auto idxp : _grid.Longitudes()) {
-                  auto longitude = longitude_to_degrees(idxp);
-                  tmp_vec_level_density[idxspatial] *=
-                      (1.0 + 0.005 * tomo_model.GetValueAt(depth, longitude,
-                                                           latitude));
-                  // tmp_vec_level_density[idxspatial] *= 1.0;
-                  ++idxspatial;
-               }
-            }
-         }
+         GPLSpec::model_detail::ApplyReferentialTomographyDensityVariation(
+             tmp_vec_level_density, depth, tomo_model, _grid);
 
          tmp_density.push_back(tmp_vec_level_density);
       }

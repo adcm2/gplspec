@@ -11,6 +11,4 @@
 #include "src/Spherical_Integrator.h"
 #include "src/Timer_Class.h"
 
-// #include "src/testtools.h"
-
 #endif

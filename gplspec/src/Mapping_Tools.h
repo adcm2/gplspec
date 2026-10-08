@@ -40,7 +40,7 @@ template <typename FLOAT, template <typename, typename, typename> class GRID,
           typename OrderIndexRange, typename IndexRange,
           template <typename, typename> class TOMMODEL,
           template <typename, typename> class TOMPERTMODEL>
-auto
+inline auto
 tom_to_dxi(GRID<FLOAT, OrderIndexRange, IndexRange> &grid, std::size_t npoly,
            std::vector<double> &vec_noderadii,
            std::vector<double> &vec_allradii,
@@ -101,7 +101,7 @@ tom_to_dxi(GRID<FLOAT, OrderIndexRange, IndexRange> &grid, std::size_t npoly,
 
 template <typename FLOAT, template <typename, typename, typename> class GRID,
           typename OrderIndexRange, typename IndexRange>
-auto
+inline auto
 dxi_to_dxilm(
     GRID<FLOAT, OrderIndexRange, IndexRange> &grid, std::size_t npoly,
     std::vector<double> &vec_elemwidth, std::vector<double> &vec_allradii,
@@ -171,7 +171,7 @@ dxi_to_dxilm(
 
 template <typename FLOAT, template <typename, typename, typename> class GRID,
           typename OrderIndexRange, typename IndexRange>
-auto
+inline auto
 dxitodf(GRID<FLOAT, OrderIndexRange, IndexRange> &grid, std::size_t npoly,
         std::vector<double> &vec_elemwidth, std::vector<double> &vec_allradii,
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &_mat_gaussderiv,
@@ -382,7 +382,7 @@ dxitodf(GRID<FLOAT, OrderIndexRange, IndexRange> &grid, std::size_t npoly,
 
 template <typename FLOAT, template <typename, typename, typename> class GRID,
           typename OrderIndexRange, typename IndexRange>
-auto
+inline auto
 h_to_f(GRID<FLOAT, OrderIndexRange, IndexRange> &grid, std::size_t npoly,
        std::vector<double> &vec_elemwidth, std::vector<double> &vec_allradii,
        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &_mat_gaussderiv,
@@ -513,7 +513,7 @@ h_to_f(GRID<FLOAT, OrderIndexRange, IndexRange> &grid, std::size_t npoly,
    return vec_f;
 };
 
-auto
+inline auto
 df_to_da(const EARTHMATRIX3 &vec_a, const EARTHMATRIX3 &vec_invf,
          const EARTHMATRIX3 &vec_df) {
    auto numnodes = vec_a.size();

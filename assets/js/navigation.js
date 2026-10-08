@@ -8,12 +8,12 @@ document.addEventListener("DOMContentLoaded", function () {
       const navLinks = this.nextElementSibling;
       const arrow = this.querySelector(".arrow");
 
-      // Toggle active class
-      this.classList.toggle("active");
-      navLinks.classList.toggle("active");
+      // Toggle expanded class (not active)
+      this.classList.toggle("expanded");
+      navLinks.classList.toggle("expanded");
 
-      // Rotate arrow
-      if (this.classList.contains("active")) {
+      // Rotate arrow - CSS should handle this, but keeping for backwards compatibility
+      if (this.classList.contains("expanded")) {
         arrow.style.transform = "rotate(90deg)";
       } else {
         arrow.style.transform = "rotate(0deg)";
@@ -22,29 +22,20 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Auto-expand section containing current page
-  const currentPath = window.location.pathname;
-  const navLinks = document.querySelectorAll(".nav-links a");
+  const currentLinks = document.querySelectorAll(".nav-links a.current");
 
-  navLinks.forEach(function (link) {
-    if (
-      link.getAttribute("href") === currentPath ||
-      currentPath.includes(link.getAttribute("href"))
-    ) {
-      // Add active class to current link
-      link.classList.add("current");
+  currentLinks.forEach(function (currentLink) {
+    // Find parent section and expand it
+    const parentSection = currentLink.closest(".nav-section");
+    if (parentSection) {
+      const toggle = parentSection.querySelector(".nav-toggle");
+      const navLinksContainer = parentSection.querySelector(".nav-links");
+      const arrow = toggle.querySelector(".arrow");
 
-      // Find parent section and expand it
-      const parentSection = link.closest(".nav-section");
-      if (parentSection) {
-        const toggle = parentSection.querySelector(".nav-toggle");
-        const navLinksContainer = parentSection.querySelector(".nav-links");
-        const arrow = toggle.querySelector(".arrow");
-
-        // Expand the section
-        toggle.classList.add("active");
-        navLinksContainer.classList.add("active");
-        arrow.style.transform = "rotate(90deg)";
-      }
+      // Expand the section using 'expanded' class to match CSS
+      toggle.classList.add("expanded");
+      navLinksContainer.classList.add("expanded");
+      arrow.style.transform = "rotate(90deg)";
     }
   });
 });

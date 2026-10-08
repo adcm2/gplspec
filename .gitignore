@@ -1,4 +1,26 @@
-*.out
+# CMake-generated metadata and default build products
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
 build/
+_build/
+out/build/
+
+# Compiler and linker outputs
+*.o
+*.obj
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# Project output data (keep the frozen baseline fixture)
+*.out
+!tests/reference/homogeneous-MatrixSolution.out
+
+# Documentation generator outputs
 /html/
 /latex/

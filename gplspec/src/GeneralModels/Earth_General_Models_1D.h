@@ -3,6 +3,7 @@
 
 #include "../Radial_Tools.h"
 #include "../Spectral_Element_Tools.h"
+#include "../Shared_Utilities.h"
 #include "../testtools.h"
 #include <GaussQuad/All>
 #include <Interpolation/All>
@@ -25,7 +26,7 @@ class spherical_1D {
                 double);
 
    // with path to file
-   spherical_1D(const std::string &, const GaussQuad::Quadrature1D<double> &,
+   inline spherical_1D(const std::string &, const GaussQuad::Quadrature1D<double> &,
                 double, double);
 
    /////////////////////////////////////////////////////
@@ -71,22 +72,22 @@ class spherical_1D {
    // model information
    // these all have the form (int idxelem, int idxpoly). They output the model
    // value within the idxelem element at the idxpoly node
-   auto isSolid(int, int);
-   auto Density(int, int);
-   auto VP(int, int);
-   auto VPV(int, int);
-   auto VPH(int, int);
-   auto VS(int, int);
-   auto VSV(int, int);
-   auto VSH(int, int);
-   auto Eta(int, int);
-   auto A(int, int);
-   auto C(int, int);
-   auto N(int, int);
-   auto L(int, int);
-   auto F(int, int);
-   auto Kappa(int, int);
-   auto Mu(int, int);
+   inline auto isSolid(int, int);
+   inline auto Density(int, int);
+   inline auto VP(int, int);
+   inline auto VPV(int, int);
+   inline auto VPH(int, int);
+   inline auto VS(int, int);
+   inline auto VSV(int, int);
+   inline auto VSH(int, int);
+   inline auto Eta(int, int);
+   inline auto A(int, int);
+   inline auto C(int, int);
+   inline auto N(int, int);
+   inline auto L(int, int);
+   inline auto F(int, int);
+   inline auto Kappa(int, int);
+   inline auto Mu(int, int);
 
  private:
    int _num_layers, _poly_ord;
@@ -141,16 +142,8 @@ spherical_1D::spherical_1D(const model &inp_model,
        Radial_Tools::RadialMesh(inp_model, q, max_radial_step, maxrad);
 
    // finding _mat_gaussderiv
-   _mat_gaussderiv.resize(_poly_ord + 1, _poly_ord + 1);
-   {
-      auto pleg = Interpolation::LagrangePolynomial(_q.Points().begin(),
-                                                    _q.Points().end());
-      for (int idxi = 0; idxi < _poly_ord + 1; ++idxi) {
-         for (int idxj = 0; idxj < _poly_ord + 1; ++idxj) {
-            _mat_gaussderiv(idxi, idxj) = pleg.Derivative(idxi, _q.X(idxj));
-         }
-      }
-   }
+   _mat_gaussderiv =
+       GPLSpec::detail::GaussDerivativeMatrix(_q, _poly_ord);
 
    // find all model information
    _vec_density.resize(_num_layers);

@@ -2,6 +2,7 @@
 #define RADIAL_TOOLS_H
 
 #include <GaussQuad/All>
+#include "Shared_Utilities.h"
 #include <PlanetaryModel/All>
 
 namespace Radial_Tools {
@@ -10,7 +11,7 @@ namespace Radial_Tools {
 template <typename FLOAT>
 FLOAT
 StandardIntervalMap(const FLOAT &x, const FLOAT &x1, const FLOAT &x2) {
-   return ((x2 - x1) * x + (x1 + x2)) * 0.5;
+   return GPLSpec::detail::StandardIntervalMap(x, x1, x2);
 };
 
 // determines radii of all nodes within the decomposition
@@ -195,7 +196,7 @@ class RadialMesh {
    RadialMesh() {};   // default
 
    // simple constructor
-   RadialMesh(const double, const double, const double,
+   inline RadialMesh(const double, const double, const double,
               const GaussQuad::Quadrature1D<double> &);
 
    template <class sphericalmodel>

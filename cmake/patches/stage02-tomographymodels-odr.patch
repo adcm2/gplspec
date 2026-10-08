@@ -1,0 +1,35 @@
+diff --git a/TomographyModels/src/ShellExec.hpp b/TomographyModels/src/ShellExec.hpp
+index d4c4611..db8c7c9 100644
+--- a/TomographyModels/src/ShellExec.hpp
++++ b/TomographyModels/src/ShellExec.hpp
+@@ -25,7 +25,7 @@
+  * Key words: Shell, standard output.
+ *************************************************/
+ 
+-std::string ShellExec(const std::string &cmd, const bool& removeTrailing=false) {
++inline std::string ShellExec(const std::string &cmd, const bool& removeTrailing=false) {
+     std::array<char, 128> buffer;
+     std::string ans;
+     std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
+diff --git a/TomographyModels/src/Tomography.hpp b/TomographyModels/src/Tomography.hpp
+index 66ee11d..50ef533 100644
+--- a/TomographyModels/src/Tomography.hpp
++++ b/TomographyModels/src/Tomography.hpp
+@@ -173,7 +173,7 @@ public:
+     void ReverseLatitude();
+ };
+ 
+-double Tomography::GetValueAt(const double &d, double lo, const double &la, const bool &outofBound) const
++inline double Tomography::GetValueAt(const double &d, double lo, const double &la, const bool &outofBound) const
+ {
+ 
+     if (v.empty())
+@@ -220,7 +220,7 @@ double Tomography::GetValueAt(const double &d, double lo, const double &la, cons
+     return LinearInterp(p, pp);
+ }
+ 
+-void Tomography::ReverseLatitude()
++inline void Tomography::ReverseLatitude()
+ {
+     auto old_data = GetValues();
+     std::size_t lat_len = GetLatitudes().size(), lon_len = GetLongitudes().size();

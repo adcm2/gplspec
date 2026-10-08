@@ -5,6 +5,7 @@ cmake_minimum_required (VERSION 3.5)
 
 
 project(gplspec)
+include(CTest)
 # get_filename_component(Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
@@ -30,76 +31,98 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Locate  FFTW3
 
 
-# add in Eigen3
+# Reuse a parent-provided Eigen target, or fetch the baseline version's headers.
+# Declare Eigen first so nested dependencies reuse the same source and target.
 include(FetchContent)
-FetchContent_Declare(
-  Eigen3
-  GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-  GIT_TAG 3.4.1
-)
-FetchContent_MakeAvailable(Eigen3)
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
+if(TARGET Eigen3::Eigen)
+  FetchContent_Declare(Eigen3
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/eigen-system")
+else()
+  FetchContent_Declare(Eigen3
+    URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+    URL_HASH SHA256=8586084f71f9bde545ee7fa6d00288b264a2b7ac3607b974e54d13e7162c1c72
+    # Populate headers only; do not configure Eigen's own tests or install rules.
+    SOURCE_SUBDIR gplspec-header-only)
+endif()
 
-
-# set(CMAKE_MODULE_PATH "/usr/local/include/eigen/cmake/;${CMAKE_MODULE_PATH}")
-# find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(FFTW)
 
-
-# find_package (FFTWpp)
-include(FetchContent)
+# Declare the complete dependency closure before populating any project. This
+# ensures these immutable revisions win over transitive branch declarations.
+FetchContent_Declare(
+  NumericConcepts
+  GIT_REPOSITORY https://github.com/da380/NumericConcepts.git
+  GIT_TAG 888126b44a979fda5dcc9d0b11d80cb8b3f61b52
+)
 FetchContent_Declare(
   FFTWpp
-  GIT_REPOSITORY git@github.com:da380/FFTWpp
-  GIT_TAG main
+  GIT_REPOSITORY https://github.com/da380/FFTWpp.git
+  GIT_TAG 06cc1fb04c4398407839e637cb5414b179b0e9c3
 )
-FetchContent_MakeAvailable(FFTWpp)
-
-include(FetchContent)
 FetchContent_Declare(
   GaussQuad
-  GIT_REPOSITORY git@github.com:da380/GaussQuad
-  GIT_TAG main
+  GIT_REPOSITORY https://github.com/da380/GaussQuad.git
+  GIT_TAG fbe37c7eef93695317dbf9c48715110bf64c800f
 )
-FetchContent_MakeAvailable(GaussQuad)
-
-include(FetchContent)
-FetchContent_Declare(
-  PlanetaryModel
-  GIT_REPOSITORY git@github.com:da380/PlanetaryModel
-  GIT_TAG newdev
-)
-FetchContent_MakeAvailable(PlanetaryModel)
-
-include(FetchContent)
-FetchContent_Declare(
-  GSHTRANS
-  GIT_REPOSITORY git@github.com:adcm2/GSHTrans
-  GIT_TAG main
-)
-FetchContent_MakeAvailable(GSHTRANS)
-
-
-include(FetchContent)
-FetchContent_Declare(
-  TomographyModels
-  GIT_REPOSITORY git@github.com:adcm2/TomographyModels
-  GIT_TAG main
-)
-FetchContent_MakeAvailable(TomographyModels)
-
-include(FetchContent)
 FetchContent_Declare(
   Interpolation
-  GIT_REPOSITORY git@github.com:da380/Interpolation.git
-  GIT_TAG main
+  GIT_REPOSITORY https://github.com/da380/Interpolation.git
+  GIT_TAG 1557aad571ceac1899c2d3795696aa4047f41d8a
 )
+FetchContent_Declare(
+  PlanetaryModel
+  GIT_REPOSITORY https://github.com/da380/PlanetaryModel.git
+  GIT_TAG a801b9e9c2205c3b32daa745fd523d596a9d2ede
+)
+FetchContent_Declare(
+  GSHTRANS
+  GIT_REPOSITORY https://github.com/adcm2/GSHTrans.git
+  GIT_TAG f0a0e24a3579ceb7c99f8782328cae14bef195de
+)
+FetchContent_Declare(
+  TomographyModels
+  GIT_REPOSITORY https://github.com/adcm2/TomographyModels.git
+  GIT_TAG 97869aeea3f3d87901705db59b5de975960bd9e1
+)
+
+# Populate in the dependency order required by the interface targets.
+FetchContent_MakeAvailable(Eigen3)
+if(NOT TARGET Eigen3::Eigen)
+  add_library(Eigen3::Eigen INTERFACE IMPORTED GLOBAL)
+  set_target_properties(Eigen3::Eigen PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${eigen3_SOURCE_DIR}")
+endif()
+FetchContent_MakeAvailable(NumericConcepts)
+FetchContent_MakeAvailable(FFTWpp)
+FetchContent_MakeAvailable(GaussQuad)
 FetchContent_MakeAvailable(Interpolation)
+FetchContent_MakeAvailable(PlanetaryModel)
+FetchContent_MakeAvailable(GSHTRANS)
+FetchContent_MakeAvailable(TomographyModels)
+
+# The pinned FFTWpp and TomographyModels revisions define non-template
+# functions in headers without `inline`. Patch only build-owned FetchContent
+# copies, and fail closed on partial/unexpected source state.
+include(cmake/ApplyPinnedOdrPatch.cmake)
+gplspec_apply_odr_patch(
+  "${FFTWpp_SOURCE_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/stage02-fftwpp-odr.patch"
+  "${CMAKE_BINARY_DIR}")
+gplspec_apply_odr_patch(
+  "${TomographyModels_SOURCE_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/stage02-tomographymodels-odr.patch"
+  "${CMAKE_BINARY_DIR}")
 
 # Set up the library
 add_library (gplspec INTERFACE)
 target_link_libraries(gplspec INTERFACE Eigen3::Eigen)
 # target_link_libraries(Gravitational_Field INTERFACE FFTWpp)
 target_link_libraries(gplspec INTERFACE GaussQuad)
+target_link_libraries(gplspec INTERFACE GSHTrans)
+target_link_libraries(gplspec INTERFACE FFTWpp PlanetaryModel TomographyModels)
 # target_link_libraries(gplspec INTERFACE PlanetaryModel)
 # target_link_libraries(gplspec INTERFACE GSHTRANS)
 # target_link_libraries(Gravitational_Field INTERFACE TomographyModels)
@@ -122,6 +145,10 @@ find_package(OpenMP REQUIRED)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     # We're in the root, define additional targets for developers.
     option(MY_PROJECT_BUILD_EXAMPLES   "whether or not examples should be built" ON)
+    option(GPLSPEC_BUILD_BASELINE_HARNESS "build deterministic stage-00 baseline harness" OFF)
+    if(GPLSPEC_BUILD_BASELINE_HARNESS)
+      add_subdirectory(tests)
+    endif()
     # option(MY_PROJECT_BUILD_TESTS      "whether or not tests should be built" ON)
 
 

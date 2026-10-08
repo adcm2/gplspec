@@ -4,16 +4,18 @@
 #include "../Pseudospectral_Matrix_Wrapper.h"
 #include "../Pseudospectral_Matrix_Wrapper3D.h"
 #include "../Radial_Tools.h"
+#include "../Shared_Utilities.h"
 #include "Earth_General_Models_1D.h"
 #include <GSHTrans/All>
 #include <GaussQuad/All>
 #include <Interpolation/All>
 #include <cmath>
+#include "../Timer_Class.h"
 
 namespace Gravity_Tools {
 
 // function for finding the force vector:
-Eigen::VectorXcd
+inline Eigen::VectorXcd
 FindForce(GeneralEarthModels::spherical_1D &inp_model, const int &lMax) {
    // auto intsize = grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();
    // lambda to use in mapping [-1,1] to [idxelem]
@@ -80,7 +82,7 @@ FindForce(GeneralEarthModels::spherical_1D &inp_model, const int &lMax) {
 };
 
 // function for finding the force vector:
-Eigen::VectorXcd
+inline Eigen::VectorXcd
 FindForce(GeneralEarthModels::Density3D &inp_model) {
    // auto intsize = grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();
    // lambda to use in mapping [-1,1] to [idxelem]
@@ -106,13 +108,7 @@ FindForce(GeneralEarthModels::Density3D &inp_model) {
    // constants
    const double pi_db = 3.1415926535897932;
    double multfact = 4.0 * pi_db * inp_model.GravitationalConstant();
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
+   auto indexreal = &GPLSpec::detail::NonNegativeHarmonicIndex;
    // looping over elements
    for (int idxelem = 0; idxelem < nelem; ++idxelem) {
 
@@ -201,7 +197,7 @@ FindForce(GeneralEarthModels::Density3D &inp_model) {
 // function for finding the force vector:
 template <class mapclass>
    requires PlanetaryModel::RadialMappingClass<mapclass>
-Eigen::VectorXcd
+inline Eigen::VectorXcd
 FindBoundaryPerturbationForce(GeneralEarthModels::Density3D &inp_model,
                               mapclass &inp_map) {
    using Real = double;
@@ -214,10 +210,9 @@ FindBoundaryPerturbationForce(GeneralEarthModels::Density3D &inp_model,
    auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
    auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
    auto rphys = [&inp_model](int idxelem, double x) {
-      return (inp_model.Node_Information().ElementWidth(idxelem) * x +
-              (inp_model.Node_Information().ElementUpperRadius(idxelem) +
-               inp_model.Node_Information().ElementLowerRadius(idxelem))) *
-             0.5;
+      return Radial_Tools::StandardIntervalMap(
+          x, inp_model.Node_Information().ElementLowerRadius(idxelem),
+          inp_model.Node_Information().ElementUpperRadius(idxelem));
    };
 
    //    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> _mat_gaussderiv;
@@ -393,7 +388,7 @@ FindBoundaryPerturbationForce(GeneralEarthModels::Density3D &inp_model,
 // the mapping defined by inp_map
 template <class mapclass>
    requires PlanetaryModel::RadialMappingClass<mapclass>
-Eigen::VectorXcd
+inline Eigen::VectorXcd
 AdvectiveBoundaryPerturbation(GeneralEarthModels::Density3D &inp_model,
                               mapclass &inp_map,
                               const Eigen::VectorXcd &vec_phi) {
@@ -407,10 +402,9 @@ AdvectiveBoundaryPerturbation(GeneralEarthModels::Density3D &inp_model,
    auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
    auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
    auto rphys = [&inp_model](int idxelem, double x) {
-      return (inp_model.Node_Information().ElementWidth(idxelem) * x +
-              (inp_model.Node_Information().ElementUpperRadius(idxelem) +
-               inp_model.Node_Information().ElementLowerRadius(idxelem))) *
-             0.5;
+      return Radial_Tools::StandardIntervalMap(
+          x, inp_model.Node_Information().ElementLowerRadius(idxelem),
+          inp_model.Node_Information().ElementUpperRadius(idxelem));
    };
 
    //    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> _mat_gaussderiv;
@@ -613,7 +607,7 @@ AdvectiveBoundaryPerturbation(GeneralEarthModels::Density3D &inp_model,
 
 // find potential
 template <class Grid>
-auto
+inline auto
 FindGravitationalPotential(GeneralEarthModels::spherical_1D &inp_model,
                            Grid &grid, double relerr = std::pow(10.0, -6.0)) {
    using Complex = std::complex<double>;
@@ -649,7 +643,7 @@ FindGravitationalPotential(GeneralEarthModels::spherical_1D &inp_model,
 };
 
 // 3D solver
-auto
+inline auto
 FindGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
                            double relerr = std::pow(10.0, -6.0)) {
    using Complex = std::complex<double>;
@@ -688,7 +682,7 @@ FindGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
    Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
    // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
    std::cout << "Number of iterations: " << solver.iterations() << "\n";
-   std::cout << "Error: " << solver.tolerance() << "\n";
+   std::cout << "Requested tolerance: " << solver.tolerance() << "\n";
    // for (int idx = 0; idx < testsol.size(); ++idx) {
    //    testsol(idx) *= inp_model.PotentialNorm();
    // }
@@ -697,7 +691,7 @@ FindGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
 };
 
 // 3D solver
-auto
+inline auto
 SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
                                    int l, int m,
                                    double relerr = std::pow(10.0, -6.0)) {
@@ -752,7 +746,7 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
 };
 
 // 3D solver
-auto
+inline auto
 SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
                                    std::vector<int> l, std::vector<int> m,
                                    std::vector<double> multval,
@@ -809,7 +803,7 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
 };
 
 // 3D solver
-auto
+inline auto
 FindGravitationalPotentialPerturbation(
     GeneralEarthModels::Density3D &inp_model,
     GeneralEarthModels::MappingPerturbation &inp_map,
@@ -822,7 +816,7 @@ FindGravitationalPotentialPerturbation(
    using CONJG = Eigen::ConjugateGradient<
        MatrixReplacement3D<Complex>, Eigen::Lower | Eigen::Upper,
        Eigen::SphericalGeometryPreconditioner<Complex>>;
-
+   Timer _timer;
    // preconditioning matrix
    Eigen::SparseMatrix<std::complex<double>> testmat =
        -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
@@ -845,11 +839,13 @@ FindGravitationalPotentialPerturbation(
    std::cout << "Force declared\n";
    // BICGSTAB solver;
    CONJG solver;
+   _timer.start();
    solver.compute(mymatrix);
    solver.preconditioner().addmatrix(testmat);
    solver.setTolerance(relerr1);
    Eigen::VectorXcd vecguess = solver.preconditioner().solve(vec_fullforce);
    Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
+   _timer.stop("Time for base solution");
    // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
    std::cout << "Number of iterations: " << solver.iterations() << "\n";
 
@@ -857,6 +853,7 @@ FindGravitationalPotentialPerturbation(
 
    std::cout << "Square norm: " << vec_pertforce.squaredNorm() << "\n";
 
+   _timer.start();
    Eigen::VectorXcd vecguess2 = solver.preconditioner().solve(vec_pertforce);
    solver.setTolerance(relerr2);
    Eigen::VectorXcd vecpertsol =
@@ -864,7 +861,7 @@ FindGravitationalPotentialPerturbation(
    // Eigen::VectorXcd vecpertsol = solver2.solve(vec_pertforce);
    std::cout << "Number of iterations for perturbation solution: "
              << solver.iterations() << "\n";
-
+   _timer.stop("Time for perturbation solution");
    Eigen::VectorXcd fullsol = testsol + vecpertsol;
    // for (int idx = 0; idx < testsol.size(); ++idx) {
    //    testsol(idx) *= inp_model.PotentialNorm();
@@ -876,7 +873,7 @@ FindGravitationalPotentialPerturbation(
 // 3D solver
 template <class mapclass>
    requires PlanetaryModel::RadialMappingClass<mapclass>
-auto
+inline auto
 FindGravitationalPotentialClassicalPerturbation(
     GeneralEarthModels::Density3D &inp_model, mapclass &inp_map,
     double relerr = std::pow(10.0, -6.0)) {
@@ -939,7 +936,7 @@ FindGravitationalPotentialClassicalPerturbation(
 };
 
 // integral solver for spherical model
-auto
+inline auto
 GravitationalSphericalIntegral(GeneralEarthModels::Density3D &inp_model) {
    std::size_t nelem = inp_model.Num_Elements();
    int npoly = inp_model.Poly_Order();
@@ -964,32 +961,19 @@ GravitationalSphericalIntegral(GeneralEarthModels::Density3D &inp_model) {
        std::vector<std::complex<double>>((lMax + 1) * (lMax + 1), 0.0));
 
    auto rphys = [&inp_model](int idxelem, double x) {
-      return (inp_model.Node_Information().ElementWidth(idxelem) * x +
-              (inp_model.Node_Information().ElementUpperRadius(idxelem) +
-               inp_model.Node_Information().ElementLowerRadius(idxelem))) *
-             0.5;
+      return Radial_Tools::StandardIntervalMap(
+          x, inp_model.Node_Information().ElementLowerRadius(idxelem),
+          inp_model.Node_Information().ElementUpperRadius(idxelem));
    };
    auto rscale = [&inp_model](int idxelem, double x) {
-      return ((1.0 -
-               inp_model.Node_Information().ElementLowerRadius(idxelem) /
-                   inp_model.Node_Information().ElementUpperRadius(idxelem)) *
-                  x +
-              (1.0 +
-               inp_model.Node_Information().ElementLowerRadius(idxelem) /
-                   inp_model.Node_Information().ElementUpperRadius(idxelem))) *
-             0.5;
+      return GPLSpec::detail::ScaledRadialNodeMap(
+          x, inp_model.Node_Information().ElementLowerRadius(idxelem) /
+                 inp_model.Node_Information().ElementUpperRadius(idxelem));
    };
    const double bigg_db = inp_model.GravitationalConstant();
    const double pi_db = 3.1415926535897932;
    // return 1.2;
    std::vector<std::complex<double>> vec_g(nelem + 1, 0.0);
-   auto indexreal = [](int l, int m) {
-      if (m < 0) {
-         return (l * (l + 1)) / 2 - m;
-      } else {
-         return (l * (l + 1)) / 2 + m;
-      }
-   };
    auto indexcomp = [](int l, int m) { return l * l + l + m; };
 
    // vector of vectors of vectors to hold information on density
@@ -1034,7 +1018,7 @@ GravitationalSphericalIntegral(GeneralEarthModels::Density3D &inp_model) {
                 inp_model.Node_Information().ElementLowerRadius(idxelem) /
                 inp_model.Node_Information().ElementUpperRadius(idxelem);
             auto rscaleint = [&myratio](double x) {
-               return ((1.0 - myratio) * x + (1.0 + myratio)) * 0.5;
+               return GPLSpec::detail::ScaledRadialNodeMap(x, myratio);
             };
             for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
                vec_f[idxelem + 1] +=
@@ -1081,10 +1065,9 @@ GravitationalSphericalIntegral(GeneralEarthModels::Density3D &inp_model) {
          }
          if (idxl == 0) {
             auto rscaleint = [&inp_model](double x) {
-               return ((inp_model.Node_Information().ElementWidth(0)) * x +
-                       (inp_model.Node_Information().ElementLowerRadius(0) +
-                        inp_model.Node_Information().ElementUpperRadius(0))) *
-                      0.5;
+               return Radial_Tools::StandardIntervalMap(
+                   x, inp_model.Node_Information().ElementLowerRadius(0),
+                   inp_model.Node_Information().ElementUpperRadius(0));
             };
             for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
                vec_g[0] += inp_model.q().W(idxnode) *
@@ -1113,7 +1096,7 @@ GravitationalSphericalIntegral(GeneralEarthModels::Density3D &inp_model) {
    return vec_output;
 }
 
-auto
+inline auto
 HomogeneousSphereIntegral(
     GeneralEarthModels::Density3D &inp_model) {   // exact solution:
    std::vector<double> vec_exactsol(inp_model.Num_Elements() + 1);
@@ -1148,7 +1131,7 @@ HomogeneousSphereIntegral(
    return vec_exactsol;
 };
 
-auto
+inline auto
 HomogeneousSphereIntegral(GeneralEarthModels::Density3D &inp_model,
                           std::vector<double> &inp_radii) {   // exact solution:
    std::vector<double> vec_exactsol(inp_radii.size());

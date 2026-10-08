@@ -4,7 +4,7 @@ title: "Home"
 
 # gplspec: Gravitational potential via pseudospectral particle relabelling and radial spectral elements
 
-Welcome to the documentation for `gplspec`, a C++ library for finding the gravitational potential of arbitrary, heterogeneous planets. The original theory paper for this method is available at https://academic.oup.com/gji/article/219/2/1043/5541065 whilst further theoretical developments and implementation details for gplspec are discussed in https://arxiv.org/abs/2508.07910.
+Welcome to the documentation for `gplspec`, a C++ library for finding the gravitational potential of arbitrary, heterogeneous planets. The original theory paper for this method is available at [https://academic.oup.com/gji/article/219/2/1043/5541065](https://academic.oup.com/gji/article/219/2/1043/5541065) whilst further theoretical developments and implementation details for gplspec are discussed in [https://arxiv.org/abs/2508.07910](https://arxiv.org/abs/2508.07910).
 
 ## Overview
 

@@ -11,6 +11,7 @@
 // #include <TomographyModels/All>
 #include "SphericalGeometryPreconditioner.h"
 #include "Spherical_Integrator.h"
+#include "Shared_Utilities.h"
 #include <FFTWpp/Ranges>
 #include <GSHTrans/All>
 #include <TomographyModels/All>
@@ -62,9 +63,9 @@ FindBoundaryPerturbationForce(
    auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
    auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
    auto rphys = [&vec_noderadii](int idxelem, double x) {
-      return ((vec_noderadii[idxelem + 1] - vec_noderadii[idxelem]) * x +
-              (vec_noderadii[idxelem + 1] + vec_noderadii[idxelem])) *
-             0.5;
+      return GPLSpec::detail::StandardIntervalMap(
+          x, vec_noderadii[idxelem],
+          vec_noderadii[idxelem + 1]);
    };
 
    //    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> _mat_gaussderiv;
@@ -240,9 +241,9 @@ AdvectiveBoundaryPerturbation(
    auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
    auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
    auto rphys = [&vec_noderadii](int idxelem, double x) {
-      return ((vec_noderadii[idxelem + 1] - vec_noderadii[idxelem]) * x +
-              (vec_noderadii[idxelem + 1] + vec_noderadii[idxelem])) *
-             0.5;
+      return GPLSpec::detail::StandardIntervalMap(
+          x, vec_noderadii[idxelem],
+          vec_noderadii[idxelem + 1]);
    };
    // finding \rho \mathbf{s} in canonical components spatially
    // firstly we need to have the background model density and the perturbation
@@ -426,7 +427,7 @@ AdvectiveBoundaryPerturbation(
    return vec_output2;
 };
 
-auto
+inline auto
 filelength(const std::string &filename) {
    std::ifstream inputFile;
    std::string line;
@@ -937,7 +938,7 @@ EarthModel<FLOAT, INTEGRAL>::EarthModel(
 
 // full constructor
 
-void
+inline void
 PhobosRead(const std::string &pathtofile) {
 
    // std::cout << this->density_norm << "\n";

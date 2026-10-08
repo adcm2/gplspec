@@ -13,7 +13,10 @@
 // #include "Timer_Class.h"
 // #include "Earth_Density_Models_3D.h"
 // #include "Earth_General_Models_1D.h"
+#include "GeneralModels/Earth_Density_Models_3D.h"
+#include "GeneralModels/Earth_General_Models_1D.h"
 #include "Radial_Tools.h"
+#include "Shared_Utilities.h"
 #include "Spherical_Integrator.h"
 
 template <typename MRScalar> class MatrixReplacement;
@@ -193,16 +196,8 @@ class MatrixReplacement : public Eigen::EigenBase<MatrixReplacement<MRScalar>> {
          _vec_gaussquadweights.push_back(q.W(idx));
       }
       _matlen = _nelem * _npoly + 1;
-      _mat_gaussderiv.resize(_npoly + 1, _npoly + 1);
-      {
-         auto pleg = Interpolation::LagrangePolynomial(_q.Points().begin(),
-                                                       _q.Points().end());
-         for (int idxi = 0; idxi < _npoly + 1; ++idxi) {
-            for (int idxj = 0; idxj < _npoly + 1; ++idxj) {
-               _mat_gaussderiv(idxi, idxj) = pleg.Derivative(idxi, _q.X(idxj));
-            }
-         }
-      }
+      _mat_gaussderiv =
+          GPLSpec::detail::GaussDerivativeMatrix(_q, _npoly);
    }
    const Quadrature q() const { return _q; }
    RealScalar polyderiv(int idxi, int idxj) const {
@@ -469,17 +464,10 @@ struct generic_product_impl<MatrixReplacement<MRScalar>, Rhs, SparseShape,
                   MATRIX3 mat_a = lhs.mat_a(idxext, idxr);
                   // std::cout << "After declaration of mat_a: " << idxr <<
                   // "\n";
-                  spatial_qm[idxr] -= mat_a(0, 0) * spatial_nzp1[idxr];
-                  spatial_qm[idxr] += mat_a(0, 1) * spatial_nz0[idxr];
-                  spatial_qm[idxr] -= mat_a(0, 2) * spatial_nzm1[idxr];
-
-                  spatial_q0[idxr] -= mat_a(1, 0) * spatial_nzp1[idxr];
-                  spatial_q0[idxr] += mat_a(1, 1) * spatial_nz0[idxr];
-                  spatial_q0[idxr] -= mat_a(1, 2) * spatial_nzm1[idxr];
-
-                  spatial_qp[idxr] -= mat_a(2, 0) * spatial_nzp1[idxr];
-                  spatial_qp[idxr] += mat_a(2, 1) * spatial_nz0[idxr];
-                  spatial_qp[idxr] -= mat_a(2, 2) * spatial_nzm1[idxr];
+                  GPLSpec::detail::ContractCanonicalTensorVector(
+                      mat_a, spatial_nzm1[idxr], spatial_nz0[idxr],
+                      spatial_nzp1[idxr], spatial_qm[idxr], spatial_q0[idxr],
+                      spatial_qp[idxr]);
                }
             }
 
