@@ -8,13 +8,13 @@ Current branch: `refactor/core-cleanup`. Verified starting/base commit: `ac62330
 
 | Stage | Scope | Status |
 |---|---|---|
-| 1A | Tracked-scope inventory and proposed keep/replace/remove decisions | Revision complete; independent re-review pending |
-| 1B | Architecture, proposed public API, workflows and migration boundaries | Not started |
+| 1A | Tracked-scope inventory and proposed keep/replace/remove decisions | Accepted; Luna PASS, local commit `31e75c18f4b52ad1855ae425249a8c2b264ac5a9` |
+| 1B | Architecture, proposed public API, workflows and migration boundaries | Proposal complete; frozen for independent review |
 | 1C | Reproducible correctness baseline, coverage gaps and practical CI | Not started; must capture fresh evidence |
 | 1D | Controlled performance baseline and provisional thresholds | Not started |
 | 1E | Consolidated Phase 1 package and Sol-high review | Not started |
 
-Review verdicts and findings will be recorded in one consolidated Phase 1 review record after the stage reviews. Historical `docs/cleanup/review-stage-*` records describe earlier work and are not reviews of this campaign.
+Review verdicts and findings are recorded in the consolidated Phase 1 review record at `docs/core-cleanup/reviews.md`. Historical `docs/cleanup/review-stage-*` records describe earlier work and are not reviews of this campaign.
 
 ## Stage 1A — inventory and decisions
 
@@ -58,3 +58,97 @@ This inventory is based on `git ls-files`, CMake targets and include relationshi
 5. Which material-interface cases and one-sided conventions are explicitly covered by current frozen evidence?
 
 No production deletion, public API retirement, dataset/output movement, experiment change, or numerical claim is made by this inventory.
+
+
+## Stage 1B — proposed architecture, API and migration
+
+This is a design proposal only. It does not rename, move, retire, or implement any production entry point. The one supported build target remains the C++23 header-only `gplspec` interface target. Scientific conventions and output contracts are preserved pending 1C evidence and later approval.
+
+Keep every current dependency revision unchanged: Eigen 3.4.0 archive SHA-256 `8586084f71f9bde545ee7fa6d00288b264a2b7ac3607b974e54d13e7162c1c72` (unless a parent supplies `Eigen3::Eigen`); NumericConcepts `888126b44a979fda5dcc9d0b11d80cb8b3f61b52`; FFTWpp `06cc1fb04c4398407839e637cb5414b179b0e9c3`; GaussQuad `fbe37c7eef93695317dbf9c48715110bf64c800f`; Interpolation `1557aad571ceac1899c2d3795696aa4047f41d8a`; PlanetaryModel `a801b9e9c2205c3b32daa745fd523d596a9d2ede`; GSHTrans `f0a0e24a3579ceb7c99f8782328cae14bef195de`; and TomographyModels `97869aeea3f3d87901705db59b5de975960bd9e1`. System FFTW/NetCDF versions remain recorded provenance, not enforced CMake pins.
+
+### Responsibility boundaries
+
+| Responsibility | Proposed owner and contract | Current implementation evidence / boundary |
+|---|---|---|
+| Model inputs and units | `models`: construct homogeneous, layered, 1D-file, tomography and mapped models. A model carries explicit unit scales and source metadata; conversions happen at input/output boundaries. Keep external model readers behind adapters. | `spherical_1D`, `Density3D`, factories in `Density_Model_Constructors.h`, `TestTools::EarthModel` and `TestTools::PhobosRead`. Do not change unit formulas or file interpretation in this phase. |
+| Radial discretization | `mesh`: radial element/node locations, polynomial order and quadrature, model-layer assignment, transform sampling grid. Its contract makes every material-layer boundary an element node while permitting smaller elements within a layer. | `Radial_Tools::node_info`, `RadialMesh`, `GaussQuad` quadrature, `SpectralElementTools`. Material layers remain model data; elements remain numerical intervals. |
+| Geometry and mapping | `geometry`: reference/physical coordinate maps, Jacobian and deformation data, and explicit mapping perturbations. Own the invariant that the mapping is one-to-one where required and spherical on the referential radius where current constructors require it. | `Mapping_Tools.h`, `Mapping_Perturbation_Utilities.h`, `MappingPerturbation`, and mapping fields on `Density3D`. Preserve present formulas and conventions. |
+| Operators and forcing | `operators`: a matrix-free potential operator with an explicit complex-vector `apply`, plus force/right-hand-side construction. Operator action should be independently callable from the solver. | `MatrixReplacement`, `MatrixReplacement3D`, `Gravity_Tools::FindForce`, `Pseudospectral_Matrix_Wrapper*.h`. These two wrappers encode 1D vs 3D inputs and are not presumed interchangeable. |
+| Solvers | `solvers`: solve a named operator/right-hand-side with explicit tolerances and report iteration count, estimated solver error, and independently computable residual. The solver owns no model parsing or output. | `Gravity_Tools::FindGravitationalPotential` overloads and Eigen iterative-solver configuration. Preserve methods, options, defaults and stopping behavior until separately validated and approved. |
+| Perturbations and sensitivity | `perturbations`: apply mapping or file-defined perturbations, construct the corresponding forcing/operator terms, solve, and expose sensitivity kernels as named operations. | `Perturbation_Models.h` and `Gravity_Tools::{FindGravitationalPotentialPerturbation,FindGravitationalPotentialClassicalPerturbation,SphericalHarmonicSensitivityKernel}`. Preserve established meanings and conventions. |
+| Scientific I/O | `io`: read supported 1D/tomography/shape input; write model, solution, density and sensitivity products with explicit physical or referential coordinates. Keep plotting as a separate consumer of documented output products. | `testtools.h`, `Density_Model_Return.h`, constructors, and `work/*.py`. Preserve current formats, names and both interface traces where currently emitted. Keep `experimental/` outside production I/O. |
+| Harmonic transforms | A narrow internal adapter described below, owned by the operator/model boundary and implemented by the pinned GSHTrans dependency. It only isolates transform calls and coefficient indexing. | Direct `GSHTrans::GaussLegendreGrid`, `GSHIndices`, `ForwardTransformation`, and `InverseTransformation` calls occur across models, gravity and output. No transform modernization or dependency change is proposed. |
+
+The dependency direction should be model/input -> mesh and geometry -> operators and forcing -> solvers/perturbations -> I/O adapters. Plotting reads output and does not call solver internals. Cross-cutting types such as units, coefficient ordering and output coordinates should be explicit values/contracts rather than hidden global conventions. This is a responsibility map; splitting files is justified only if the resulting dependency direction is real and testable.
+
+### Proposed supported API and workflows
+
+The proposed user-facing facade is intentionally small and uses names below as design names, not implemented declarations. It should provide a single namespace and typed model/solution values, without requiring consumers to include implementation headers. A candidate surface is:
+
+```cpp
+namespace gplspec {
+  namespace models {
+    Model homogeneous(...);
+    Model layered(...);
+    Model from_1d_file(...);
+    Model from_tomography(...);
+    Model with_mapping(...);
+  }
+  Solution solve_potential(const Model&, SolverOptions = {});
+  Solution solve_perturbation(const Model&, const Perturbation&, SolverOptions = {});
+  Kernel sensitivity(const Model&, const SensitivityRequest&, SolverOptions = {});
+  Solution integral_reference(const Model&, const Radii&);
+  void write_solution(const Model&, const Solution&, OutputCoordinates, OutputPath);
+  void write_density(const Model&, OutputCoordinates, OutputPath);
+}
+```
+
+`Model` owns or references radial material inputs, unit scales, discretization and mapping fields with clear lifetime rules. `Solution` identifies the sampled representation and model geometry it belongs to. `SolverOptions` exposes existing tolerance/solver controls without changing their defaults. `OutputCoordinates` is an explicit physical/referential choice; output APIs preserve element ordering, interface traces, rotation conventions and established column/file formats until a separately reviewed format proposal. `integral_reference` is a check/reference workflow, not silently substituted for the matrix-free solve.
+
+Supported scientific workflows to document and keep covered are:
+
+1. Homogeneous sphere and layered 1D model: construct from explicit values or a supported text model; compute the potential and compare with the analytic sphere or independent radial integral where applicable. Existing examples: `clean_bench_1`, `clean_bench_2`; tutorials: `homogeneous_sphere.md`, `tutorial2_prem.md`.
+2. Mapped sphere and 3D tomography: construct from a 1D background, tomography field and mapping; compute potential, optional integral/sensitivity product, then physical or referential output. Existing examples: `clean_bench_3`, `clean_bench_6`; tutorials: `tutorial3_tomo.md`, `tutorial4_surface.md`.
+3. Shape/Phobos model: read the existing shape/density input, construct its model, solve potential, optionally compute sensitivity or perturbation, and write element/slice/rotated outputs. Existing callers: `phobos_gravity.cpp`, `phobos_heterogeneous.cpp`, and `tutorial5_phobos.md`.
+4. Mapping and file perturbations: construct a declared perturbation, calculate the perturbation response and/or classical comparison, and write with the same model/output coordinate metadata. Existing callers include `clean_bench_7`–`clean_bench_10` and `phobos_gravity_perturbation.cpp`.
+
+These workflows define intended support, not evidence that every current example is correct or every solver converges; 1C will establish that. `wignertest` remains a developer/dependency check unless a concrete supported user workflow is identified.
+
+### Existing-entry migration and retirement proposal
+
+| Existing entry point | Proposed destination | Migration and retirement boundary |
+|---|---|---|
+| `gplspec/All`, `Core`, `GeneralModels`, `SimpleModels`, `Test`, `Timer`; target `gplspec` | One documented facade header and target, with narrower module headers available for compile-time cost and clear ownership. | Keep all existing include paths and the target throughout Phase 1 and the initial migration. Update examples/tutorials to the facade only after the Stage 1C consumer build proves it. Retire an umbrella only after external-consumer inventory, a migration window, user approval and a major-version boundary; if external use remains unknown, retain it. |
+| `GeneralEarthModels::Density3D` constructors and `spherical_1D` | `gplspec::models` factories returning typed model values, with units and discretization explicit. | Migrate tracked examples/tests first after parity coverage. Preserve old factories as thin delegates only for an approved bounded migration; do not keep duplicate implementations. Retirement requires downstream-consumer confirmation and approval. |
+| `Gravity_Tools::FindGravitationalPotential`, `FindForce`, integral, perturbation and sensitivity routines | `solve_potential`, explicit force/operator primitives where needed, `integral_reference`, `solve_perturbation`, and `sensitivity`. | Keep numerical kernels and solver defaults; add facade forwarding only after 1C coverage. Low-level force and matrix-adapter calls may become internal after external-use review. No routine is retired in 1B. |
+| `TestTools::EarthModel`, `PhobosRead`, and other readers exposed by `gplspec/Test` | `gplspec::models::from_1d_file` and focused `gplspec::io` readers for tomography and shape data. | First separate readers that are demonstrably production dependencies from test-only helpers. Migrate tracked constructors/examples, then evaluate `gplspec/Test`; preserve current header and functions while downstream use is unknown. |
+| `Density3D` output member methods and direct result containers | `gplspec::io::write_solution`/`write_density` with coordinate choice and explicit output paths. | Keep legacy writer methods forwarding to the common writer during migration; preserve byte-level and scientific output contracts. Retire duplicated writer entry points only after producers, plotting consumers, tests and external consumers are migrated. |
+| `MatrixReplacement*`, direct transform calls, and `Radial_Tools` helpers | Internal `Operator`, transform adapter and `mesh` contracts; expose only an explicitly supported operator action if users need it. | Public status is uncertain because implementation headers are included by umbrellas. Keep them accessible during migration; audit direct downstream use before hiding or removing. |
+
+The migration decision sequence is: answer the external-consumer question; establish 1C numerical and compile coverage; implement one facade path without changing numerical bodies; migrate tracked examples/tests/docs; compare old and new entry points; only then present a concrete retirement list for approval. This proposal does not authorize API deprecation or deletion.
+
+### Future transform seam
+
+Define a compile-time transform adapter with only these operations: construct/query the latitude-longitude sample grid for the requested maximum degree; report the supported coefficient range/count and `(l,m)` indexing; transform spatial samples to coefficients for an explicit spin/order; and transform coefficients back to spatial samples with that same metadata. Inputs/outputs should be spans or equivalent non-owning views, with caller-owned storage. Keep quadrature construction separate from harmonic transform operations.
+
+The adapter contract must preserve the current GSHTrans coefficient ordering, `All` versus `NonNegative` range, spin values `-1/0/+1`, normalization, sign/conjugation behavior, grid points and longitude/latitude conventions. It should not add batching, new storage formats, caching policy or a second transform implementation. GSHTrans remains pinned and is the only backend. Stage 1C should add a parity fixture around the existing GSHTrans calls and coefficient-index boundary. It verifies current behavior; it does not implement this proposed facade or a new adapter. Any facade implementation or transform modernization is later work. This seam is a proposal only; no interface or transform code is added in Stage 1B.
+
+### Mathematical comments and disabled code
+
+Keep comments that explain a mathematical formula, tensor/index ordering, coefficient normalization/sign, unit conversion, mapping condition, material-interface trace, solver stopping meaning, or output convention. The code should remain the authoritative implementation; where a comment states a formula, 1C fixtures should cover the resulting behavior when scientifically material.
+
+Propose removing comments that merely narrate the next line, stale variable names, old file paths, obsolete TODOs presented as current behavior, commented-out debug prints, and disabled implementation blocks after a targeted current-caller/reference search. If a disabled block records a distinct numerical method or historical result, classify and preserve that evidence before removal; do not delete mathematical explanation or historical experiments as comment cleanup. No comment or disabled code is changed in 1B.
+
+### Stage 1C and 1D evidence plan
+
+Stage 1C should begin by classifying and reusing the current smoke, construction, operator, regression and serialization checks. Add only the smallest probes needed to close material gaps; do not build a broad Cartesian test matrix. Separate compile/API evidence, operator evidence, solve evidence and serialization evidence:
+
+- Retain the current umbrella and multi-translation-unit checks; add one minimal external CMake consumer that links only `gplspec` if no existing check provides it. Capture compiler, CMake, system FFTW/NetCDF/Eigen versions, dependency pins and build configuration.
+- Reuse the homogeneous/layered, mapping and tomography fixtures already present. Confirm origin, each aligned material boundary on both element traces, and outer-boundary coverage across those fixtures. Add only a focused assertion for a missing invariant; keep 1D and 3D operator cases distinct.
+- Ensure there is a deterministic nonzero complex-vector action check for each distinct operator adapter, using existing tests where possible. Independently compute `r = b - A*x` for at least one representative solve that performs at least two solver iterations; record absolute/normalized residual, solver-reported error and iteration count. Select a fixture that naturally reaches at least two iterations at its existing requested tolerance; do not loosen tolerance or alter solver settings to force a pass. A zero- or one-iteration homogeneous/serialization fixture does not establish meaningful solve accuracy. Do not add multiple near-duplicate solver fixtures solely to multiply coverage.
+- Reuse existing perturbation, sensitivity and accepted PR #7 output checks. Add a narrow probe only if a required behavior is uncovered: physical/referential output, density normalization, rotated/slice output, or both traces at a discontinuous interface. Keep serialized-output evidence separate from solver evidence. Do not build `experimental/`.
+- Preserve all frozen references and tolerances. The known discrepancy in the original 1D Hermitian-form check remains an observed limitation to record and assess; 1C does not repair the algorithm, loosen the check, or hide the discrepancy.
+
+Stage 1D should use fixed input checksums and optimized builds with controlled thread counts. Candidate workloads are a small homogeneous sphere for setup overhead (`clean_bench_1`), layered PREM (`clean_bench_2`), a mapped model (`clean_bench_3`), and tomography/sensitivity (`clean_bench_6`); select and freeze exact sizes after the 1C nontriviality check. Measure model/input setup, discretization, one matrix-vector action, cold first solve, warmed complete solve, peak resident memory, and clean optimized build time separately. Run repeated fresh processes and repeated warmed operations; record hardware, compiler/build flags, thread settings, solver iterations, achieved independent residual, raw timings/logs and variability. Choose provisional regression thresholds only after observing run-to-run noise; if a workload or resource metric cannot be measured repeatably, mark it unavailable rather than infer a threshold. No timing-driven algorithm changes are in scope.
+
+No 1C test implementation, baseline capture or 1D measurement has started in Stage 1B.
