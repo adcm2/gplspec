@@ -1,0 +1,16 @@
+[
+  {
+    "file": "work/Bench2/IntegralSolution.out",
+    "max_abs": 0.0,
+    "changed": 0,
+    "tolerance_failures": 0,
+    "all_finite": true
+  },
+  {
+    "file": "work/Bench2/MatrixSolution.out",
+    "max_abs": 0.0,
+    "changed": 0,
+    "tolerance_failures": 0,
+    "all_finite": true
+  }
+]

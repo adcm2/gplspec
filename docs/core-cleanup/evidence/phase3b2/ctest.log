@@ -1,0 +1,38 @@
+Internal ctest changing into directory: /tmp/gplspec-phase3-candidate-release
+Test project /tmp/gplspec-phase3-candidate-release
+      Start  1: stage1c_file_tomography_solver
+ 1/16 Test  #1: stage1c_file_tomography_solver .................   Passed    0.11 sec
+      Start  2: stage1c_external_consumer
+ 2/16 Test  #2: stage1c_external_consumer ......................   Passed   10.39 sec
+      Start  3: stage02_patch_application
+ 3/16 Test  #3: stage02_patch_application ......................   Passed    0.09 sec
+      Start  4: stage3a_harmonic_contract
+ 4/16 Test  #4: stage3a_harmonic_contract ......................   Passed    0.00 sec
+      Start  5: stage3b_model_input
+ 5/16 Test  #5: stage3b_model_input ............................   Passed    0.01 sec
+      Start  6: stage03_utilities
+ 6/16 Test  #6: stage03_utilities ..............................   Passed    0.00 sec
+      Start  7: stage04_construction_storage
+ 7/16 Test  #7: stage04_construction_storage ...................   Passed    0.00 sec
+      Start  8: stage04_mapping_geometry
+ 8/16 Test  #8: stage04_mapping_geometry .......................   Passed    0.00 sec
+      Start  9: stage04_density_sampling
+ 9/16 Test  #9: stage04_density_sampling .......................   Passed    0.00 sec
+      Start 10: stage04_discretization_setup
+10/16 Test #10: stage04_discretization_setup ...................   Passed    0.00 sec
+      Start 11: stage05_tensor_contraction
+11/16 Test #11: stage05_tensor_contraction .....................   Passed    0.00 sec
+      Start 12: stage06_output_helpers
+12/16 Test #12: stage06_output_helpers .........................   Passed    0.00 sec
+      Start 13: stage06_output_original_reference
+13/16 Test #13: stage06_output_original_reference ..............   Passed    0.04 sec
+      Start 14: stage05_1d_original_reference
+14/16 Test #14: stage05_1d_original_reference ..................   Passed    0.01 sec
+      Start 15: stage05_file_perturbation_original_reference
+15/16 Test #15: stage05_file_perturbation_original_reference ...   Passed    0.01 sec
+      Start 16: pr07_rotated_output
+16/16 Test #16: pr07_rotated_output ............................   Passed    0.01 sec
+
+100% tests passed, 0 tests failed out of 16
+
+Total Test time (real) =  10.69 sec

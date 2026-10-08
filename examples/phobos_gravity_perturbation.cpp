@@ -39,11 +39,13 @@ main() {
    using NRange = GSHTrans::All;
    using Grid = GSHTrans::GaussLegendreGrid<double, MRange, NRange>;
    timer1.start();
-   Density3D phobosfull(scaledensity, pathtofile, npoly, lMax, lengthnorm,
+   const auto phobos_data =
+       GPLSpec::ModelInput::ReadPhobosHarmonics(pathtofile);
+   Density3D phobosfull(scaledensity, phobos_data, npoly, lMax, lengthnorm,
                         timenorm, massnorm, 0.1, 1.5, 0);
    timer1.stop("Time to construct full model");
    timer1.start();
-   Density3D phobos(scaledensity, pathtofile, lsmall, npoly, lMax, lengthnorm,
+   Density3D phobos(scaledensity, phobos_data, lsmall, npoly, lMax, lengthnorm,
                     timenorm, massnorm, 0.1, 1.5, 0);
    timer1.stop("Time to construct small model");
 
@@ -66,7 +68,7 @@ main() {
    // find perturbed solution
    // define map
    timer1.start();
-   MappingPerturbation testpertmap(phobos, pathtofile, lsmall + 1, lMax);
+   MappingPerturbation testpertmap(phobos, phobos_data, lsmall + 1, lMax);
    timer1.stop("Time for map to be defined");
 
    // get solution

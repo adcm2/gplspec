@@ -22,6 +22,8 @@ main() {
    std::string pathtofile = "modeldata/TABLEA1.DAT";
    Timer timer1;
    timer1.start();
+   const auto phobos_data =
+       GPLSpec::ModelInput::ReadPhobosHarmonics(pathtofile);
    double physdensity = 1860.0;
    double lengthnorm = 10000.0;
    double usedensity = 1342.0;
@@ -30,12 +32,10 @@ main() {
    double scaledensity = physdensity / massnorm * std::pow(lengthnorm, 3.0);
    int lMax = 100;
    int npoly = 5;
-   Density3D phobos(scaledensity, pathtofile, npoly, lMax, lengthnorm, timenorm,
+   Density3D phobos(scaledensity, phobos_data, npoly, lMax, lengthnorm, timenorm,
                     massnorm, 0.1, 1.5);
 
    {
-      const auto phobos_data =
-          GPLSpec::ModelInput::ReadPhobosHarmonics(pathtofile);
       const std::size_t model_lmax = phobos_data.InferredMaximumDegree();
       // appending to vec_A if model lmax smaller than lmax:
       auto coefficientnumber =

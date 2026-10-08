@@ -4,6 +4,8 @@
 #include <cmath>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 #ifndef GPLSPEC_SOURCE_DIR
@@ -11,6 +13,14 @@
 #endif
 
 namespace {
+
+template <typename Scalar>
+concept RadialModelScalarSupported = requires {
+   typename GeneralEarthModels::RadialEarthModel<Scalar>;
+};
+
+static_assert(RadialModelScalarSupported<double>);
+static_assert(!RadialModelScalarSupported<float>);
 
 void require(bool condition, const std::string &message) {
    if (!condition) {
@@ -63,7 +73,11 @@ int main() {
                close(prem200.nodes[1].radius, 31321.0),
            "prem.200 known raw values changed");
 
-   const TestTools::EarthModel<> earth(prem);
+   using RadialModel = GeneralEarthModels::RadialEarthModel<>;
+   static_assert(!std::is_copy_constructible_v<RadialModel>);
+   static_assert(!std::is_copy_assignable_v<RadialModel>);
+   static_assert(std::is_move_constructible_v<RadialModel>);
+   const RadialModel earth(prem);
    const EarthModels::EarthConstants<double> units;
    int expected_layers = 1;
    std::size_t first_boundary_index = prem.nodes.size();
@@ -94,14 +108,35 @@ int main() {
    invalid_deck.node_count += 1;
    bool rejected_inconsistent_deck = false;
    try {
-      (void)TestTools::EarthModel<>(invalid_deck);
+      (void)GeneralEarthModels::RadialEarthModel<>(invalid_deck);
    } catch (const std::invalid_argument &) {
       rejected_inconsistent_deck = true;
    }
    require(rejected_inconsistent_deck,
            "PREM model construction accepted a mismatched row count");
 
-   const auto phobos =
+   auto short_lived_deck =
+       GPLSpec::ModelInput::ReadPremDeck(root + "/modeldata/PREM500");
+   const GeneralEarthModels::RadialEarthModel<> owned_earth(short_lived_deck);
+   const auto owned_earth_layers = owned_earth.NumberOfLayers();
+   const auto owned_earth_density =
+       owned_earth.Density(0)(owned_earth.LayerRadii(0).front());
+   short_lived_deck.nodes.clear();
+   require(owned_earth.NumberOfLayers() == owned_earth_layers &&
+               close(owned_earth.Density(0)(owned_earth.LayerRadii(0).front()),
+                     owned_earth_density),
+           "radial model retained a borrow into the parsed PREM deck");
+   const auto moved_earth = [&root]() {
+      auto deck = GPLSpec::ModelInput::ReadPremDeck(root + "/modeldata/PREM500");
+      RadialModel source(deck);
+      return RadialModel(std::move(source));
+   }();
+   require(moved_earth.NumberOfLayers() == expected_layers &&
+               close(moved_earth.Density(0)(moved_earth.LayerRadii(0).front()),
+                     owned_earth_density),
+           "moved radial model lost its owned interpolation storage");
+
+   auto phobos =
        GPLSpec::ModelInput::ReadPhobosHarmonics(root + "/modeldata/TABLEA1.DAT");
    require(phobos.rows.size() == 1081 && phobos.InferredMaximumDegree() == 45,
            "Phobos TABLEA1 triangular coefficient extent changed");
@@ -125,4 +160,26 @@ int main() {
    }
    require(rejected_empty_phobos,
            "Phobos maximum degree accepted an empty row list");
+
+   const double length_norm = 10000.0;
+   const double time_norm = 3600.0;
+   const double mass_norm = std::pow(length_norm, 3.0) * 1342.0;
+   const double density_scale = 1860.0 / 1342.0;
+   const double expected_phobos_radius =
+       phobos.rows.front().cosine / std::sqrt(4.0 * std::acos(-1.0));
+   GeneralEarthModels::Density3D owned_phobos(
+       density_scale, phobos, 2, 2, length_norm, time_norm, mass_norm, 0.5,
+       1.5);
+   const double owned_phobos_density = owned_phobos.Density_Point(0, 0, 0);
+   require(std::isfinite(owned_phobos_density) && owned_phobos_density > 0.0,
+           "Phobos model construction returned invalid owned density");
+   require(close(owned_phobos.Node_InformationP().PlanetRadius(),
+                 expected_phobos_radius / length_norm),
+           "Phobos model geometry changed its A00 radius convention");
+   phobos.rows.clear();
+   require(close(owned_phobos.Node_InformationP().PlanetRadius(),
+                 expected_phobos_radius / length_norm) &&
+               close(owned_phobos.Density_Point(0, 0, 0),
+                     owned_phobos_density),
+           "Phobos model retained a borrow into parsed harmonics");
 }

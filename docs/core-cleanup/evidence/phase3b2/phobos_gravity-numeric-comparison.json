@@ -1,0 +1,51 @@
+[
+  {
+    "file": "work/Phobos/Cartesian/MatrixSolution.out",
+    "max_abs": 5.684341886080802e-14,
+    "changed": 534833,
+    "tolerance_failures": 49614,
+    "all_finite": true
+  },
+  {
+    "file": "work/Phobos/Sensitivity/SensitivityKernel.out",
+    "max_abs": 1.5777218104420236e-30,
+    "changed": 312639,
+    "tolerance_failures": 0,
+    "all_finite": true
+  },
+  {
+    "file": "work/Phobos/Sensitivity/SensitivityKernelSlice.out",
+    "max_abs": 1.9721522630525295e-30,
+    "changed": 5400,
+    "tolerance_failures": 0,
+    "all_finite": true
+  },
+  {
+    "file": "work/Phobos/Spherical/MatrixSolution.out",
+    "max_abs": 5.684341886080802e-14,
+    "changed": 534833,
+    "tolerance_failures": 49614,
+    "all_finite": true
+  },
+  {
+    "file": "work/Phobos/Spherical/MatrixSolutionPhysical.out",
+    "max_abs": 7.105427357601002e-14,
+    "changed": 539016,
+    "tolerance_failures": 49790,
+    "all_finite": true
+  },
+  {
+    "file": "work/Phobos/Spherical/MatrixSolutionReferentialRotated.out",
+    "max_abs": 5.684341886080802e-14,
+    "changed": 529920,
+    "tolerance_failures": 74231,
+    "all_finite": true
+  },
+  {
+    "file": "work/Phobos/Spherical/MatrixSolutionSlice.out",
+    "max_abs": 5.684341886080802e-14,
+    "changed": 5247,
+    "tolerance_failures": 875,
+    "all_finite": true
+  }
+]

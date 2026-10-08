@@ -1,0 +1,206 @@
+{
+  "stage": "3B.2 radial input ownership parity",
+  "baseline_commit": "15582edab8112dbb63e0101be5b26f5135298644",
+  "pre_stage_commit": "71ee3f366c31951a39c1ff2eac015c9d077b9fd2",
+  "build_directory": "/tmp/gplspec-phase3-candidate-release",
+  "configuration": "Release; BUILD_TESTING=ON; GPLSPEC_BUILD_BASELINE_HARNESS=ON; MY_PROJECT_BUILD_EXAMPLES=ON",
+  "probe_source": {
+    "path": "prem-model-probe.cpp",
+    "sha256": "83dba26a51ae9313357d0eed946dead1c68549a11bc2336d24fa91886d4c21bc"
+  },
+  "fixtures": {
+    "prem500": {
+      "input": "modeldata/PREM500",
+      "input_sha256": "ec9869508847eb6753cf0165f6176dd3eea1f03ac5717533ffb6dcfe09489685",
+      "baseline_output": "../phase3b1/prem500-baseline.csv",
+      "candidate_output": "prem500-radial-model.csv",
+      "sha256": "170ec35ed193c5b92da6e9886f9de5473b752ccfc9f3fa165cd68b22dd7fc527",
+      "result": "byte-identical to baseline model profile",
+      "candidate_output_bytes": 57189,
+      "candidate_output_sha256": "170ec35ed193c5b92da6e9886f9de5473b752ccfc9f3fa165cd68b22dd7fc527"
+    },
+    "prem200": {
+      "input": "modeldata/prem.200",
+      "input_sha256": "4c3c53ca04e785ff4fd853cf211fe94e353ef70d6052a526122d0f279a3519ea",
+      "baseline_output": "../phase3b1/prem200-baseline.csv",
+      "candidate_output": "prem200-radial-model.csv",
+      "sha256": "5c815d823a186f826c64aa294a615772f8707e5468c0a9fa61b6c4458c7090b1",
+      "result": "byte-identical to baseline model profile",
+      "candidate_output_bytes": 25178,
+      "candidate_output_sha256": "5c815d823a186f826c64aa294a615772f8707e5468c0a9fa61b6c4458c7090b1"
+    }
+  },
+  "validation": {
+    "full_build": {
+      "command": "cmake --build /tmp/gplspec-phase3-candidate-release -j2",
+      "result": "all configured targets passed; final state includes move-only owner declarations",
+      "log": "build.log",
+      "sha256": "13d9480219b587c9059712acc89f9798eb0e4b6c2d123e8292e22b7c11864c36"
+    },
+    "ctest": {
+      "command": "ctest --test-dir /tmp/gplspec-phase3-candidate-release --output-on-failure",
+      "result": "16/16 passed in 10.69 seconds",
+      "log": "ctest.log",
+      "sha256": "f2569bab648fb3de696c3c8e2b01a743a4cdd2d72790302e51c79f3d55ee934c"
+    },
+    "stage00": {
+      "command": "tests/run_stage00.sh /tmp/gplspec-phase3-candidate-release/bin/stage00_reference",
+      "result": "three 20,700-record checks; zero changed components; representative MatrixSolution.out byte-identical",
+      "log": "stage00.log",
+      "sha256": "b9bdb29ec03d626c7ba6f27b6efd4bf1fd216ec4094ec1f5b7a44009fd1096c1"
+    },
+    "focused": {
+      "result": "stage3b_model_input, stage05_file_perturbation_original_reference, and stage02_patch_application passed"
+    },
+    "protected_manifest": {
+      "baseline": "15582edab8112dbb63e0101be5b26f5135298644",
+      "path_count": 121,
+      "missing": 0,
+      "changed": 0
+    }
+  },
+  "scope_limit": "Model/profile and owned-value checks only; Phobos and clean_bench workflow comparisons are separately captured by coordinator. No solver acceptance implied.",
+  "workflow_comparison": {
+    "manifest": "workflow-manifest.json",
+    "source_before_final_delta": "71ee3f366c31951a39c1ff2eac015c9d077b9fd2 plus initial 3B.2 implementation",
+    "final_delta": "RadialEarthModel copy/assignment deleted and move operations defaulted; comments document iterator-backed interpolation lifetime; focused ownership test and documentation/evidence changes. No parser, formula, solver, operator, or output arithmetic changed.",
+    "all_runs_exit_0": true,
+    "all_values_finite": true,
+    "strict_outcomes": "clean_bench_2 and clean_bench_6 byte-identical; OutputZiheng 2/3 files byte-identical and remaining file has no tolerance failures; Phobos gravity and heterogeneous have potential output strict componentwise failures. See numeric comparison JSONs.",
+    "numeric_files": {
+      "clean_bench_2-numeric-comparison.json": "5d79d60ec1a8da1a59c89c05ab1f0a4dbe5db49231e8932e47f90b8f2c9c4aae",
+      "clean_bench_6-numeric-comparison.json": "ca78cb9389734d69446c64c171ba6058f4332ab44d7972b6d435fce69184a176",
+      "phobos_gravity-numeric-comparison.json": "fab67a4bfd964b6a848074b5ab9a26aeb38fd7bb3e1358673d9f9d61f5cf4013",
+      "phobos_heterogeneous-numeric-comparison.json": "841e48da07650e2d8543f25ee1202ffe0fd0a32ada4921d203d13d3d5e2260d4",
+      "OutputZiheng-numeric-comparison.json": "e91cc9100585fe7a872becd3aa6afcbad984ad52935035d9b910408590423953"
+    },
+    "workflow_manifest_sha256": "954395cd94a3782605fb8278c49d444a0f41635c0fed314f55b32bc89579ca6e"
+  },
+  "artifacts": {
+    "OutputZiheng-numeric-comparison.json": {
+      "bytes": 468,
+      "sha256": "e91cc9100585fe7a872becd3aa6afcbad984ad52935035d9b910408590423953"
+    },
+    "README.md": {
+      "bytes": 5061,
+      "sha256": "4b1286fb2cf3d5804e8bf931cd30390d1b7c9b94491dbd1b717cb747f4a57644"
+    },
+    "build.log": {
+      "bytes": 5861,
+      "sha256": "13d9480219b587c9059712acc89f9798eb0e4b6c2d123e8292e22b7c11864c36"
+    },
+    "clean_bench_2-numeric-comparison.json": {
+      "bytes": 295,
+      "sha256": "5d79d60ec1a8da1a59c89c05ab1f0a4dbe5db49231e8932e47f90b8f2c9c4aae"
+    },
+    "clean_bench_6-numeric-comparison.json": {
+      "bytes": 744,
+      "sha256": "ca78cb9389734d69446c64c171ba6058f4332ab44d7972b6d435fce69184a176"
+    },
+    "ctest.log": {
+      "bytes": 2277,
+      "sha256": "f2569bab648fb3de696c3c8e2b01a743a4cdd2d72790302e51c79f3d55ee934c"
+    },
+    "phobos_gravity-numeric-comparison.json": {
+      "bytes": 1311,
+      "sha256": "fab67a4bfd964b6a848074b5ab9a26aeb38fd7bb3e1358673d9f9d61f5cf4013"
+    },
+    "phobos_heterogeneous-numeric-comparison.json": {
+      "bytes": 1718,
+      "sha256": "841e48da07650e2d8543f25ee1202ffe0fd0a32ada4921d203d13d3d5e2260d4"
+    },
+    "prem-model-probe.cpp": {
+      "bytes": 1188,
+      "sha256": "83dba26a51ae9313357d0eed946dead1c68549a11bc2336d24fa91886d4c21bc"
+    },
+    "prem200-radial-model.csv": {
+      "bytes": 25178,
+      "sha256": "5c815d823a186f826c64aa294a615772f8707e5468c0a9fa61b6c4458c7090b1"
+    },
+    "prem500-radial-model.csv": {
+      "bytes": 57189,
+      "sha256": "170ec35ed193c5b92da6e9886f9de5473b752ccfc9f3fa165cd68b22dd7fc527"
+    },
+    "review-fix-build.log": {
+      "bytes": 693,
+      "sha256": "ea46d37267da949650c71889ce1c4e3d400e13e5cf2d6682b8806b814a21a239"
+    },
+    "review-fix-ctest.log": {
+      "bytes": 471,
+      "sha256": "cb01b539507075bd45419b8e65b0a766b4a6af9a3e7f40211fb2f8b48590a0e2"
+    },
+    "run-prem-model-comparison.sh": {
+      "bytes": 1647,
+      "sha256": "e84c4e8bf36fc63ed43425bd83936f672a1e829a8d05e132c58581954b6a4821"
+    },
+    "stage00.log": {
+      "bytes": 354,
+      "sha256": "b9bdb29ec03d626c7ba6f27b6efd4bf1fd216ec4094ec1f5b7a44009fd1096c1"
+    },
+    "workflow-manifest.json": {
+      "bytes": 7022,
+      "sha256": "954395cd94a3782605fb8278c49d444a0f41635c0fed314f55b32bc89579ca6e"
+    }
+  },
+  "review_status": "initial Luna review BLOCKED; focused corrections re-reviewed PASS; Stage 3B.2 accepted pending coordinator commit; solver gate remains paused",
+  "source_scope_note": "Historical Stage 00, testremove, and experimental source/evidence were not migrated; experimental files are protected. Current active callers and tutorial migrated.",
+  "pre_review_manifest_sha256": "cae285945554f8fd113499edeb3ce12cfe4a7730e76fa99218b37540f78be7d7",
+  "pre_review_source_hashes": {
+    "api.md": "25104936acfd6a2c15abf7435b9547c4b74fef36c6ba1c16de4e700981ce1380",
+    "implementation_status.md": "02b44fb2546ff7c37829bd1a18412b075c5733de7d3a2bedcc07b28406db6490",
+    "docs/core-cleanup/phase-3.md": "d243832bc943cbb480ec24c59566c74f7aed49914673c55a9a8e07db94602bb8",
+    "docs/core-cleanup/phase-3-reviews.md": "beb354c0758dcf29bdb1e6c85386048150bb85ad4bb87fdcb00e61f0fb951526",
+    "_tutorials/tutorial5_phobos.md": "160c0aef25ce3d9f210e105796bd21c026d00e88dbb1797efbdb0a98b2dddbff",
+    "examples/OutputZiheng.cpp": "d4c6dc71160f4ca7def22fb4255b1e525714bcfa0b1660fdf3721c7bb512086f",
+    "examples/phobos_gravity.cpp": "2cce67f54f4b2686482bec8370dd931c347b7b1d9b3649cdc01494d156227c84",
+    "examples/phobos_gravity_perturbation.cpp": "e27861b602e8e8c2a9a4d8d59487f5e907ee39e29240ebd20282fc3d651243ba",
+    "examples/phobos_heterogeneous.cpp": "df33c7529473dd0a7139fbc12f35879ef4e03c2ce8ad94741309fdf3526681f9",
+    "gplspec/GeneralModels": "d8f982faee970458cb01e581f78a938822c162823af1a45fbc2172f722d08090",
+    "gplspec/src/GeneralModels/Density_Model_Constructors.h": "c507f89f4bec6c32c6a55ac341a95b63dc7aa23d7cca2fb0b5447624c1236b64",
+    "gplspec/src/GeneralModels/Earth_Density_Models_3D.h": "8f897fcc4c14e8ac2bddc7f084f03c96be9e31fc2479aa756195fd805aa760bc",
+    "gplspec/src/GeneralModels/Earth_General_Models_1D.h": "e29c99615e6312c6cdc0f8f82041023a0c55109402e6591af0ec84ce33990c68",
+    "gplspec/src/GeneralModels/Perturbation_Models.h": "6b95db744ee497df3e957719611f6c460cab172a97af8d4abf9fef0504886b2c",
+    "gplspec/src/GeneralModels/Radial_Earth_Model.h": "e34862b592f66aa7f58fa72257f1d37cdbf588f9425ec369f27272293946c1ba",
+    "gplspec/src/testtools.h": "343512d231505c33962f9f31c1e96eca80b5a749488cacc1c5bb025bfc737e71",
+    "tests/phase1_performance.cpp": "b6a8ffd84938e5c755b9276a9c760020f781785600163ff8ea50184f8eb4f8d6",
+    "tests/stage05_file_perturbation_reference.cpp": "6341de4771937cd06dc2eac247df60663c1c3a1f7c45ab68b793970af0334d77",
+    "tests/stage3b_model_input.cpp": "5ebb3bfa5f4af5cc208620fdafdd17debffd889f6386cb5caf6cf5971440ed73"
+  },
+  "review_fix": {
+    "initial_verdict": "BLOCKED by independent Luna review; two focused corrections applied",
+    "status": "independent Luna re-review PASS with no implementation blockers; Stage 3B.2 accepted pending coordinator commit",
+    "changes": [
+      "Constrained RadialEarthModel<FLOAT> to FLOAT=double, matching vector<double> storage and spline iterators; compile-time contract accepts double and rejects float.",
+      "Documented that returned splines borrow layer storage and derived A/C/N/L/F/Kappa/Mu functions capture the owner; discard before move or destruction.",
+      "Moved OutputZiheng timer start before ReadPhobosHarmonics so parsing remains included in timed workflow."
+    ],
+    "source_hashes": {
+      "gplspec/src/GeneralModels/Radial_Earth_Model.h": "7b95a6d17b825e53649900ca6397c309022cd6363149f7b2150d3f6f7626ff1d",
+      "tests/stage3b_model_input.cpp": "e8e94a07d33f609d26d85404f4ca2bfa5d12852f83143f9e4d02f9a5aaf7bb00",
+      "examples/OutputZiheng.cpp": "c8be014ebdc215509a4e7514b7066b641682e9411b974a0bda8d0410b156ac21",
+      "api.md": "383f63463f9042196460291101f2608bac0cd64a119d7e824d285b701f96f96a",
+      "implementation_status.md": "fb5ed736a7278172234b7a08ff807183222cf337b2182205589ba72af7524d03",
+      "docs/core-cleanup/evidence/phase3b2/README.md": "4b1286fb2cf3d5804e8bf931cd30390d1b7c9b94491dbd1b717cb747f4a57644"
+    },
+    "validation": {
+      "build_command": "cmake --build /tmp/gplspec-phase3-candidate-release --target stage3b_model_input OutputZiheng stage05_file_perturbation_reference -j2",
+      "build_result": "all three targets built successfully",
+      "build_log": "review-fix-build.log",
+      "ctest_command": "ctest --test-dir /tmp/gplspec-phase3-candidate-release --output-on-failure -R '^(stage3b_model_input|stage05_file_perturbation_original_reference)$'",
+      "ctest_result": "2/2 passed",
+      "ctest_log": "review-fix-ctest.log"
+    },
+    "scope": "No formulas, solver behavior, scientific output arithmetic, inputs, references, or experimental files changed. Prior workflow comparisons remain labeled as pre-review evidence."
+  },
+  "acceptance_record": {
+    "verdict": "independent Luna re-review PASS, no implementation blockers",
+    "stage_status": "Stage 3B.2 accepted pending coordinator commit; solver accuracy and dependent 3C work remain paused",
+    "record_hashes": {
+      "docs/core-cleanup/phase-3-reviews.md": "9ed694c2660d642ac399223a4f64ebe56f943db376c16257dcb78db861032a66",
+      "docs/core-cleanup/phase-3.md": "d208cda61fc97d8f8d2b90eedec37ee8d60bc753c9339dce1c1269231a7e0517",
+      "implementation_status.md": "33ce472d222fc2d09403cfffc6f64e65f3c56c94848091d233d1faebfce9415b",
+      "api.md": "383f63463f9042196460291101f2608bac0cd64a119d7e824d285b701f96f96a"
+    },
+    "manifest_hash_note": "This manifest hash is reported in the coordinator handoff because a file cannot contain its own hash."
+  }
+}

@@ -5,6 +5,7 @@
 #include "../Radial_Tools.h"
 // #include "Simple_Models.h"
 #include "../Spectral_Element_Tools.h"
+#include "../Model_Input.h"
 #include "../testtools.h"
 #include <GSHTrans/All>
 #include <GaussQuad/All>
@@ -29,10 +30,10 @@ class Density3D {
    //    requires PlanetaryModel::BasicSphericalDensityModel<model, int, double>
    // Density3D(const model &, const int, const int, double, double);
 
-   // with path to file for 1D model
+   // with parsed PREM model data for 1D model
    // Density3D(const std::string &, const int, const int, double, double);
 
-   // with path to file for 1D and tomography models
+   // with parsed PREM model data and tomography input
    // Density3D(const std::string &, const std::string &, const int, const int,
    //           double, double);
 
@@ -96,10 +97,10 @@ class Density3D {
        double imass_norm = EarthModels::EarthConstants<double>().MassNorm(),
        double maxradialstep = 0.01, double ballrad = 1.2);
 
-   // constructor for homogeneous physical planet with mapping/layers
-   // this is used for Phobos
+   // constructor for a homogeneous physical planet using owned Phobos harmonics
    inline Density3D(
-       double physicaldensity, std::string pathtofile, const int lMaxMod,
+       double physicaldensity,
+       const GPLSpec::ModelInput::PhobosHarmonics &harmonics, const int lMaxMod,
        const int npoly, const int lMax,
        double ilength_norm = EarthModels::EarthConstants<double>().LengthNorm(),
        double itime_norm = EarthModels::EarthConstants<double>().TimeNorm(),
@@ -108,7 +109,8 @@ class Density3D {
        bool randdensity = false);
 
    inline Density3D(
-       double physicaldensity, std::string pathtofile, const int npoly,
+       double physicaldensity,
+       const GPLSpec::ModelInput::PhobosHarmonics &harmonics, const int npoly,
        const int lMax,
        double ilength_norm = EarthModels::EarthConstants<double>().LengthNorm(),
        double itime_norm = EarthModels::EarthConstants<double>().TimeNorm(),

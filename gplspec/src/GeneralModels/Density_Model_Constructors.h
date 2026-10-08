@@ -4,6 +4,7 @@
 #include <random>
 #include "../Shared_Utilities.h"
 #include "Model_Construction_Utilities.h"
+#include "Radial_Earth_Model.h"
 namespace GeneralEarthModels {
 // template <class model>
 //    requires PlanetaryModel::BasicSphericalDensityModel<model, int, double>
@@ -51,7 +52,7 @@ Density3D
 Density3D::OneDimensionalPlanetFromFile(const std::string &pathto1D,
                                         const int npoly, const int lMax,
                                         double max_radial_step, double maxrad) {
-   return Density3D(TestTools::EarthModel<>(
+   return Density3D(RadialEarthModel<>(
                         GPLSpec::ModelInput::ReadPremDeck(pathto1D)),
                     PlanetaryModel::TomographyZeroModel(), npoly, lMax,
                     max_radial_step, maxrad);
@@ -73,7 +74,7 @@ Density3D::SphericalThreeDimensionalPlanetFromFile(
    };
    inp_map map1;
    return Density3D(
-       TestTools::EarthModel<>(GPLSpec::ModelInput::ReadPremDeck(pathto1D)),
+       RadialEarthModel<>(GPLSpec::ModelInput::ReadPremDeck(pathto1D)),
        Tomography(pathtotomo), npoly, lMax, max_radial_step, maxrad);
 };
 
@@ -157,16 +158,20 @@ Density3D::PhysicalPlanetModelWithProvidedMapping(
 //  contains the relative file path of a data file with the spherical harmonic
 //  coefficients in the form of that for Phobos. maxradialstep is now relative
 //  to the planet's referential radius, ie 0.01 means minimum 100 layers
-Density3D::Density3D(double physicaldensity, std::string pathtofile,
-                     const int npoly, const int lMax, double ilength_norm,
-                     double itime_norm, double imass_norm, double maxradialstep,
+Density3D::Density3D(
+    double physicaldensity,
+    const GPLSpec::ModelInput::PhobosHarmonics &harmonics, const int npoly,
+    const int lMax, double ilength_norm, double itime_norm, double imass_norm,
+    double maxradialstep,
                      double ballrad, bool randdensity)
-    : Density3D(physicaldensity, pathtofile, lMax, npoly, lMax, ilength_norm,
+    : Density3D(physicaldensity, harmonics, lMax, npoly, lMax, ilength_norm,
                 itime_norm, imass_norm, maxradialstep, ballrad, randdensity) {};
 
-Density3D::Density3D(double physicaldensity, std::string pathtofile,
-                     const int lModMax, const int npoly, const int lMax,
-                     double ilength_norm, double itime_norm, double imass_norm,
+Density3D::Density3D(
+    double physicaldensity,
+    const GPLSpec::ModelInput::PhobosHarmonics &harmonics, const int lModMax,
+    const int npoly, const int lMax, double ilength_norm, double itime_norm,
+    double imass_norm,
                      double maxradialstep, double ballrad, bool randdensity)
     : length_norm(ilength_norm), mass_norm(imass_norm), time_norm(itime_norm),
       density_norm(imass_norm / std::pow(ilength_norm, 3.0)),
@@ -185,10 +190,9 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
    GPLSpec::model_detail::InitializeModelDiscretization(
        _q, _grid, _poly_ord, npoly, lMax);
 
-   // Parsing returns owned rows; model geometry and harmonic construction stay
+   // The caller owns parsed rows; model geometry and harmonic construction stay
    // in this constructor.
-   const auto phobos_data = GPLSpec::ModelInput::ReadPhobosHarmonics(pathtofile);
-   const std::size_t model_lmax = phobos_data.InferredMaximumDegree();
+   const std::size_t model_lmax = harmonics.InferredMaximumDegree();
    // appending to vec_A if model lmax smaller than lmax:
    auto coefficientnumber =
        GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
@@ -222,8 +226,8 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
             }
             vec_lm_rad[idxoverall] =
                 multfact *
-                (phobos_data.rows[idxoverall].cosine -
-                 imag1 * phobos_data.rows[idxoverall].sine);
+                (harmonics.rows[idxoverall].cosine -
+                 imag1 * harmonics.rows[idxoverall].sine);
             ++idxoverall;
          }
       }
@@ -243,7 +247,7 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
    // physical radius that we will use is the 00 component
    double pi_db = 3.1415926535897932;
    double physicalaverageradius =
-       phobos_data.rows[0].cosine / std::sqrt(4.0 * pi_db);
+       harmonics.rows[0].cosine / std::sqrt(4.0 * pi_db);
    double referentialradius = physicalaverageradius / length_norm;
    double maxstep = referentialradius * std::min(maxradialstep, 1.0);
    // std::cout << "Ref. rad: " << referentialradius << "\n";

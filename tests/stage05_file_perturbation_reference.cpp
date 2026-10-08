@@ -51,7 +51,8 @@ int main() {
   const std::string coefficients =
       std::string(GPLSPEC_SOURCE_DIR) +
       "/tests/reference/stage05-file-perturbation-coefficients.dat";
-  GeneralEarthModels::MappingPerturbation perturbation(model, coefficients, 0,
+  const auto harmonics = GPLSpec::ModelInput::ReadPhobosHarmonics(coefficients);
+  GeneralEarthModels::MappingPerturbation perturbation(model, harmonics, 0,
                                                         2);
 
   std::cout << std::setprecision(17);

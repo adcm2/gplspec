@@ -4,6 +4,7 @@
 #include "../Radial_Tools.h"
 #include "../Spectral_Element_Tools.h"
 #include "../Shared_Utilities.h"
+#include "Radial_Earth_Model.h"
 #include "../testtools.h"
 #include <GaussQuad/All>
 #include <Interpolation/All>
@@ -238,7 +239,7 @@ spherical_1D::spherical_1D(const std::string &pathtofile,
                            const GaussQuad::Quadrature1D<double> &q,
                            double max_radial_step, double maxrad)
     : spherical_1D::spherical_1D(
-          TestTools::EarthModel<>(GPLSpec::ModelInput::ReadPremDeck(pathtofile)),
+          RadialEarthModel<>(GPLSpec::ModelInput::ReadPremDeck(pathtofile)),
           q, max_radial_step, maxrad) {};
 
 /////////////////////////////////////////////////

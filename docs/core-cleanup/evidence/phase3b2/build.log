@@ -1,0 +1,95 @@
+[  0%] Built target FFTWpp
+[  1%] Building CXX object tests/CMakeFiles/stage00_reference.dir/stage00_reference.cpp.o
+[  2%] Building CXX object tests/CMakeFiles/stage1c_file_tomography_solver.dir/stage1c_file_tomography_solver.cpp.o
+[  4%] Linking CXX executable ../bin/stage00_reference
+[  4%] Built target stage00_reference
+[  5%] Building CXX object tests/CMakeFiles/phase1_performance.dir/phase1_performance.cpp.o
+[  6%] Linking CXX executable ../bin/stage1c_file_tomography_solver
+[  6%] Built target stage1c_file_tomography_solver
+[  8%] Building CXX object tests/CMakeFiles/stage02_core_smoke.dir/stage02_core_smoke.cpp.o
+[  8%] Built target stage02_core_smoke
+[  9%] Building CXX object tests/CMakeFiles/stage02_generalmodels_smoke.dir/stage02_generalmodels_smoke.cpp.o
+[  9%] Built target stage02_generalmodels_smoke
+[ 10%] Built target stage02_simplemodels_smoke
+[ 12%] Building CXX object tests/CMakeFiles/stage02_all_smoke.dir/stage02_all_smoke.cpp.o
+[ 12%] Built target stage02_all_smoke
+[ 13%] Building CXX object tests/CMakeFiles/stage02_test_smoke.dir/stage02_test_smoke.cpp.o
+[ 14%] Linking CXX executable ../bin/phase1_performance
+[ 14%] Built target phase1_performance
+[ 16%] Built target stage02_timer_smoke
+[ 17%] Building CXX object tests/CMakeFiles/stage02_header_link.dir/stage02_header_main.cpp.o
+[ 17%] Built target stage02_test_smoke
+[ 18%] Building CXX object tests/CMakeFiles/stage3a_harmonic_contract.dir/stage3a_harmonic_contract.cpp.o
+[ 20%] Building CXX object tests/CMakeFiles/stage02_header_link.dir/stage02_header_peer.cpp.o
+[ 21%] Linking CXX executable ../bin/stage02_header_link
+[ 21%] Built target stage02_header_link
+[ 24%] Built target stage3b_model_input
+[ 27%] Built target stage03_utilities
+[ 29%] Built target stage04_construction_storage
+[ 32%] Built target stage04_mapping_geometry
+[ 35%] Built target stage04_density_sampling
+[ 37%] Built target stage04_discretization_setup
+[ 39%] Building CXX object tests/CMakeFiles/stage05_operator_reference.dir/stage05_operator_reference.cpp.o
+[ 40%] Linking CXX executable ../bin/stage3a_harmonic_contract
+[ 40%] Built target stage3a_harmonic_contract
+[ 43%] Built target stage05_tensor_contraction
+[ 44%] Building CXX object tests/CMakeFiles/stage06_output_helpers.dir/stage06_output_helpers.cpp.o
+[ 45%] Linking CXX executable ../bin/stage06_output_helpers
+[ 45%] Built target stage06_output_helpers
+[ 47%] Building CXX object tests/CMakeFiles/stage06_output_reference.dir/stage06_output_reference.cpp.o
+[ 48%] Linking CXX executable ../bin/stage05_operator_reference
+[ 48%] Built target stage05_operator_reference
+[ 50%] Building CXX object tests/CMakeFiles/stage05_file_perturbation_reference.dir/stage05_file_perturbation_reference.cpp.o
+[ 51%] Linking CXX executable ../bin/stage06_output_reference
+[ 51%] Built target stage06_output_reference
+[ 52%] Building CXX object tests/CMakeFiles/pr07_rotated_output.dir/pr07_rotated_output.cpp.o
+[ 54%] Linking CXX executable ../bin/stage05_file_perturbation_reference
+[ 54%] Built target stage05_file_perturbation_reference
+[ 55%] Building CXX object tests/CMakeFiles/tutorial5_phobos_compile.dir/tutorial5_phobos.cpp.o
+[ 56%] Linking CXX executable ../bin/pr07_rotated_output
+[ 56%] Built target pr07_rotated_output
+[ 58%] Building CXX object examples/CMakeFiles/clean_bench_1.dir/clean_bench_1.cpp.o
+[ 59%] Linking CXX executable ../bin/tutorial5_phobos_compile
+[ 60%] Built target tutorial5_phobos_compile
+[ 62%] Building CXX object examples/CMakeFiles/clean_bench_2.dir/clean_bench_2.cpp.o
+[ 63%] Linking CXX executable ../bin/clean_bench_1
+[ 63%] Built target clean_bench_1
+[ 64%] Building CXX object examples/CMakeFiles/clean_bench_3.dir/clean_bench_3.cpp.o
+[ 66%] Linking CXX executable ../bin/clean_bench_2
+[ 66%] Built target clean_bench_2
+[ 67%] Building CXX object examples/CMakeFiles/clean_bench_4.dir/clean_bench_4.cpp.o
+[ 68%] Linking CXX executable ../bin/clean_bench_3
+[ 68%] Built target clean_bench_3
+[ 70%] Building CXX object examples/CMakeFiles/clean_bench_5.dir/clean_bench_5.cpp.o
+[ 71%] Linking CXX executable ../bin/clean_bench_4
+[ 71%] Built target clean_bench_4
+[ 72%] Building CXX object examples/CMakeFiles/clean_bench_6.dir/clean_bench_6.cpp.o
+[ 74%] Linking CXX executable ../bin/clean_bench_5
+[ 74%] Built target clean_bench_5
+[ 75%] Building CXX object examples/CMakeFiles/clean_bench_7.dir/clean_bench_7.cpp.o
+[ 77%] Linking CXX executable ../bin/clean_bench_6
+[ 77%] Built target clean_bench_6
+[ 78%] Building CXX object examples/CMakeFiles/clean_bench_8.dir/clean_bench_8.cpp.o
+[ 79%] Linking CXX executable ../bin/clean_bench_7
+[ 79%] Built target clean_bench_7
+[ 81%] Building CXX object examples/CMakeFiles/clean_bench_9.dir/clean_bench_9.cpp.o
+[ 82%] Linking CXX executable ../bin/clean_bench_8
+[ 82%] Built target clean_bench_8
+[ 83%] Building CXX object examples/CMakeFiles/clean_bench_10.dir/clean_bench_10.cpp.o
+[ 85%] Linking CXX executable ../bin/clean_bench_9
+[ 85%] Built target clean_bench_9
+[ 86%] Building CXX object examples/CMakeFiles/phobos_gravity.dir/phobos_gravity.cpp.o
+[ 87%] Linking CXX executable ../bin/clean_bench_10
+[ 87%] Built target clean_bench_10
+[ 89%] Building CXX object examples/CMakeFiles/phobos_gravity_perturbation.dir/phobos_gravity_perturbation.cpp.o
+[ 90%] Linking CXX executable ../bin/phobos_gravity
+[ 90%] Built target phobos_gravity
+[ 91%] Building CXX object examples/CMakeFiles/phobos_heterogeneous.dir/phobos_heterogeneous.cpp.o
+[ 93%] Linking CXX executable ../bin/phobos_gravity_perturbation
+[ 93%] Built target phobos_gravity_perturbation
+[ 95%] Built target wignertest
+[ 97%] Building CXX object examples/CMakeFiles/OutputZiheng.dir/OutputZiheng.cpp.o
+[ 98%] Linking CXX executable ../bin/phobos_heterogeneous
+[ 98%] Built target phobos_heterogeneous
+[100%] Linking CXX executable ../bin/OutputZiheng
+[100%] Built target OutputZiheng

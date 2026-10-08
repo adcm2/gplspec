@@ -42,7 +42,9 @@ main() {
    int npoly = 5;
 
    // constructing model
-   Density3D phobos(scaledensity, pathtofile, npoly, lMax, lengthnorm, timenorm,
+   const auto phobos_data =
+       GPLSpec::ModelInput::ReadPhobosHarmonics(pathtofile);
+   Density3D phobos(scaledensity, phobos_data, npoly, lMax, lengthnorm, timenorm,
                     massnorm, 0.1, 1.5);
 
    // get gravitational field

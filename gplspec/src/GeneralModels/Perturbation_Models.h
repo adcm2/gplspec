@@ -5,6 +5,7 @@
 #include "../Radial_Tools.h"
 // #include "Simple_Models.h"
 #include "../Spectral_Element_Tools.h"
+#include "../Model_Input.h"
 #include "../testtools.h"
 #include "Earth_Density_Models_3D.h"
 #include "Mapping_Perturbation_Utilities.h"
@@ -42,8 +43,9 @@ class MappingPerturbation {
       requires PlanetaryModel::RadialMappingClass<mapclass>
    MappingPerturbation(const Density3D &, const mapclass &);
 
-   // radial map with file input
-   inline MappingPerturbation(const Density3D &, const std::string &, const int,
+   // radial map from caller-owned Phobos harmonics
+   inline MappingPerturbation(
+       const Density3D &, const GPLSpec::ModelInput::PhobosHarmonics &, const int,
                        const int);
 
    auto dxi() const { return _vec_dxi; };
@@ -206,8 +208,9 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
 };
 
 // radial map only
-MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
-                                         const std::string &pathtofile,
+MappingPerturbation::MappingPerturbation(
+    const Density3D &inp_model,
+    const GPLSpec::ModelInput::PhobosHarmonics &harmonics,
                                          const int lmin, const int lmodmax)
     : _ref_model{inp_model} {
    std::size_t _num_layers = inp_model.Num_Elements();
@@ -216,31 +219,8 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
    std::size_t nnode = inp_model.qP().N();
    std::size_t lMax = inp_model.GSH_GridP().MaxDegree();
 
-   // now this constructor deals with reading in Phobos data in particular
-   // find length of file
-   std::size_t num_lines = TestTools::filelength(pathtofile);
-   std::size_t model_lmax = (std::sqrt(1 + 8 * num_lines) - 3) / 2;
-   std::vector<int> vec_l(num_lines), vec_m(num_lines);
-   std::vector<double> vec_A(num_lines), vec_SA(num_lines), vec_B(num_lines),
-       vec_SB(num_lines);
-   std::fstream modelfile;
-   modelfile.open(pathtofile, std::ios::in);
-   // getting information out of file
-   if (modelfile.is_open()) {
-      // test first line
-      // getline(modelfile, modeltitle);
-      for (int idx = 0; idx < num_lines; ++idx) {
-         modelfile >> vec_l[idx] >> vec_m[idx] >> vec_A[idx] >> vec_SA[idx] >>
-             vec_B[idx] >> vec_SB[idx];
-         // move to next line
-         modelfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-      }
-
-      modelfile.close();
-   } else {
-      std::cout << "Couldn't open!" << "\n";
-      assert("Model not found!");
-   }
+   // Coefficients are owned by the caller and shared with Density3D.
+   const std::size_t model_lmax = harmonics.InferredMaximumDegree();
    // appending to vec_A if model lmax smaller than lmax:
    auto coefficientnumber =
        GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
@@ -278,7 +258,8 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
                multfact = 1.0;
             }
             vec_lm_rad[idxoverall] =
-                multfact * (vec_A[idxoverall] - imag1 * vec_B[idxoverall]);
+                multfact * (harmonics.rows[idxoverall].cosine -
+                           imag1 * harmonics.rows[idxoverall].sine);
             ++idxoverall;
          }
       }

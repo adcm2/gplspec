@@ -55,7 +55,9 @@ main() {
 
    // Construct Density3D model for Phobos
    timer1.start();
-   Density3D phobos(scaledensity, pathtofile, npoly, lMax, lengthnorm, timenorm,
+   const auto phobos_data =
+       GPLSpec::ModelInput::ReadPhobosHarmonics(pathtofile);
+   Density3D phobos(scaledensity, phobos_data, npoly, lMax, lengthnorm, timenorm,
                     massnorm, 0.1, 1.5, nhomo);
    timer1.stop("Time to construct");
 

@@ -1,0 +1,4 @@
+PASS: 20700 records; changed components=0; max_abs=0; max_scaled=0; rtol=1e-13; atol=1e-15
+PASS: 20700 records; changed components=0; max_abs=0; max_scaled=0; rtol=1e-13; atol=1e-15
+PASS: 20700 records; changed components=0; max_abs=0; max_scaled=0; rtol=1e-13; atol=1e-15
+PASS: representative MatrixSolution.out is byte-identical to the frozen baseline

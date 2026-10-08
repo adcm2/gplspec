@@ -29,7 +29,9 @@ main() {
    double scaledensity = physdensity / massnorm * std::pow(lengthnorm, 3.0);
    int lMax = 100;
    int npoly = 5;
-   Density3D phobos(scaledensity, pathtofile, npoly, lMax, lengthnorm, timenorm,
+   const auto phobos_data =
+       GPLSpec::ModelInput::ReadPhobosHarmonics(pathtofile);
+   Density3D phobos(scaledensity, phobos_data, npoly, lMax, lengthnorm, timenorm,
                     massnorm, 0.1, 1.5);
    timer1.stop("Time to construct");
 
