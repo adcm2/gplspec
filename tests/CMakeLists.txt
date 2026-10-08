@@ -5,6 +5,10 @@ target_link_libraries(stage00_reference PRIVATE gplspec PlanetaryModel Tomograph
 
 add_executable(stage1c_file_tomography_solver stage1c_file_tomography_solver.cpp)
 target_link_libraries(stage1c_file_tomography_solver PRIVATE gplspec)
+
+# Opt-in Stage 1D measurement harness; intentionally not registered with CTest.
+add_executable(phase1_performance phase1_performance.cpp)
+target_link_libraries(phase1_performance PRIVATE gplspec)
 if(BUILD_TESTING)
   add_test(NAME stage1c_file_tomography_solver
     COMMAND stage1c_file_tomography_solver)

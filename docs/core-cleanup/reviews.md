@@ -39,3 +39,18 @@ The reviewer found that the standalone public-umbrella compile checks covered `C
 **Disposition: resolved pending independent re-review.** The prior full build, 14/14 CTests and frozen Stage 00 comparison remain valid because the response only adds two compile-only object targets; both new targets were force-recompiled successfully. No CTest count or numerical result changed. No PASS or Stage 1C acceptance is claimed yet.
 
 **Stage 1C independent Luna re-review: PASS.** All six public umbrellas have standalone coverage; follow-up compilation and link evidence resolves the blocker. The reviewer independently verified all 96 base/candidate manifest hashes with zero mismatches. No remaining findings; production, inputs, references, dependencies and experiments remain unchanged. Coordinator acceptance record follows the frozen reviewed candidate.
+
+
+## Stage 1D — initial Luna review
+
+**Verdict: BLOCKED.**
+
+The initial build-time evidence timed only the `phase1_performance` target after cleaning the 70 configured targets. The review requested timing the full all-target clean Release build. It also requested explicit methodology limits: the first public solver call occurs after setup and six matrix-vector actions; full public-call timings include output capture/copy overhead; independent residual diagnostics run once per process outside the timed calls rather than for every timed solve.
+
+**Implementation response:** Repeated the clean-first build for all 70 configured targets with `-j2` and controlled thread variables. It succeeded in 3:41.47 wall time with peak RSS 980,376 KiB; the complete build and `/usr/bin/time -v` logs are saved as `stage1d-clean-full-build.log` and `stage1d-clean-full-time.txt`. Updated the evidence record to state that this excludes configure/dependency fetch, and to distinguish the first public call from a cold end-to-end solve and describe capture overhead and per-process residual diagnostics. The timing harness and runtime batch were not changed or rerun.
+
+**Disposition: resolved pending independent re-review.** No production algorithms, tolerance, references, inputs, or dependency pins changed. Stage 1E remains gated on Stage 1D acceptance.
+
+**Stage 1D rereview: substantive PASS.** The sole documentation finding was a stale sentence in `phase-1.md` that still described target-only build timing. It now reports the measured clean-first all-target Release build (70 steps, 3:41.47, 980,376 KiB peak RSS); no rebuild was needed.
+
+**Stage 1D final independent Luna re-review: PASS.** Full clean build evidence and the aligned summary resolve all findings. No further runtime or numerical rerun was needed. Coordinator acceptance follows the reviewed candidate.
