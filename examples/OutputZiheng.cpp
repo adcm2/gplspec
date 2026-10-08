@@ -20,7 +20,6 @@ main() {
    using namespace SimpleModels;
    using FLOAT = double;
    std::string pathtofile = "modeldata/TABLEA1.DAT";
-   TestTools::PhobosRead(pathtofile);
    Timer timer1;
    timer1.start();
    double physdensity = 1860.0;
@@ -35,30 +34,9 @@ main() {
                     massnorm, 0.1, 1.5);
 
    {
-      std::size_t num_lines = TestTools::filelength(pathtofile);
-      std::size_t model_lmax = (std::sqrt(1 + 8 * num_lines) - 3) / 2;
-      std::vector<int> vec_l(num_lines), vec_m(num_lines);
-      std::vector<double> vec_A(num_lines), vec_SA(num_lines), vec_B(num_lines),
-          vec_SB(num_lines);
-
-      std::fstream modelfile;
-      modelfile.open(pathtofile, std::ios::in);
-      // getting information out of file
-      if (modelfile.is_open()) {
-         // test first line
-         // getline(modelfile, modeltitle);
-         for (int idx = 0; idx < num_lines; ++idx) {
-            modelfile >> vec_l[idx] >> vec_m[idx] >> vec_A[idx] >>
-                vec_SA[idx] >> vec_B[idx] >> vec_SB[idx];
-            // move to next line
-            modelfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-         }
-
-         modelfile.close();
-      } else {
-         std::cout << "Couldn't open!" << "\n";
-         assert("Model not found!");
-      }
+      const auto phobos_data =
+          GPLSpec::ModelInput::ReadPhobosHarmonics(pathtofile);
+      const std::size_t model_lmax = phobos_data.InferredMaximumDegree();
       // appending to vec_A if model lmax smaller than lmax:
       auto coefficientnumber =
           GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
@@ -79,7 +57,9 @@ main() {
                   multfact = 1.0;
                }
                vec_lm_rad[idxoverall] =
-                   multfact * (vec_A[idxoverall] - imag1 * vec_B[idxoverall]);
+                   multfact *
+                   (phobos_data.rows[idxoverall].cosine -
+                    imag1 * phobos_data.rows[idxoverall].sine);
                ++idxoverall;
             }
          }

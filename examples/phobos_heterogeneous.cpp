@@ -39,7 +39,6 @@ main() {
 
    // Path to density model data file
    std::string pathtofile = "modeldata/TABLEA1.DAT";
-   TestTools::PhobosRead(pathtofile);
 
    Timer timer1;
 

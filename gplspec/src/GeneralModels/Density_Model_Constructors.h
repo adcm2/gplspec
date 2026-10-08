@@ -51,7 +51,8 @@ Density3D
 Density3D::OneDimensionalPlanetFromFile(const std::string &pathto1D,
                                         const int npoly, const int lMax,
                                         double max_radial_step, double maxrad) {
-   return Density3D(TestTools::EarthModel(pathto1D),
+   return Density3D(TestTools::EarthModel<>(
+                        GPLSpec::ModelInput::ReadPremDeck(pathto1D)),
                     PlanetaryModel::TomographyZeroModel(), npoly, lMax,
                     max_radial_step, maxrad);
 };
@@ -71,8 +72,9 @@ Density3D::SphericalThreeDimensionalPlanetFromFile(
       }
    };
    inp_map map1;
-   return Density3D(TestTools::EarthModel(pathto1D), Tomography(pathtotomo),
-                    npoly, lMax, max_radial_step, maxrad);
+   return Density3D(
+       TestTools::EarthModel<>(GPLSpec::ModelInput::ReadPremDeck(pathto1D)),
+       Tomography(pathtotomo), npoly, lMax, max_radial_step, maxrad);
 };
 
 template <class model>
@@ -183,32 +185,10 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
    GPLSpec::model_detail::InitializeModelDiscretization(
        _q, _grid, _poly_ord, npoly, lMax);
 
-   // now this constructor deals with reading in Phobos data in particular
-   // find length of file
-   std::size_t num_lines = TestTools::filelength(pathtofile);
-   std::size_t model_lmax = (std::sqrt(1 + 8 * num_lines) - 3) / 2;
-   std::vector<int> vec_l(num_lines), vec_m(num_lines);
-   std::vector<double> vec_A(num_lines), vec_SA(num_lines), vec_B(num_lines),
-       vec_SB(num_lines);
-
-   std::fstream modelfile;
-   modelfile.open(pathtofile, std::ios::in);
-   // getting information out of file
-   if (modelfile.is_open()) {
-      // test first line
-      // getline(modelfile, modeltitle);
-      for (int idx = 0; idx < num_lines; ++idx) {
-         modelfile >> vec_l[idx] >> vec_m[idx] >> vec_A[idx] >> vec_SA[idx] >>
-             vec_B[idx] >> vec_SB[idx];
-         // move to next line
-         modelfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-      }
-
-      modelfile.close();
-   } else {
-      std::cout << "Couldn't open!" << "\n";
-      assert("Model not found!");
-   }
+   // Parsing returns owned rows; model geometry and harmonic construction stay
+   // in this constructor.
+   const auto phobos_data = GPLSpec::ModelInput::ReadPhobosHarmonics(pathtofile);
+   const std::size_t model_lmax = phobos_data.InferredMaximumDegree();
    // appending to vec_A if model lmax smaller than lmax:
    auto coefficientnumber =
        GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
@@ -241,7 +221,9 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
                multfact = 1.0;
             }
             vec_lm_rad[idxoverall] =
-                multfact * (vec_A[idxoverall] - imag1 * vec_B[idxoverall]);
+                multfact *
+                (phobos_data.rows[idxoverall].cosine -
+                 imag1 * phobos_data.rows[idxoverall].sine);
             ++idxoverall;
          }
       }
@@ -260,12 +242,12 @@ Density3D::Density3D(double physicaldensity, std::string pathtofile,
 
    // physical radius that we will use is the 00 component
    double pi_db = 3.1415926535897932;
-   double physicalaverageradius = vec_A[0] / std::sqrt(4.0 * pi_db);
+   double physicalaverageradius =
+       phobos_data.rows[0].cosine / std::sqrt(4.0 * pi_db);
    double referentialradius = physicalaverageradius / length_norm;
    double maxstep = referentialradius * std::min(maxradialstep, 1.0);
    // std::cout << "Ref. rad: " << referentialradius << "\n";
 
-   // std::cout << vec_A[0] << " " << vec_A[1] << " " << vec_A[2] << "\n";
    // std::cout << vec_lm_rad[0] << " " << vec_lm_rad[1] << " " << vec_lm_rad[2]
    //           << "\n";
 

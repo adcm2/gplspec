@@ -19,7 +19,6 @@ main() {
    using namespace SimpleModels;
    using FLOAT = double;
    std::string pathtofile = "modeldata/TABLEA1.DAT";
-   TestTools::PhobosRead(pathtofile);
    Timer timer1;
    timer1.start();
    double physdensity = 1860.0;

@@ -237,8 +237,9 @@ spherical_1D::spherical_1D(const model &inp_model,
 spherical_1D::spherical_1D(const std::string &pathtofile,
                            const GaussQuad::Quadrature1D<double> &q,
                            double max_radial_step, double maxrad)
-    : spherical_1D::spherical_1D(TestTools::EarthModel(pathtofile), q,
-                                 max_radial_step, maxrad) {};
+    : spherical_1D::spherical_1D(
+          TestTools::EarthModel<>(GPLSpec::ModelInput::ReadPremDeck(pathtofile)),
+          q, max_radial_step, maxrad) {};
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////

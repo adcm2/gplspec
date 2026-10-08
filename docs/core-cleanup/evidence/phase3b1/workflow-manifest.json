@@ -1,0 +1,183 @@
+{
+  "baseline_commit": "15582edab8112dbb63e0101be5b26f5135298644",
+  "candidate_parent": "838de6d3736fdebc69adb21cbc91ee8f74d243f7",
+  "candidate_state": "uncommitted Stage3B.1 typed readers; source manifest provided by writer",
+  "threads": 1,
+  "runs": [
+    {
+      "program": "clean_bench_2",
+      "returncode": 0,
+      "elapsed_seconds": 0.0351665639973362,
+      "outputs": {
+        "work/Bench2/IntegralSolution.out": {
+          "bytes": 2658,
+          "sha256": "c3a979b898d2fe8302b12f6f9d69b4e865b4b596c4c4e7086ac4e2457fc95d7d"
+        },
+        "work/Bench2/MatrixSolution.out": {
+          "bytes": 2536,
+          "sha256": "21a6c3ffb0e1937e3b23af05570969768d4f6798fbae7a1bc4139b15429abc17"
+        }
+      },
+      "byte_mismatches": [],
+      "extra_outputs": []
+    },
+    {
+      "program": "clean_bench_6",
+      "returncode": 0,
+      "elapsed_seconds": 2.7889030820006155,
+      "outputs": {
+        "work/Bench6/IntegralSolution.out": {
+          "bytes": 2455626,
+          "sha256": "730b4e9d803bb44ec1b98a84ba745a7582b29123b400838078327997d3f102f1"
+        },
+        "work/Bench6/MatrixSolution.out": {
+          "bytes": 2495664,
+          "sha256": "ca54132216183232aef302367417c5f94e3487355f4428853db9bb7f8e99dcea"
+        },
+        "work/Bench6/lm/IntegralSolution.out": {
+          "bytes": 549434,
+          "sha256": "11973a198a4f5db22e7a94409dbed099cae5d69d94450a2b035acfa1a4df4417"
+        },
+        "work/Bench6/lm/MatrixSolution.out": {
+          "bytes": 581116,
+          "sha256": "6c659d7375c984fae823896304176fe89020b0351adf0a749056f12948ecef75"
+        },
+        "work/Bench6/lm/SensitivityKernel.out": {
+          "bytes": 78804,
+          "sha256": "a85ee569ec84d943b53464732ec090c09aaedc9d89ab06e5257731457c6e21a9"
+        }
+      },
+      "byte_mismatches": [
+        "work/Bench6/IntegralSolution.out",
+        "work/Bench6/MatrixSolution.out",
+        "work/Bench6/lm/IntegralSolution.out",
+        "work/Bench6/lm/MatrixSolution.out"
+      ],
+      "extra_outputs": []
+    },
+    {
+      "program": "phobos_gravity",
+      "returncode": 0,
+      "elapsed_seconds": 125.13758369700372,
+      "outputs": {
+        "work/Phobos/Cartesian/MatrixSolution.out": {
+          "bytes": 30173195,
+          "sha256": "0528fbc9f7d078127074f59b400ba754ffc4279ad20f0a53789403f2689eaf82"
+        },
+        "work/Phobos/Sensitivity/SensitivityKernel.out": {
+          "bytes": 7309501,
+          "sha256": "d3f8b082638397dce0c62a184462a6fa14827703394d5acb13fa9e2610bec57a"
+        },
+        "work/Phobos/Sensitivity/SensitivityKernelSlice.out": {
+          "bytes": 253408,
+          "sha256": "502a54b12eeaa69262c7fd077779be882244881423e29561ca2dee3f3ea7a1a8"
+        },
+        "work/Phobos/Spherical/MatrixSolution.out": {
+          "bytes": 30483214,
+          "sha256": "f7be03389407d5275ec3d420f571bed2a1de2009f0fa7275476edf125cf9d27c"
+        },
+        "work/Phobos/Spherical/MatrixSolutionPhysical.out": {
+          "bytes": 30483358,
+          "sha256": "69429419f0947ae00a2229c68d62e062bfb5c80c266341fb1662204714f6d3b0"
+        },
+        "work/Phobos/Spherical/MatrixSolutionReferentialRotated.out": {
+          "bytes": 30528254,
+          "sha256": "91c97d1f4baf2746146ec2afc2060bbf54082f95bd6e6a596d691aea2c06defb"
+        },
+        "work/Phobos/Spherical/MatrixSolutionSlice.out": {
+          "bytes": 243634,
+          "sha256": "34c715a68131c9424fb1ed5c0cb4492f18f6e03f11d0861f8a02ba0392b9f654"
+        }
+      },
+      "byte_mismatches": [
+        "work/Phobos/Cartesian/MatrixSolution.out",
+        "work/Phobos/Sensitivity/SensitivityKernel.out",
+        "work/Phobos/Sensitivity/SensitivityKernelSlice.out",
+        "work/Phobos/Spherical/MatrixSolution.out",
+        "work/Phobos/Spherical/MatrixSolutionPhysical.out",
+        "work/Phobos/Spherical/MatrixSolutionReferentialRotated.out",
+        "work/Phobos/Spherical/MatrixSolutionSlice.out"
+      ],
+      "extra_outputs": []
+    },
+    {
+      "program": "phobos_heterogeneous",
+      "returncode": 0,
+      "elapsed_seconds": 107.83516528600012,
+      "outputs": {
+        "work/Phobos/Cartesian/MatrixSolution.out": {
+          "bytes": 30121802,
+          "sha256": "932aad20ba7c992ad376e91901c80120a1e652934d6bb92a5da892346b2fc5c9"
+        },
+        "work/Phobos/Sensitivity/SensitivityKernel.out": {
+          "bytes": 7309432,
+          "sha256": "9d2665fa90bfa4084e95ddf094044ec9ca2500f64002a4b3612f168eb6a2e250"
+        },
+        "work/Phobos/Sensitivity/SensitivityKernelSlice.out": {
+          "bytes": 253428,
+          "sha256": "6c9f8e7962009f8014eeaf99ec0c3c7ef4bf0c4e1d4ba9fcf283897a0a4dc2de"
+        },
+        "work/Phobos/Spherical/MatrixSolution.out": {
+          "bytes": 30431821,
+          "sha256": "46d180dfdaa59b8064f3668677d83cc9bc64ce92cddb313c9c18d2d0804f59a1"
+        },
+        "work/Phobos/Spherical/MatrixSolutionPhysicalRotated.out": {
+          "bytes": 30432387,
+          "sha256": "6f151db26e45b4a5caf8d73becb757bf9f7952010fdb92f2a15811b9a8b36588"
+        },
+        "work/Phobos/Spherical/MatrixSolutionReferentialRotated.out": {
+          "bytes": 30463570,
+          "sha256": "3c32c6c9299d4c42c1a2b8e747ce6861335b9cd911a16e9714034bf4c452450f"
+        },
+        "work/Phobos/Spherical/PhysicalDensitySolutionRotated.out": {
+          "bytes": 26538077,
+          "sha256": "cacda54b94f016b9e8fab2edb4b08706dddfd7f75849d3174d9becf12b13a7c1"
+        },
+        "work/Phobos/Spherical/PowerSpectrum.out": {
+          "bytes": 197172,
+          "sha256": "0231df0224829e971a5d811f01e1daa550b9ffd5142591fcdb71ec3713ee81be"
+        },
+        "work/Phobos/Spherical/ReferentialDensitySolutionRotated.out": {
+          "bytes": 26567743,
+          "sha256": "f4c37190604607d61e9094c8be67dc9a44860db18887b1053c6d6ceeac4684ca"
+        }
+      },
+      "byte_mismatches": [
+        "work/Phobos/Cartesian/MatrixSolution.out",
+        "work/Phobos/Sensitivity/SensitivityKernel.out",
+        "work/Phobos/Sensitivity/SensitivityKernelSlice.out",
+        "work/Phobos/Spherical/MatrixSolution.out",
+        "work/Phobos/Spherical/MatrixSolutionPhysicalRotated.out",
+        "work/Phobos/Spherical/MatrixSolutionReferentialRotated.out",
+        "work/Phobos/Spherical/PhysicalDensitySolutionRotated.out",
+        "work/Phobos/Spherical/PowerSpectrum.out",
+        "work/Phobos/Spherical/ReferentialDensitySolutionRotated.out"
+      ],
+      "extra_outputs": []
+    },
+    {
+      "program": "OutputZiheng",
+      "returncode": 0,
+      "elapsed_seconds": 100.06585986899881,
+      "outputs": {
+        "work/Ziheng/PHOBOS_POTENTIAL_OUTER.out": {
+          "bytes": 462369,
+          "sha256": "a6d32d24b78adc33111c52e8647868d470f42e40ec7a0dbcb062b5217679294d"
+        },
+        "work/Ziheng/PREM200.NO.INTEGRAL.out": {
+          "bytes": 48837,
+          "sha256": "c6caa4ced2cfc58c218655b8be4db9aaac9bbf4e2291e3ca0c12b08750da40e7"
+        },
+        "work/Ziheng/PhobosRadius.out": {
+          "bytes": 16456030,
+          "sha256": "8f1ebf530833619c9cc1bbb29acf389002a6c30c3cb04cea863cd6e13cc3259c"
+        }
+      },
+      "byte_mismatches": [
+        "work/Ziheng/PHOBOS_POTENTIAL_OUTER.out",
+        "work/Ziheng/PhobosRadius.out"
+      ],
+      "extra_outputs": []
+    }
+  ]
+}

@@ -11,8 +11,8 @@ Exact Phase 3 baseline: `15582edab8112dbb63e0101be5b26f5135298644` on `refactor/
 | Stage | Scope | Status |
 |---|---|---|
 | 3A.1 | Freeze operation/convention contracts; add pinned-transform identities and a real two-translation-unit external consumer check. | Accepted by independent Luna; committed as `bf844159ffd82383ee1c5abfae1374a785f46a2a`. |
-| 3A.2 | Strengthen file-backed model/operator/solve checks; map exact paper cases and capture unchanged baseline outputs and controlled performance measurements. | 3A.2.1 accepted and committed as `e0b08ca22484673589b97329ac211afec456ef71`. 3A.2.2 is in progress; an independent true-residual discrepancy blocks solver scientific acceptance and dependent replacement. |
-| 3B | Model/input ownership, model-value checks, caller migration, and old-reader retirement. | Not started. |
+| 3A.2 | Strengthen file-backed model/operator/solve checks; map exact paper cases and capture unchanged baseline outputs and controlled performance measurements. | 3A.2.1 (`e0b08ca22484673589b97329ac211afec456ef71`) and the 3A.2.2 evidence checkpoint (`838de6d3736fdebc69adb21cbc91ee8f74d243f7`) are accepted and committed. The independent true-residual discrepancy still blocks solver scientific acceptance and dependent replacement; overall 3A remains incomplete. |
+| 3B | Model/input ownership, model-value checks, caller migration, and old-reader retirement. | 3B.1 typed PREM/Phobos parsing and caller migration passed independent Luna review and awaits coordinator commit; 3B remains in progress. |
 | 3C | Source/operator/solver reconstruction in reviewed checkpoints; keep perturbation operations callable; compare old/new performance before old solver retirement. | Not started. |
 | 3D | Consolidate GPLSpec harmonic-call ownership while retaining pinned GSHTrans and grids. | Not started. |
 | 3E | Rebuild integrals, perturbations, and sensitivity in separately reviewed mathematical checkpoints. | Not started. |

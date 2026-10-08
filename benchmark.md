@@ -31,7 +31,7 @@ The exact output spelling and the plotting scripts are part of the workflow cont
 
 ## Phobos workflows
 
-The Phobos examples read the tracked `modeldata/TABLEA1.DAT` through `TestTools::PhobosRead`. Common source parameters are physical density 1860, length norm 10,000, used density 1342, mass norm `lengthnorm^3 * useddensity`, time norm 3600, scaled density `physical_density / massnorm * lengthnorm^3`, degree 100, polynomial order 5, max step 0.1, and ball radius 1.5. They write below `work/Phobos/` or `work/Ziheng/`; create those directories inside a disposable run tree first.
+The Phobos model constructor and `OutputZiheng` read the tracked `modeldata/TABLEA1.DAT` through the typed `GPLSpec::ModelInput::ReadPhobosHarmonics` input function. Common source parameters are physical density 1860, length norm 10,000, used density 1342, mass norm `lengthnorm^3 * useddensity`, time norm 3600, scaled density `physical_density / massnorm * lengthnorm^3`, degree 100, polynomial order 5, max step 0.1, and ball radius 1.5. They write below `work/Phobos/` or `work/Ziheng/`; create those directories inside a disposable run tree first.
 
 | Program | Differences and outputs |
 |---|---|

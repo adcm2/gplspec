@@ -12,6 +12,7 @@
 #include "SphericalGeometryPreconditioner.h"
 #include "Spherical_Integrator.h"
 #include "Shared_Utilities.h"
+#include "Model_Input.h"
 #include <FFTWpp/Ranges>
 #include <GSHTrans/All>
 #include <TomographyModels/All>
@@ -461,8 +462,12 @@ template <typename FLOAT = double, typename INTEGRAL = int> class EarthModel {
    // constructors
    EarthModel() {};
    EarthModel(const std::string &);
+   explicit EarthModel(const GPLSpec::ModelInput::PremDeck &);
    template <template <typename> class ParameterModel>
    EarthModel(const std::string &, const ParameterModel<FLOAT> &);
+   template <template <typename> class ParameterModel>
+   EarthModel(const GPLSpec::ModelInput::PremDeck &,
+              const ParameterModel<FLOAT> &);
 
    // norms
    FLOAT LengthNorm() const { return length_norm; };
@@ -733,14 +738,30 @@ template <typename FLOAT, typename INTEGRAL>
 EarthModel<FLOAT, INTEGRAL>::EarthModel(const std::string &pathtofile)
     : EarthModel(pathtofile, EarthModels::EarthConstants<FLOAT>()){};
 
-// full constructor
+template <typename FLOAT, typename INTEGRAL>
+EarthModel<FLOAT, INTEGRAL>::EarthModel(
+    const GPLSpec::ModelInput::PremDeck &deck)
+    : EarthModel(deck, EarthModels::EarthConstants<FLOAT>()) {}
+
+// Parse the file into an owned deck, then construct the interpolated model.
 template <typename FLOAT, typename INTEGRAL>
 template <template <typename> class ParameterModel>
 EarthModel<FLOAT, INTEGRAL>::EarthModel(
     const std::string &pathtofile, const ParameterModel<FLOAT> &ModelConstants)
-    : length_norm(ModelConstants.LengthNorm()),
-      mass_norm(ModelConstants.MassNorm()),
-      time_norm(ModelConstants.TimeNorm()),
+    : EarthModel(GPLSpec::ModelInput::ReadPremDeck(pathtofile), ModelConstants) {}
+
+// Construction from parsed PREM values. Existing material-layer, scaling, and
+// interpolation operations are retained; file extraction lives in ModelInput.
+template <typename FLOAT, typename INTEGRAL>
+template <template <typename> class ParameterModel>
+EarthModel<FLOAT, INTEGRAL>::EarthModel(
+    const GPLSpec::ModelInput::PremDeck &deck,
+    const ParameterModel<FLOAT> &ModelConstants)
+    : modeltitle(deck.title), ifanis(deck.anisotropy_flag),
+      ifdeck(deck.deck_flag), numnodes(deck.node_count),
+      nic(deck.inner_core_node_count), noc(deck.outer_core_node_count),
+      tref(deck.reference_time), length_norm(ModelConstants.LengthNorm()),
+      mass_norm(ModelConstants.MassNorm()), time_norm(ModelConstants.TimeNorm()),
       density_norm(ModelConstants.DensityNorm()),
       velocity_norm(ModelConstants.VelocityNorm()),
       acceleration_norm(ModelConstants.AccelerationNorm()),
@@ -748,228 +769,99 @@ EarthModel<FLOAT, INTEGRAL>::EarthModel(
       stress_norm(ModelConstants.StressNorm()),
       inertia_norm(ModelConstants.InertiaNorm()),
       gravitational_constant(ModelConstants.GravitationalConstant()) {
+   GPLSpec::ModelInput::ValidatePremDeck(deck);
+   int laynum = 0;
+   int idxouter = 0;
+   int idxinner = 0;
 
-   // std::cout << this->density_norm << "\n";
-   // opening file
-   std::fstream modelfile;
-   modelfile.open(pathtofile, std::ios::in);
+   for (const auto &node : deck.nodes) {
+      const double radius = node.radius;
+      const double rho = node.density;
+      const double vpv = node.vpv;
+      const double vsv = node.vsv;
+      const double qkappa = node.qkappa;
+      const double qshear = node.qshear;
+      const double vph = node.vph;
+      const double vsh = node.vsh;
+      const double eta = node.eta;
 
-   // getting information out of file
-   if (modelfile.is_open()) {
-      // get first line (title)
-      getline(modelfile, modeltitle);
+      if (idxinner > 0 && (radius / this->length_norm ==
+                           layered_radii[laynum][idxinner - 1])) {
+         layered_radii.push_back({radius / this->length_norm});
+         layered_rho.push_back({rho / this->density_norm});
+         layered_vpv.push_back({vpv / this->velocity_norm});
+         layered_vsv.push_back({vsv / this->velocity_norm});
+         layered_qkappa.push_back({qkappa});
+         layered_qshear.push_back({qshear});
+         layered_vph.push_back({vph / this->velocity_norm});
+         layered_vsh.push_back({vsh / this->velocity_norm});
+         layered_eta.push_back({eta});
 
-      // extract information from second line and move to next line
-      modelfile >> ifanis >> tref >> ifdeck;
-      modelfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-      // extract information from third line and move to next line
-      modelfile >> numnodes >> nic >> noc;
-      modelfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-      // loop through the deck
-      int laynum = 0;
-      int idxouter = 0;
-      int idxinner = 0;
-
-      while (idxouter < numnodes) {
-
-         std::vector<double> tmp_radius;
-         bool samelayer = true;
-
-         // while (samelayer) {
-         // double radius;
-         double radius, rho, vpv, vsv, qkappa, qshear, vph, vsh, eta;
-         modelfile >> radius >> rho >> vpv >> vsv >> qkappa >> qshear >> vph >>
-             vsh >> eta;
-         if (idxinner > 0 && (radius / this->length_norm ==
-                              layered_radii[laynum][idxinner - 1])) {
-            // move to next layer
-            layered_radii.push_back({radius / this->length_norm});
-            layered_rho.push_back({rho / this->density_norm});
-            layered_vpv.push_back({vpv / this->velocity_norm});
-            layered_vsv.push_back({vsv / this->velocity_norm});
-            layered_qkappa.push_back({qkappa});
-            layered_qshear.push_back({qshear});
-            layered_vph.push_back({vph / this->velocity_norm});
-            layered_vsh.push_back({vsh / this->velocity_norm});
-            layered_eta.push_back({eta});
-
-            // isotropy
-            if (_isisotropic && vpv != vsv) {
-               _isisotropic = false;
-            }
-
-            // fluid/solid:
-            if (vsv == 0.0 && vsh == 0) {
-               _issolid.push_back(false);
-            } else {
-               _issolid.push_back(true);
-            }
-
-            // set idxinner back to zero
-            idxinner = 0;
-            ++laynum;
+         if (_isisotropic && vpv != vsv) {
+            _isisotropic = false;
+         }
+         if (vsv == 0.0 && vsh == 0) {
+            _issolid.push_back(false);
          } else {
-            // put next value in current layer in
-            layered_radii[laynum].push_back(radius / this->length_norm);
-            layered_rho[laynum].push_back(rho / this->density_norm);
-            layered_vpv[laynum].push_back(vpv / this->velocity_norm);
-            layered_vsv[laynum].push_back(vsv / this->velocity_norm);
-            layered_qkappa[laynum].push_back(qkappa);
-            layered_qshear[laynum].push_back(qshear);
-            layered_vph[laynum].push_back(vph / this->velocity_norm);
-            layered_vsh[laynum].push_back(vsh / this->velocity_norm);
-            layered_eta[laynum].push_back(eta);
-
-            // check whether solid or fluid
-            if (idxouter == 0) {
-               if (vsv == 0.0 && vsh == 0.0) {
-                  _issolid[laynum] = false;
-               }
-            }
+            _issolid.push_back(true);
          }
+         idxinner = 0;
+         ++laynum;
+      } else {
+         layered_radii[laynum].push_back(radius / this->length_norm);
+         layered_rho[laynum].push_back(rho / this->density_norm);
+         layered_vpv[laynum].push_back(vpv / this->velocity_norm);
+         layered_vsv[laynum].push_back(vsv / this->velocity_norm);
+         layered_qkappa[laynum].push_back(qkappa);
+         layered_qshear[laynum].push_back(qshear);
+         layered_vph[laynum].push_back(vph / this->velocity_norm);
+         layered_vsh[laynum].push_back(vsh / this->velocity_norm);
+         layered_eta[laynum].push_back(eta);
 
-         // move to next line
-         modelfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-         // increment counters
-         ++idxinner;
-         ++idxouter;
-         // }
-      }
-      // for (auto &idxouter : layered_radii) {
-      //    // std::cout << "HELLO\n";
-      //    std::cout << idxouter.front() << " " << idxouter.back() << "\n";
-      // }
-      // std::cout << "Seg test 1\n";
-      _numlayers = layered_radii.size();
-      vec_layers.reserve(_numlayers + 1);
-      vec_layers.push_back(0.0);
-      // std::generate(
-      //     vec_layers.begin() + 1, vec_layers.end(),
-      //     [n = 0, this]() mutable { return layered_radii[n++].back(); });
-      // std::cout << "Seg test 2\n";
-      _vec_indices =
-          std::vector<std::vector<int>>(_numlayers, std::vector<int>(2, 0));
-      _vec_indices[0][0] = 0;
-      // std::cout << "Seg test 3\n";
-      for (int idx = 0; idx < _numlayers; ++idx) {
-         vec_layers.push_back(layered_radii[idx].back());
-         if (idx != 0) {
-            _vec_indices[idx][0] = _vec_indices[idx - 1][1] + 1;
+         if (idxouter == 0 && vsv == 0.0 && vsh == 0.0) {
+            _issolid[laynum] = false;
          }
-         _vec_indices[idx][1] =
-             _vec_indices[idx][0] + layered_radii[idx].size() - 1;
-         // std::cout << "Seg test " << idx + 3 << "\n";
       }
-      // std::cout << "Size: " << vec_layers.size() << "\n";
-      // for (auto &idx : vec_layers) {
-      //    std::cout << idx << "\n";
-      // }
-
-      for (int idx = 0; idx < _numlayers; ++idx) {
-         // iterators to start and end of layer of radius
-         auto it1 = layered_radii[idx].begin();
-         auto it2 = layered_radii[idx].end();
-
-         // iterators to beginning of this layer for all data
-         auto it_rho = layered_rho[idx].begin();
-         auto it_vpv = layered_vpv[idx].begin();
-         auto it_vsv = layered_vsv[idx].begin();
-         auto it_qkappa = layered_qkappa[idx].begin();
-         auto it_qshear = layered_qshear[idx].begin();
-         auto it_vph = layered_vph[idx].begin();
-         auto it_vsh = layered_vsh[idx].begin();
-         auto it_eta = layered_eta[idx].begin();
-
-         // pushback
-         func_rho.push_back(InterpA(it1, it2, it_rho));
-         func_vpv.push_back(InterpA(it1, it2, it_vpv));
-         func_vsv.push_back(InterpA(it1, it2, it_vsv));
-         func_qkappa.push_back(InterpA(it1, it2, it_qkappa));
-         func_qshear.push_back(InterpA(it1, it2, it_qshear));
-         func_vph.push_back(InterpA(it1, it2, it_vph));
-         func_vsh.push_back(InterpA(it1, it2, it_vsh));
-         func_eta.push_back(InterpA(it1, it2, it_eta));
-      }
-
-      // for (int idx = 0; idx < N; ++idx) {
-      //    double radius, rho, vpv, vsv, qkappa, qshear, vph, vsh, eta;
-      //    modelfile >> radius >> rho >> vpv >> vsv >> qkappa >> qshear >> vph
-      //    >>
-      //        vsh >> eta;
-      //    vec_radius.push_back(radius);
-      //    // vec_rho.push_back(rho);
-      //    // vec_vpv.push_back(vpv);
-      //    // vec_vsv.push_back(vsv);
-      //    // vec_qkappa.push_back(qkappa);
-      //    // vec_qshear.push_back(qshear);
-      //    // vec_vph.push_back(vph);
-      //    // vec_vsh.push_back(vsh);
-      //    // vec_eta.push_back(eta);
-
-      //    // move to next line
-      //    modelfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-      // }
-
-      modelfile.close();
-   } else {
-      assert("Model not found!");
+      ++idxinner;
+      ++idxouter;
    }
 
-   // finding layers
-   // this->vec_layers = this->findlayers(this->vec_radius);
-
-   // auto vec_indices = this->layerindices(this->vec_radius);
-   // for (auto &idx : vec_indices) {
-   //    std::cout << idx << "\n";
-   // }
-   // {
-   //    int idxouter = 0;
-   //    for (int idxlayers = 0; idxlayers < _numlayers; ++idxlayers) {
-   //       std::vector<double> tmp;
-   //       while (vec_radius[idxouter] != vec_layers[idxlayers + 1]) {
-   //          tmp.push_back(vec_radius[idxouter]);
-   //       }
-   //    }
-   // }
-};
-
-// full constructor
-
-inline void
-PhobosRead(const std::string &pathtofile) {
-
-   // std::cout << this->density_norm << "\n";
-   // opening file
-
-   // find length of file
-   std::size_t num_lines = filelength(pathtofile);
-
-   std::vector<int> vec_l(num_lines), vec_m(num_lines);
-   std::vector<double> vec_A(num_lines), vec_SA(num_lines), vec_B(num_lines),
-       vec_SB(num_lines);
-
-   std::fstream modelfile;
-   modelfile.open(pathtofile, std::ios::in);
-   // getting information out of file
-   if (modelfile.is_open()) {
-      // test first line
-      // getline(modelfile, modeltitle);
-      for (int idx = 0; idx < num_lines; ++idx) {
-         modelfile >> vec_l[idx] >> vec_m[idx] >> vec_A[idx] >> vec_SA[idx] >>
-             vec_B[idx] >> vec_SB[idx];
-         // move to next line
-         modelfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+   _numlayers = layered_radii.size();
+   vec_layers.reserve(_numlayers + 1);
+   vec_layers.push_back(0.0);
+   _vec_indices =
+       std::vector<std::vector<int>>(_numlayers, std::vector<int>(2, 0));
+   _vec_indices[0][0] = 0;
+   for (int idx = 0; idx < _numlayers; ++idx) {
+      vec_layers.push_back(layered_radii[idx].back());
+      if (idx != 0) {
+         _vec_indices[idx][0] = _vec_indices[idx - 1][1] + 1;
       }
-
-      modelfile.close();
-   } else {
-      std::cout << "Couldn't open!" << "\n";
-      assert("Model not found!");
+      _vec_indices[idx][1] =
+          _vec_indices[idx][0] + layered_radii[idx].size() - 1;
    }
-};
+
+   for (int idx = 0; idx < _numlayers; ++idx) {
+      auto it1 = layered_radii[idx].begin();
+      auto it2 = layered_radii[idx].end();
+      auto it_rho = layered_rho[idx].begin();
+      auto it_vpv = layered_vpv[idx].begin();
+      auto it_vsv = layered_vsv[idx].begin();
+      auto it_qkappa = layered_qkappa[idx].begin();
+      auto it_qshear = layered_qshear[idx].begin();
+      auto it_vph = layered_vph[idx].begin();
+      auto it_vsh = layered_vsh[idx].begin();
+      auto it_eta = layered_eta[idx].begin();
+      func_rho.push_back(InterpA(it1, it2, it_rho));
+      func_vpv.push_back(InterpA(it1, it2, it_vpv));
+      func_vsv.push_back(InterpA(it1, it2, it_vsv));
+      func_qkappa.push_back(InterpA(it1, it2, it_qkappa));
+      func_qshear.push_back(InterpA(it1, it2, it_qshear));
+      func_vph.push_back(InterpA(it1, it2, it_vph));
+      func_vsh.push_back(InterpA(it1, it2, it_vsh));
+      func_eta.push_back(InterpA(it1, it2, it_eta));
+   }
+}
 
 }   // namespace TestTools
 

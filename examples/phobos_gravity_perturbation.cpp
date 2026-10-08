@@ -22,7 +22,6 @@ main() {
    using FLOAT = double;
    using INT = std::ptrdiff_t;
    std::string pathtofile = "modeldata/TABLEA1.DAT";
-   TestTools::PhobosRead(pathtofile);
    Timer timer1;
    timer1.start();
    double physdensity = 1860.0;

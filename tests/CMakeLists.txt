@@ -46,6 +46,14 @@ if(BUILD_TESTING)
   add_test(NAME stage3a_harmonic_contract COMMAND stage3a_harmonic_contract)
 endif()
 
+add_executable(stage3b_model_input stage3b_model_input.cpp)
+target_link_libraries(stage3b_model_input PRIVATE gplspec)
+target_compile_definitions(stage3b_model_input PRIVATE
+  GPLSPEC_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+if(BUILD_TESTING)
+  add_test(NAME stage3b_model_input COMMAND stage3b_model_input)
+endif()
+
 add_executable(stage03_utilities stage03_utilities.cpp)
 target_link_libraries(stage03_utilities PRIVATE gplspec)
 if(BUILD_TESTING)

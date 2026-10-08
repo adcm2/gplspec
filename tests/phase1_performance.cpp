@@ -165,7 +165,8 @@ void benchmark_mapped(const std::string &process) {
 
 void benchmark_file_tomography(const std::string &process) {
   const auto earth_start = Clock::now();
-  TestTools::EarthModel<> earth("modeldata/PREM500");
+  TestTools::EarthModel<> earth(
+      GPLSpec::ModelInput::ReadPremDeck("modeldata/PREM500"));
   emit(process, "file_tomography", "earth_input_read", 0,
        elapsed(earth_start), "s");
 

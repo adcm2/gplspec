@@ -3,6 +3,7 @@
 
 // Header files
 #include "SimpleModels"
+#include "src/Model_Input.h"
 #include "src/GeneralModels/Earth_Density_Models_3D.h"
 #include "src/GeneralModels/Density_Model_Constructors.h"
 #include "src/GeneralModels/Density_Model_Return.h"
