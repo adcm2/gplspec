@@ -141,3 +141,7 @@ add_custom_command(
   VERBATIM)
 add_executable(tutorial5_phobos_compile ${phobos_tutorial_source})
 target_link_libraries(tutorial5_phobos_compile PRIVATE gplspec)
+
+# Opt-in Stage 3A performance harness; invoked by the controlled Python runner.
+add_executable(phase3a_performance EXCLUDE_FROM_ALL phase3a_performance.cpp)
+target_link_libraries(phase3a_performance PRIVATE gplspec)

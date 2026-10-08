@@ -1,0 +1,22 @@
+Finding a
+rows,639
+b_norm,60.222103526295157
+guess_norm,3048.9902499387426
+ag1_norm,588.82874003323207
+matvec_repeat_difference,0
+guess_direct_residual,9.6639597101388457
+guess_materialized_residual1,9.6639597101388457
+guess_materialized_residual2,9.6639597101388457
+residual_eval_difference,0
+iterations,13
+solver_info,0
+solver_error,4.9450537613665555e-13
+solution_guess_difference,0.15917680732115011
+solution_materialized_residual,2.0798443098823916e-12
+solution_direct_residual,2.0798443098823916e-12
+solution_action_difference,9.6639597101385935
+preconditioned_true_residual_correction_fraction,1.0377533620399361e-15
+correction_action_relative_mismatch,1.3010693404937488
+one_refinement_true_residual,2.5699640058006133e-12
+a_2norm_lower_bound,11.614142462552019
+backward_error_upper_bound_using_a_lower_bound,4.1778144990476697e-15

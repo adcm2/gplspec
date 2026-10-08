@@ -1,0 +1,10 @@
+Time to make model: 0.411432 seconds
+Force declared
+Preconditioner done
+Number of iterations: 0
+Requested tolerance: 1e-14
+Time for 3D: 0.825467 seconds
+Time for integral: 0.143887 seconds
+Force declared
+Number of iterations: 0
+Time for sensitivity kernel: 0.57627 seconds

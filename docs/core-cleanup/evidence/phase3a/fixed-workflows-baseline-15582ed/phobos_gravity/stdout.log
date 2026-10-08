@@ -1,0 +1,25 @@
+# layers: 15
+Max radius: 13931.9, min element: 8196.69
+Time to construct: 1.66694 seconds
+Volume: 5741.48km^3
+Density: 1.86 g/cm^3
+Force declared
+Preconditioner done
+Number of iterations: 47
+Requested tolerance: 1e-12
+Time for gravity: 54.6158 seconds
+Force declared
+Preconditioner done
+Number of iterations: 14
+Requested tolerance: 0.001
+Time for gravity 2: 17.9189 seconds
+Force declared
+Number of iterations: 19
+Time for sensitivity kernel: 23.2996 seconds
+First output: 0.73157 seconds
+Second output: 0.590218 seconds
+Third output: 0.112375 seconds
+Fifth output: 0.027285 seconds
+Sixth output: 0.027327 seconds
+Referential rotated: 1.60726 seconds
+Physical rotated: 1.57435 seconds

@@ -1,0 +1,10 @@
+Command: OMP_NUM_THREADS=1 OMP_DYNAMIC=FALSE OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 ctest --test-dir /tmp/gplspec-phase3-candidate-release --output-on-failure -R ^stage1c_file_tomography_solver$
+Exit: 0
+Internal ctest changing into directory: /tmp/gplspec-phase3-candidate-release
+Test project /tmp/gplspec-phase3-candidate-release
+    Start 1: stage1c_file_tomography_solver
+1/1 Test #1: stage1c_file_tomography_solver ...   Passed    0.41 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.41 sec

@@ -66,4 +66,4 @@ Historical evidence and dependency information are in:
 - `docs/cleanup/deferred-issues.md`
 - `docs/cleanup/baseline-manifest.md`
 
-Stage 00 source and frozen references remain immutable. Record newly discovered scientific issues separately and seek approval before changing their behavior.
+The Stage 00 baseline source and frozen references remain retrievable unchanged at the Phase 3 baseline commit. The current tracked Stage 00 harness may receive only an API migration required by an explicitly authorized Phase 3 public-API retirement; preserve its fixtures, mathematics, requested tolerances, output records and reference comparator exactly, and compare it against the immutable baseline checkout. Do not use API migration to alter scientific behavior, regenerate references or loosen tolerances. Record newly discovered scientific issues separately and pause dependent changes for human review.

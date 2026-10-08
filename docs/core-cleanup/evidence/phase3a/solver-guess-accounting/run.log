@@ -1,0 +1,17 @@
+Command: env OMP_NUM_THREADS=1 OMP_DYNAMIC=FALSE OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 /tmp/gplspec-phase3-candidate-release/bin/stage1c_file_tomography_solver
+CWD: /tmp/gplspec-phase3-baseline at 15582edab8112dbb63e0101be5b26f5135298644
+Test source SHA-256: 51855f936fc8e1713448f5c532b5210b14d0c22de52d26312074e2b60db3529f
+Executable SHA-256: 919fd0f7e91888421081ba130fbba945df4061266abf6c741022d0ac664d1479
+Exit: 0
+STDOUT:
+Force declared
+Preconditioner done
+Number of iterations: 0
+Requested tolerance: 1e-06
+Finding a
+Force declared
+Preconditioner done
+Number of iterations: 3
+Requested tolerance: 1e-06
+rows=261 force_norm=27.8166 quadrature_max_abs_error=3.55271e-15 iterations=0 initial_guess_relative_residual=5.06196e-12 update_relative_norm=0 solver_error=5.06196e-12 absolute_residual=1.40806e-10 independent_relative_residual=5.06196e-12 public_difference=0 public_finite_values=378 mapped_rows=63 mapped_iterations=3 mapped_independent_relative_residual=1.62767e-07 mapped_public_difference=0 mapped_public_finite_values=81
+STDERR:

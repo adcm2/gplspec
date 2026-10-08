@@ -133,7 +133,9 @@ int main() {
   solver.preconditioner().addmatrix(preconditioner_matrix);
   solver.setTolerance(tolerance);
   const Eigen::VectorXcd guess = solver.preconditioner().solve(force);
+  const double guess_relative_residual = (force - op * guess).norm() / force.norm();
   const Eigen::VectorXcd solution = solver.solveWithGuess(force, guess);
+  const double update_relative_norm = (solution - guess).norm() / guess.norm();
   const double absolute_residual = (force - op * solution).norm();
   const double relative_residual = absolute_residual / force.norm();
   if (solver.info() != Eigen::Success || !solution.allFinite() ||
@@ -142,6 +144,8 @@ int main() {
       relative_residual > tolerance) {
     std::cerr << "file-backed solver info=" << solver.info()
               << " iterations=" << solver.iterations()
+              << " initial_guess_relative_residual=" << guess_relative_residual
+              << " update_relative_norm=" << update_relative_norm
               << " reported_error=" << solver.error()
               << " absolute_residual=" << absolute_residual
               << " independent_relative_residual=" << relative_residual << '\n';
@@ -254,6 +258,8 @@ int main() {
   std::cout << "rows=" << op.rows() << " force_norm=" << force.norm()
             << " quadrature_max_abs_error=" << max_source_error
             << " iterations=" << solver.iterations()
+            << " initial_guess_relative_residual=" << guess_relative_residual
+            << " update_relative_norm=" << update_relative_norm
             << " solver_error=" << solver.error()
             << " absolute_residual=" << absolute_residual
             << " independent_relative_residual=" << relative_residual

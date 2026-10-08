@@ -1,0 +1,16 @@
+# layers: 15
+Max radius: 13931.9, min element: 8196.69
+Time to construct: 1.91574 seconds
+Force declared
+Preconditioner done
+Number of iterations: 21
+Requested tolerance: 1e-05
+Time for gravity: 28.1898 seconds
+Force declared
+Preconditioner done
+Number of iterations: 14
+Requested tolerance: 0.001
+Time for gravity 2: 18.5775 seconds
+Force declared
+Number of iterations: 19
+Time for sensitivity kernel: 24.0635 seconds
