@@ -1,0 +1,34 @@
+Internal ctest changing into directory: /tmp/gplspec-core-phase1-build
+Test project /tmp/gplspec-core-phase1-build
+      Start  1: stage1c_file_tomography_solver
+ 1/14 Test  #1: stage1c_file_tomography_solver .................   Passed    0.17 sec
+      Start  2: stage1c_external_consumer
+ 2/14 Test  #2: stage1c_external_consumer ......................   Passed   15.99 sec
+      Start  3: stage02_patch_application
+ 3/14 Test  #3: stage02_patch_application ......................   Passed    0.37 sec
+      Start  4: stage03_utilities
+ 4/14 Test  #4: stage03_utilities ..............................   Passed    0.01 sec
+      Start  5: stage04_construction_storage
+ 5/14 Test  #5: stage04_construction_storage ...................   Passed    0.01 sec
+      Start  6: stage04_mapping_geometry
+ 6/14 Test  #6: stage04_mapping_geometry .......................   Passed    0.01 sec
+      Start  7: stage04_density_sampling
+ 7/14 Test  #7: stage04_density_sampling .......................   Passed    0.01 sec
+      Start  8: stage04_discretization_setup
+ 8/14 Test  #8: stage04_discretization_setup ...................   Passed    0.01 sec
+      Start  9: stage05_tensor_contraction
+ 9/14 Test  #9: stage05_tensor_contraction .....................   Passed    0.01 sec
+      Start 10: stage06_output_helpers
+10/14 Test #10: stage06_output_helpers .........................   Passed    0.01 sec
+      Start 11: stage06_output_original_reference
+11/14 Test #11: stage06_output_original_reference ..............   Passed    0.13 sec
+      Start 12: stage05_1d_original_reference
+12/14 Test #12: stage05_1d_original_reference ..................   Passed    0.06 sec
+      Start 13: stage05_file_perturbation_original_reference
+13/14 Test #13: stage05_file_perturbation_original_reference ...   Passed    0.05 sec
+      Start 14: pr07_rotated_output
+14/14 Test #14: pr07_rotated_output ............................   Passed    0.04 sec
+
+100% tests passed, 0 tests failed out of 14
+
+Total Test time (real) =  16.90 sec

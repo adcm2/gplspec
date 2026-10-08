@@ -26,3 +26,16 @@ The reviewer found that Stage 1C's solver plan required “meaningful nonzero it
 **Disposition: resolved pending independent re-review.** No production code, tests, references, dependencies or numerical settings were changed.
 
 **Stage 1B independent Luna re-review: PASS.** The reviewer verified the minimum-two-iteration criterion, independent residual contract, and existing-call transform parity scope. No remaining findings. The coordinator acceptance update follows the reviewed documentation snapshot.
+
+
+## Stage 1C — initial Luna review
+
+**Verdict: BLOCKED.**
+
+The reviewer found that the standalone public-umbrella compile checks covered `Core`, `GeneralModels`, `SimpleModels`, and `All`, but omitted the supported `Test` and `Timer` umbrellas.
+
+**Implementation response:** Added `tests/stage02_test_smoke.cpp` and `tests/stage02_timer_smoke.cpp` and included both umbrellas in the standalone smoke-target loop in `tests/CMakeLists.txt`. Both compile as separate translation units in the fresh Release build; no header or production implementation repair was needed. Added both sources and all build/CI inputs to the Stage 1C content manifest, which compares candidate hashes with the exact Stage 1C parent and records inputs/references separately. Updated campaign and implementation status accordingly.
+
+**Disposition: resolved pending independent re-review.** The prior full build, 14/14 CTests and frozen Stage 00 comparison remain valid because the response only adds two compile-only object targets; both new targets were force-recompiled successfully. No CTest count or numerical result changed. No PASS or Stage 1C acceptance is claimed yet.
+
+**Stage 1C independent Luna re-review: PASS.** All six public umbrellas have standalone coverage; follow-up compilation and link evidence resolves the blocker. The reviewer independently verified all 96 base/candidate manifest hashes with zero mismatches. No remaining findings; production, inputs, references, dependencies and experiments remain unchanged. Coordinator acceptance record follows the frozen reviewed candidate.

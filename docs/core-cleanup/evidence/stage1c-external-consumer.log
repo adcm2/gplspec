@@ -1,0 +1,27 @@
+$ cmake -S /home/adcm2/Documents/Research/Projects/gplspec/tests/external_consumer -B /tmp/gplspec-core-phase1-build/tests/external-consumer-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DGPLSPEC_SOURCE_DIR=/home/adcm2/Documents/Research/Projects/gplspec -DGPLSPEC_EIGEN_INCLUDE_DIR=/tmp/gplspec-core-phase1-build/_deps/eigen3-src -DFETCHCONTENT_SOURCE_DIR_NUMERICCONCEPTS=/tmp/gplspec-core-phase1-build/tests/external-consumer-build/_deps/numericconcepts-src -DFETCHCONTENT_SOURCE_DIR_TOMOGRAPHYMODELS=/tmp/gplspec-core-phase1-build/tests/external-consumer-build/_deps/tomographymodels-src -DFETCHCONTENT_SOURCE_DIR_FFTWPP=/tmp/gplspec-core-phase1-build/tests/external-consumer-build/_deps/fftwpp-src -DFETCHCONTENT_SOURCE_DIR_INTERPOLATION=/tmp/gplspec-core-phase1-build/tests/external-consumer-build/_deps/interpolation-src -DFETCHCONTENT_SOURCE_DIR_GSHTRANS=/tmp/gplspec-core-phase1-build/tests/external-consumer-build/_deps/gshtrans-src -DFETCHCONTENT_SOURCE_DIR_GAUSSQUAD=/tmp/gplspec-core-phase1-build/tests/external-consumer-build/_deps/gaussquad-src -DFETCHCONTENT_SOURCE_DIR_PLANETARYMODEL=/tmp/gplspec-core-phase1-build/tests/external-consumer-build/_deps/planetarymodel-src
+-- The CXX compiler identification is GNU 13.3.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- The C compiler identification is GNU 13.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Found PkgConfig: /usr/bin/pkg-config (found version "1.8.1")
+-- Found FFTW: /usr/include
+-- Found OpenMP_C: -fopenmp (found version "4.5")
+-- Found OpenMP_CXX: -fopenmp (found version "4.5")
+-- Found OpenMP: TRUE (found version "4.5")
+-- Found NetCDF: /usr/include (found version "4.9.2")
+-- Configuring done (3.7s)
+-- Generating done (0.0s)
+-- Build files have been written to: /tmp/gplspec-core-phase1-build/tests/external-consumer-build
+$ cmake --build /tmp/gplspec-core-phase1-build/tests/external-consumer-build --target external_consumer -j2
+[1/3] Building CXX object CMakeFiles/external_consumer.dir/main.cpp.o
+[2/3] Building CXX object CMakeFiles/external_consumer.dir/peer.cpp.o
+[3/3] Linking CXX executable external_consumer
+$ /tmp/gplspec-core-phase1-build/tests/external-consumer-build/external_consumer

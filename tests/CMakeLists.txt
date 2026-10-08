@@ -3,9 +3,25 @@ find_package(PythonInterp 3 REQUIRED)
 add_executable(stage00_reference stage00_reference.cpp)
 target_link_libraries(stage00_reference PRIVATE gplspec PlanetaryModel TomographyModels)
 
+add_executable(stage1c_file_tomography_solver stage1c_file_tomography_solver.cpp)
+target_link_libraries(stage1c_file_tomography_solver PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage1c_file_tomography_solver
+    COMMAND stage1c_file_tomography_solver)
+  set_tests_properties(stage1c_file_tomography_solver PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+  add_test(NAME stage1c_external_consumer
+    COMMAND ${PYTHON_EXECUTABLE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/run_external_consumer.py
+      ${PROJECT_SOURCE_DIR}
+      ${CMAKE_CURRENT_BINARY_DIR}/external-consumer-build
+      ${CMAKE_BINARY_DIR}/_deps
+      ${CMAKE_BINARY_DIR}/_deps/eigen3-src)
+endif()
+
 # Public umbrella headers must compile independently and remain ODR-safe when
 # included by more than one translation unit.
-foreach(header IN ITEMS Core GeneralModels SimpleModels All)
+foreach(header IN ITEMS Core GeneralModels SimpleModels All Test Timer)
   string(TOLOWER "${header}" header_lower)
   add_library(stage02_${header_lower}_smoke OBJECT stage02_${header_lower}_smoke.cpp)
   target_link_libraries(stage02_${header_lower}_smoke PRIVATE gplspec)

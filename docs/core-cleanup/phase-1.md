@@ -9,8 +9,8 @@ Current branch: `refactor/core-cleanup`. Verified starting/base commit: `ac62330
 | Stage | Scope | Status |
 |---|---|---|
 | 1A | Tracked-scope inventory and proposed keep/replace/remove decisions | Accepted; Luna PASS, local commit `31e75c18f4b52ad1855ae425249a8c2b264ac5a9` |
-| 1B | Architecture, proposed public API, workflows and migration boundaries | Proposal complete; frozen for independent review |
-| 1C | Reproducible correctness baseline, coverage gaps and practical CI | Not started; must capture fresh evidence |
+| 1B | Architecture, proposed public API, workflows and migration boundaries | Accepted; Luna PASS, local commit `b68bb219e94eac50ecc145c9eb6388ac5fb61f57` |
+| 1C | Reproducible correctness baseline, coverage gaps and practical CI | Accepted after independent Luna re-review; fresh Release build, 14 CTests, six standalone umbrellas, external consumer and frozen Stage 00 pass. |
 | 1D | Controlled performance baseline and provisional thresholds | Not started |
 | 1E | Consolidated Phase 1 package and Sol-high review | Not started |
 
@@ -151,4 +151,14 @@ Stage 1C should begin by classifying and reusing the current smoke, construction
 
 Stage 1D should use fixed input checksums and optimized builds with controlled thread counts. Candidate workloads are a small homogeneous sphere for setup overhead (`clean_bench_1`), layered PREM (`clean_bench_2`), a mapped model (`clean_bench_3`), and tomography/sensitivity (`clean_bench_6`); select and freeze exact sizes after the 1C nontriviality check. Measure model/input setup, discretization, one matrix-vector action, cold first solve, warmed complete solve, peak resident memory, and clean optimized build time separately. Run repeated fresh processes and repeated warmed operations; record hardware, compiler/build flags, thread settings, solver iterations, achieved independent residual, raw timings/logs and variability. Choose provisional regression thresholds only after observing run-to-run noise; if a workload or resource metric cannot be measured repeatably, mark it unavailable rather than infer a threshold. No timing-driven algorithm changes are in scope.
 
-No 1C test implementation, baseline capture or 1D measurement has started in Stage 1B.
+### Stage 1C candidate evidence
+
+The fresh Release build includes all examples and the opt-in baseline harness. The original 12 CTests passed before new coverage; the final suite passes 14/14. The three frozen Stage 00 comparisons each cover 20,700 records with zero changed components at the existing `rtol=1e-13`, `atol=1e-15`; `MatrixSolution.out` remains byte-identical. No file under `tests/reference/` changed. Standalone compile targets now cover all six supported umbrellas: `Core`, `GeneralModels`, `SimpleModels`, `All`, `Test`, and `Timer`; both newly added targets compile successfully.
+
+Added `stage1c_file_tomography_solver`: it constructs the file-backed `PREM500`/`S40RTS_dvs.nc` model from tracked inputs and requires a finite nonzero deterministic complex matrix action. That spherical case naturally solves in zero iterations, so it is used only for file-input/operator coverage. The same test uses the existing smooth angular mapping workload for solve diagnostics: at the unchanged `1e-6` tolerance, CG performs 3 iterations, reports error `1.62767e-7`, and has independent absolute residual `3.04753e-5` and relative residual `1.62767e-7` (`||b-Ax||/||b||`). It fails above the requested tolerance, requires all returned values finite, and compares the public solver result with the diagnosed solution format. This is bounded evidence of convergence for the selected fixture, not general validation of all models or solver methods.
+
+Added a standalone external two-translation-unit CMake consumer. It supplies `Eigen3::Eigen` from the parent project, includes `<gplspec/All>`, links the executable only to `gplspec`, and constructs a model. The runner reuses copies of the already pinned dependency sources under its own build directory; the CMake ODR patch guard remains active. The consumer must explicitly request C++23, as required by GPLSpec's public headers.
+
+Added a separate C++ workflow on Ubuntu 24.04 with read-only `contents` permission. It installs FFTW/NetCDF development packages, configures the Release examples/tests, builds with two jobs, runs CTest and the unregistered two-TU header-link executable, then runs the frozen Stage 00 comparator. The Pages deployment workflow remains independent. The workflow is configured but has not yet run on GitHub.
+
+Previously established checks continue to cover the 1D and 3D complex operator actions, material origin/interfaces, mapping perturbations, output helpers, density sampling, and PR #7 rotated output. These are distinct operator and serialization/reference checks; they do not claim broader scientific validation. The known original 1D Hermitian-form discrepancy remains recorded as an unchanged baseline observation. No numerical method, tolerance/reference, dependency revision, model input, or experimental file changed. Stage 1D performance measurements are not part of this Stage 1C candidate.
