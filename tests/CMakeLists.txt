@@ -70,6 +70,12 @@ if(BUILD_TESTING)
   add_test(NAME stage3c_geometry_ownership COMMAND stage3c_geometry_ownership)
 endif()
 
+add_executable(stage3e_radial_integral stage3e_radial_integral.cpp)
+target_link_libraries(stage3e_radial_integral PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage3e_radial_integral COMMAND stage3e_radial_integral)
+endif()
+
 add_executable(stage03_utilities stage03_utilities.cpp)
 target_link_libraries(stage03_utilities PRIVATE gplspec)
 if(BUILD_TESTING)

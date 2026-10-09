@@ -10,7 +10,7 @@
 #include <PlanetaryModel/All>
 // #include <TomographyModels/All>
 #include "SphericalGeometryPreconditioner.h"
-#include "Spherical_Integrator.h"
+#include "Shared_Utilities.h"
 #include <FFTWpp/Ranges>
 #include <GSHTrans/All>
 #include <TomographyModels/All>
@@ -28,7 +28,6 @@
 #include <vector>
 
 namespace MappingTools {
-using namespace GravityFunctions;
 
 using MATRIX3cd = Eigen::Matrix<std::complex<double>, 3, 3>;
 using EARTHMATRIX3 = std::vector<std::vector<MATRIX3cd>>;
@@ -70,7 +69,7 @@ tom_to_dxi(GRID<FLOAT, OrderIndexRange, IndexRange> &grid, std::size_t npoly,
       auto normval = std::sqrt(4.0 * 3.1415926535);
       // std::cout << "Hello internal\n";
       for (int idxpoly = 0; idxpoly < idxpolymax; ++idxpoly) {
-         auto radr = GravityFunctions::StandardIntervalMap(
+         auto radr = GPLSpec::detail::StandardIntervalMap(
              q.X(idxpoly), vec_noderadii[idxelem], vec_noderadii[idxelem + 1]);
 
          for (int idxtheta = 0; idxtheta < grid.NumberOfCoLatitudes();

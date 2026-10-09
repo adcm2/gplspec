@@ -3,6 +3,7 @@
 
 #include <string>
 #include <fstream>
+#include <numbers>
 #include "../Radial_Tools.h"
 #include "../Shared_Utilities.h"
 #include "Earth_Density_Models_3D.h"
@@ -370,7 +371,9 @@ Density3D::Mass() const {
       masstemp *= node_data.ElementWidth(idxelem) / 2.0;
       massret += masstemp;
    }
-   return massret * sqrt(4.0 * 3.1415926535) * this->MassNorm();
+   // GSHTrans uses the full-precision orthonormal Y00 normalization.
+   return massret * std::sqrt(4.0 * std::numbers::pi_v<double>) *
+          this->MassNorm();
 };
 
 auto

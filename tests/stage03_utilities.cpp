@@ -1,6 +1,6 @@
 #include "../gplspec/src/Shared_Utilities.h"
+#include "../gplspec/src/Radial_Tools.h"
 #include "../gplspec/src/Spectral_Element_Tools.h"
-#include "../gplspec/src/Spherical_Integrator.h"
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
@@ -110,9 +110,6 @@ int main() {
                     x, interval_edges[idx], interval_edges[idx + 1]) ==
                 expected);
          Require(Radial_Tools::StandardIntervalMap(
-                    x, interval_edges[idx], interval_edges[idx + 1]) ==
-                expected);
-         Require(GravityFunctions::StandardIntervalMap(
                     x, interval_edges[idx], interval_edges[idx + 1]) ==
                 expected);
       }

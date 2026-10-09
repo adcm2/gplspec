@@ -795,235 +795,165 @@ FindGravitationalPotentialClassicalPerturbation(
    return retsol;
 };
 
-// integral solver for spherical model
+// The normalized radial Green function is evaluated as two cumulative moments.
+// Scaling each moment at its current boundary keeps the powers bounded by one.
 inline auto
-GravitationalSphericalIntegral(GeneralEarthModels::Density3D &inp_model) {
-   std::size_t nelem = inp_model.Num_Elements();
-   int npoly = inp_model.Poly_Order();
-   int lMax = inp_model.GSH_Grid().MaxDegree();
+GravitationalSphericalIntegral(const GeneralEarthModels::Density3D &model) {
+   using Complex = std::complex<double>;
+   constexpr double pi = 3.141592653589793238462643383279502884;
 
-   double phi_0;
-   phi_0 = 0.0;
+   const auto &mesh = model.Node_Information();
+   const auto &quadrature = model.qP();
+   const auto &grid = model.GSH_Grid();
+   const std::size_t elements = mesh.NumberOfElements();
+   const std::size_t nodes_per_element = mesh.NumNodesWithinElement();
+   const int lmax = grid.MaxDegree();
+   const std::size_t stride = static_cast<std::size_t>(lmax + 1) * (lmax + 1);
+   const std::size_t spatial_size = grid.NumberOfLongitudes() *
+                                    grid.NumberOfCoLatitudes();
 
-   // length of coefficients for YLM
-   auto coefficientnumber =
-       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
-   auto coefficientnumber2 =
-       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
-   auto numspatial = inp_model.GSH_Grid().NumberOfLongitudes() *
-                     inp_model.GSH_Grid().NumberOfCoLatitudes();
-   // int laynum = 0;
-   // double rad_scale = mymodel.LengthNorm();
-   // double scdiff = rad_scale / mymodel.OuterRadius();
-   // vector that will contain results
-   std::vector<std::vector<std::complex<double>>> vec_output(
-       nelem + 1,
-       std::vector<std::complex<double>>((lMax + 1) * (lMax + 1), 0.0));
-
-   auto rphys = [&inp_model](int idxelem, double x) {
-      return Radial_Tools::StandardIntervalMap(
-          x, inp_model.Node_Information().ElementLowerRadius(idxelem),
-          inp_model.Node_Information().ElementUpperRadius(idxelem));
-   };
-   auto rscale = [&inp_model](int idxelem, double x) {
-      return GPLSpec::detail::ScaledRadialNodeMap(
-          x, inp_model.Node_Information().ElementLowerRadius(idxelem) /
-                 inp_model.Node_Information().ElementUpperRadius(idxelem));
-   };
-   const double bigg_db = inp_model.GravitationalConstant();
-   const double pi_db = 3.1415926535897932;
-   // return 1.2;
-   std::vector<std::complex<double>> vec_g(nelem + 1, 0.0);
-   auto indexcomp = [](int l, int m) { return l * l + l + m; };
-
-   // vector of vectors of vectors to hold information on density
-   // std::vector<std::vector<std::vector<std::complex<double>>>> vec_rho_ylm(
-   //     nelem, std::vector<std::vector<std::complex<double>>>(
-   //                npoly + 1,
-   //                std::vector<std::complex<double>>(coefficientnumber,
-   //                0.0)));
-   std::vector<std::vector<std::vector<std::complex<double>>>> vec_rho_ylm(
-       nelem, std::vector<std::vector<std::complex<double>>>(
-                  npoly + 1,
-                  std::vector<std::complex<double>>(coefficientnumber2, 0.0)));
-   for (int idxelem = 0; idxelem < nelem; ++idxelem) {
-      for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
-         // density on the spatial grid
-         // auto rho_spatial = inp_model.DensityAtRadialNode(idxelem, idxnode);
-         std::vector<std::complex<double>> rho_spatial(numspatial);
-         for (int idx = 0; idx < numspatial; ++idx) {
-            rho_spatial[idx] = inp_model.Density_Point(idxelem, idxnode, idx);
-         };
-
-         // inp_model.GSH_Grid().ForwardTransformation(
-         //     lMax, 0, rho_spatial, vec_rho_ylm[idxelem][idxnode]);
-         inp_model.GSH_Grid().ForwardTransformation(
-             lMax, 0, rho_spatial, vec_rho_ylm[idxelem][idxnode]);
+   // Transform each element-local density sample once. Shared interface nodes
+   // intentionally occur in both adjacent elements with their own material.
+   std::vector<Complex> density_coefficients(elements * nodes_per_element * stride);
+   std::vector<Complex> density_on_grid(spatial_size);
+   std::vector<Complex> coefficients(stride);
+   for (std::size_t element = 0; element < elements; ++element) {
+      for (std::size_t node = 0; node < nodes_per_element; ++node) {
+         for (std::size_t spatial = 0; spatial < spatial_size; ++spatial) {
+            density_on_grid[spatial] =
+                Complex{model.Density_Point(element, node, spatial), 0.0};
+         }
+         std::fill(coefficients.begin(), coefficients.end(), Complex{});
+         grid.ForwardTransformation(lmax, 0, density_on_grid, coefficients);
+         const std::size_t sample = (element * nodes_per_element + node) * stride;
+         std::copy(coefficients.begin(), coefficients.end(),
+                   density_coefficients.begin() + sample);
       }
    }
 
-   // finding integral
-   for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-      for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
-         std::vector<std::complex<double>> vec_f(nelem + 1, 0.0),
-             vec_g(nelem + 1, 0.0);
-         // auto idxlm = indexreal(idxl, idxm);
-         auto idxlm = indexcomp(idxl, idxm);
-         // auto idxlm = idxl * idxl + idxl + idxm;
+   std::vector<std::vector<Complex>> potential(
+       elements + 1, std::vector<Complex>(stride, Complex{}));
+   std::vector<Complex> inward(elements + 1, Complex{});
+   std::vector<Complex> outward(elements + 1, Complex{});
 
-         // use Gaussian quadrature to find the integral from
-         // vec_noderadii[idxelem-1] to vec_noderadii[idxelem]
-         for (int idxelem = 0; idxelem < nelem; ++idxelem) {
-            auto myratio =
-                inp_model.Node_Information().ElementLowerRadius(idxelem) /
-                inp_model.Node_Information().ElementUpperRadius(idxelem);
-            auto rscaleint = [&myratio](double x) {
-               return GPLSpec::detail::ScaledRadialNodeMap(x, myratio);
-            };
-            for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
-               vec_f[idxelem + 1] +=
-                   inp_model.q().W(idxnode) *
-                   vec_rho_ylm[idxelem][idxnode][idxlm] *
-                   std::pow(rscaleint(inp_model.q().X(idxnode)),
-                            2.0 + static_cast<double>(idxl));
+   for (int degree = 0; degree <= lmax; ++degree) {
+      for (int order = -degree; order <= degree; ++order) {
+         const std::size_t harmonic =
+             static_cast<std::size_t>(degree * degree + degree + order);
+         std::fill(inward.begin(), inward.end(), Complex{});
+         std::fill(outward.begin(), outward.end(), Complex{});
+
+         // inward[e] = r_e^(-l-1) * integral_0^r_e rho_lm(s) s^(l+2) ds.
+         for (std::size_t element = 0; element < elements; ++element) {
+            const double lower = mesh.ElementLowerRadius(element);
+            const double upper = mesh.ElementUpperRadius(element);
+            const double ratio = lower / upper;
+            Complex segment{};
+            for (std::size_t node = 0; node < nodes_per_element; ++node) {
+               const std::size_t sample =
+                   (element * nodes_per_element + node) * stride + harmonic;
+               const double radius = mesh.NodeRadius(element, node);
+               segment += quadrature.W(node) * density_coefficients[sample] *
+                          std::pow(radius / upper, degree + 2);
             }
-            auto intfact = 0.5 * (1.0 - myratio);
-            vec_f[idxelem + 1] *= intfact;
-            vec_f[idxelem + 1] *=
-                inp_model.Node_Information().ElementUpperRadius(idxelem) *
-                inp_model.Node_Information().ElementUpperRadius(idxelem);
-
-            vec_f[idxelem + 1] +=
-                vec_f[idxelem] *
-                std::pow(myratio, 1.0 + static_cast<double>(idxl));
+            inward[element + 1] =
+                inward[element] * std::pow(ratio, degree + 1) +
+                (0.5 * upper * (upper - lower)) * segment;
          }
 
-         // filling out g
-         for (int idxelem = nelem - 1; idxelem > 0; --idxelem) {
-
-            auto myratio =
-                inp_model.Node_Information().ElementLowerRadius(idxelem) /
-                inp_model.Node_Information().ElementUpperRadius(idxelem);
-            auto myratio2 = 1.0 / myratio;
-            auto rscaleint = [&myratio2](double x) {
-               return ((myratio2 - 1.0) * x + (myratio2 + 1.0)) * 0.5;
-            };
-
-            for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
-               vec_g[idxelem] += inp_model.q().W(idxnode) *
-                                 vec_rho_ylm[idxelem][idxnode][idxlm] *
-                                 std::pow(rscaleint(inp_model.q().X(idxnode)),
-                                          1.0 - static_cast<double>(idxl));
+         // outward[e] = r_e^l * integral_r_e^R rho_lm(s) s^(1-l) ds.
+         // Only the monopole has a nonzero contribution at the origin.
+         for (std::size_t element = elements; element-- > 1;) {
+            const double lower = mesh.ElementLowerRadius(element);
+            const double upper = mesh.ElementUpperRadius(element);
+            Complex segment{};
+            for (std::size_t node = 0; node < nodes_per_element; ++node) {
+               const std::size_t sample =
+                   (element * nodes_per_element + node) * stride + harmonic;
+               const double scaled_radius =
+                   mesh.NodeRadius(element, node) / lower;
+               segment += quadrature.W(node) * density_coefficients[sample] *
+                          std::pow(scaled_radius, 1 - degree);
             }
-            auto intfact = 0.5 * (myratio2 - 1.0);
-            vec_g[idxelem] *= intfact;
-            vec_g[idxelem] *=
-                inp_model.Node_Information().ElementLowerRadius(idxelem) *
-                inp_model.Node_Information().ElementLowerRadius(idxelem);
-            vec_g[idxelem] += vec_g[idxelem + 1] *
-                              std::pow(myratio, static_cast<double>(idxl));
-         }
-         if (idxl == 0) {
-            auto rscaleint = [&inp_model](double x) {
-               return Radial_Tools::StandardIntervalMap(
-                   x, inp_model.Node_Information().ElementLowerRadius(0),
-                   inp_model.Node_Information().ElementUpperRadius(0));
-            };
-            for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
-               vec_g[0] += inp_model.q().W(idxnode) *
-                           vec_rho_ylm[0][idxnode][0] *
-                           rscaleint(inp_model.q().X(idxnode));
-            }
-            auto intfact = 0.5 * inp_model.Node_Information().ElementWidth(0);
-            vec_g[0] *= intfact;
-            vec_g[0] += vec_g[1];
+            segment *= 0.5 * lower *
+                       (upper - lower);
+            const double ratio = lower / upper;
+            outward[element] =
+                segment + outward[element + 1] * std::pow(ratio, degree);
          }
 
-         // store result
-         for (int idxelem = 0; idxelem < nelem + 1; ++idxelem) {
-            auto idxuse = indexcomp(idxl, idxm);
-            vec_output[idxelem][idxuse] = vec_f[idxelem] + vec_g[idxelem];
-            vec_output[idxelem][idxuse] *=
-                -4.0 * pi_db * bigg_db /
-                (2.0 * static_cast<double>(idxl) + 1.0);
-            if (idxl == lMax && std::abs(idxm) == idxl) {
-               vec_output[idxelem][idxuse] *= 0;
+         if (degree == 0) {
+            const double lower = mesh.ElementLowerRadius(0);
+            const double upper = mesh.ElementUpperRadius(0);
+            Complex center_segment{};
+            for (std::size_t node = 0; node < nodes_per_element; ++node) {
+               const std::size_t sample = harmonic + node * stride;
+               center_segment += quadrature.W(node) *
+                                 density_coefficients[sample] *
+                                 mesh.NodeRadius(0, node);
+            }
+            outward[0] = outward[1] +
+                         0.5 * (upper - lower) * center_segment;
+         }
+
+         const double green_scale = -4.0 * pi * model.GravitationalConstant() /
+                                    (2.0 * degree + 1.0);
+         for (std::size_t radial = 0; radial <= elements; ++radial) {
+            potential[radial][harmonic] =
+                green_scale * (inward[radial] + outward[radial]);
+            if (lmax > 0 && degree == lmax && std::abs(order) == degree) {
+               // Preserve both reserved highest-order coefficients.
+               potential[radial][harmonic] = Complex{};
             }
          }
       }
    }
 
-   return vec_output;
+   return potential;
 }
 
+namespace detail {
+inline double HomogeneousSphereScalarPotential(
+    const GeneralEarthModels::Density3D &model, double radius) {
+   constexpr double pi = 3.141592653589793238462643383279502884;
+   const double body_radius = model.Node_Information().PlanetRadius();
+   const double density = model.Density_Point(0, 0, 0);
+   const double scale = 2.0 * pi * model.GravitationalConstant() * density / 3.0;
+   if (radius <= body_radius) {
+      return scale * (radius * radius - 3.0 * body_radius * body_radius);
+   }
+   return -2.0 * scale * std::pow(body_radius, 3.0) / radius;
+}
+}  // namespace detail
+
+// Mesh-boundary values are the spherical-harmonic Y00 coefficient.
 inline auto
-HomogeneousSphereIntegral(
-    GeneralEarthModels::Density3D &inp_model) {   // exact solution:
-   std::vector<double> vec_exactsol(inp_model.Num_Elements() + 1);
-
-   // define constants
-   double bigg_db = 6.6743015 * std::pow(10.0, -11.0) /
-                    inp_model.GravitationalConstantNorm();
-   double pi_db = 3.1415926535897932;
-   double multfact = 2.0 * pi_db * std::pow(4.0 * pi_db, 0.5) * bigg_db *
-                     inp_model.Density_Point(0, 0, 0) / 3.0;
-   double planetradius = inp_model.Node_InformationP().PlanetRadius();
-
-   // fill out exact integral
-   for (int idx = 0; idx < inp_model.Num_Elements(); ++idx) {
-      double currentrad = inp_model.Node_InformationP().ElementLowerRadius(idx);
-
-      // if inside planet
-      if (currentrad < planetradius) {
-         vec_exactsol[idx] = multfact * (currentrad * currentrad -
-                                         3.0 * planetradius * planetradius);
-      } else {
-         vec_exactsol[idx] = -2.0 * multfact * planetradius / currentrad;
-      }
+HomogeneousSphereIntegral(const GeneralEarthModels::Density3D &model) {
+   constexpr double sqrt_four_pi = 3.544907701811032054596334966682290366;
+   const auto &mesh = model.Node_Information();
+   std::vector<double> coefficient(mesh.NumberOfElements() + 1);
+   for (std::size_t element = 0; element < mesh.NumberOfElements(); ++element) {
+      coefficient[element] =
+          sqrt_four_pi * detail::HomogeneousSphereScalarPotential(
+                             model, mesh.ElementLowerRadius(element));
    }
-   // final point
-   {
-      double currentrad = inp_model.Node_InformationP().OuterRadius();
-      vec_exactsol.back() =
-          -2.0 * multfact * std::pow(planetradius, 3.0) / currentrad;
-   }
+   coefficient.back() =
+       sqrt_four_pi * detail::HomogeneousSphereScalarPotential(
+                          model, mesh.OuterRadius());
+   return coefficient;
+}
 
-   return vec_exactsol;
-};
-
+// Arbitrary-radius values are scalar potentials, as used by spatial outputs.
 inline auto
-HomogeneousSphereIntegral(GeneralEarthModels::Density3D &inp_model,
-                          std::vector<double> &inp_radii) {   // exact solution:
-   std::vector<double> vec_exactsol(inp_radii.size());
-
-   // define constants
-   double bigg_db = 6.6743015 * std::pow(10.0, -11.0) /
-                    inp_model.GravitationalConstantNorm();
-   double pi_db = 3.1415926535897932;
-   double multfact =
-       2.0 * pi_db * bigg_db * inp_model.Density_Point(0, 0, 0) / 3.0;
-   double planetradius = inp_model.Node_Information().PlanetRadius();
-
-   // fill out exact integral
-   // for (int idx = 0; idx < inp_radii.size() ; ++idx) {
-   for (int idx = 0; idx < inp_radii.size(); ++idx) {
-      double r = inp_radii[idx];
-      // if inside planet
-      if (inp_radii[idx] < planetradius) {
-         vec_exactsol[idx] =
-             multfact * (r * r - 3.0 * planetradius * planetradius);
-      } else {
-         vec_exactsol[idx] = -2.0 * multfact * std::pow(planetradius, 3.0) / r;
-      }
+HomogeneousSphereIntegral(const GeneralEarthModels::Density3D &model,
+                          const std::vector<double> &radii) {
+   std::vector<double> potential(radii.size());
+   for (std::size_t index = 0; index < radii.size(); ++index) {
+      potential[index] =
+          detail::HomogeneousSphereScalarPotential(model, radii[index]);
    }
-   // // final point
-   // {
-   //    double currentrad = inp_model.Node_Information().OuterRadius();
-   //    vec_exactsol.back() = -2.0 * multfact * planetradius / currentrad;
-   // }
-
-   return vec_exactsol;
-};
+   return potential;
+}
 
 }   // namespace Gravity_Tools
 

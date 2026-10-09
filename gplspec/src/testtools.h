@@ -10,7 +10,6 @@
 #include <PlanetaryModel/All>
 // #include <TomographyModels/All>
 #include "SphericalGeometryPreconditioner.h"
-#include "Spherical_Integrator.h"
 #include "Shared_Utilities.h"
 #include "Model_Input.h"
 #include <FFTWpp/Ranges>
@@ -31,7 +30,10 @@
 
 namespace TestTools {
 
-using namespace GravityFunctions;
+enum class CoefficientOrdering {
+   RadialClumped,
+   SphericalDecomp
+};
 
 using MATRIX3cd = Eigen::Matrix<std::complex<double>, 3, 3>;
 using EARTHMATRIX3 = std::vector<std::vector<MATRIX3cd>>;
@@ -109,7 +111,7 @@ FindBoundaryPerturbationForce(
       int idxpolymax = npoly + 1;
       for (int idxpoly = 0; idxpoly < idxpolymax; ++idxpoly) {
 
-         auto rval = GravityFunctions::StandardIntervalMap(
+         auto rval = GPLSpec::detail::StandardIntervalMap(
              gaussquadpoints[idxpoly], vec_noderadii[idxelem],
              vec_noderadii[idxelem + 1]);
          auto invr = 1 / rval;
@@ -286,7 +288,7 @@ AdvectiveBoundaryPerturbation(
       }
       for (int idxpoly = idxpolymin; idxpoly < idxpolymax; ++idxpoly) {
          // radius, inverse and squared
-         auto rval = GravityFunctions::StandardIntervalMap(
+         auto rval = GPLSpec::detail::StandardIntervalMap(
              gaussquadpoints[idxpoly], vec_noderadii[idxelem],
              vec_noderadii[idxelem + 1]);
          auto invr = 1 / rval;
