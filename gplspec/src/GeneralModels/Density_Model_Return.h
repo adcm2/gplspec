@@ -133,13 +133,8 @@ auto
 Density3D::SpectralElementInformation() {
    return _spectral_info;
 };
-auto
+const Density3D::Grid &
 Density3D::GSH_Grid() const {
-   return _grid;
-};
-
-const GSHTrans::GaussLegendreGrid<double, GSHTrans::All, GSHTrans::All> &
-Density3D::GSH_GridP() const {
    return _grid;
 };
 
@@ -556,7 +551,7 @@ Density3D::ReferentialOutputAtElement(
       // working through lm
       //
       int idxlm = 0;
-      for (int idxl = 0; idxl < this->GSH_GridP().MaxDegree() + 1; ++idxl) {
+      for (int idxl = 0; idxl < this->GSH_Grid().MaxDegree() + 1; ++idxl) {
          for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
             file2 << ";" << vec_fullinformation[i][0][idxlm].real() * normfactor
                   << ";"
@@ -573,7 +568,7 @@ Density3D::ReferentialOutputAtElement(
           this->LengthNorm();
       file2 << std::setprecision(16) << currentrad;
       int idxlm = 0;
-      for (int idxl = 0; idxl < this->GSH_GridP().MaxDegree() + 1; ++idxl) {
+      for (int idxl = 0; idxl < this->GSH_Grid().MaxDegree() + 1; ++idxl) {
          for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
             file2 << ";"
                   << vec_fullinformation[nelem - 1][this->Poly_Order()][idxlm]
@@ -1005,7 +1000,7 @@ Density3D::ReferentialOutputRotated(
    for (int i = 0; i < nelem; ++i) {
       for (int idxnode = 0; idxnode < _poly_ord + 1; ++idxnode) {
          int idxlm = 0;
-         for (int idxl = 0; idxl < this->GSH_GridP().MaxDegree() + 1; ++idxl) {
+         for (int idxl = 0; idxl < this->GSH_Grid().MaxDegree() + 1; ++idxl) {
             int rowidx = 0;
             for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
                int idxlmp = idxl * idxl;
@@ -1184,7 +1179,7 @@ Density3D::ModelDensityOutputRotated(const std::string str_pathtofolder,
    for (int i = 0; i < nelem; ++i) {
       for (int idxnode = 0; idxnode < _poly_ord + 1; ++idxnode) {
          int idxlm = 0;
-         for (int idxl = 0; idxl < this->GSH_GridP().MaxDegree() + 1; ++idxl) {
+         for (int idxl = 0; idxl < this->GSH_Grid().MaxDegree() + 1; ++idxl) {
             int rowidx = 0;
             for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
                int idxlmp = idxl * idxl;
@@ -1368,7 +1363,7 @@ Density3D::PhysicalOutputRotated(
    for (int i = 0; i < nelem; ++i) {
       for (int idxnode = 0; idxnode < _poly_ord + 1; ++idxnode) {
          int idxlm = 0;
-         for (int idxl = 0; idxl < this->GSH_GridP().MaxDegree() + 1; ++idxl) {
+         for (int idxl = 0; idxl < this->GSH_Grid().MaxDegree() + 1; ++idxl) {
             int rowidx = 0;
             for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
                int idxlmp = idxl * idxl;

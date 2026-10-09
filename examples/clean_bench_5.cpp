@@ -93,8 +93,8 @@ main() {
    timer1.start();
    //  std::cout << "\n\n HELLO HELLO \n\n";
    std::vector<std::vector<double>> inp_radii2, vec_exactsol2;
-   auto maxidx = testconstruct.GSH_GridP().NumberOfCoLatitudes() *
-                 testconstruct.GSH_GridP().NumberOfLongitudes();
+   auto maxidx = testconstruct.GSH_Grid().NumberOfCoLatitudes() *
+                 testconstruct.GSH_Grid().NumberOfLongitudes();
    for (int idx = 0; idx < maxidx; ++idx) {
       auto inp_radii = testconstruct.PhysicalRadius_Line(idx);
       auto vec_exactsol =

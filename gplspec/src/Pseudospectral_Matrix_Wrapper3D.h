@@ -84,8 +84,8 @@ class MatrixReplacement3D
    Index Dimension() const {
       const auto &mesh = _model->Node_InformationP();
       const auto harmonic_count = static_cast<Index>(
-          _model->GSH_GridP().MaxDegree() + 1) *
-          (_model->GSH_GridP().MaxDegree() + 1);
+          _model->GSH_Grid().MaxDegree() + 1) *
+          (_model->GSH_Grid().MaxDegree() + 1);
       return mesh.NumberOfGlobalRadialNodes() * harmonic_count;
    }
 

@@ -127,7 +127,7 @@ inline Eigen::VectorXcd
 FindForce(GeneralEarthModels::Density3D &model) {
    using Complex = std::complex<double>;
    const auto &mesh = model.Node_InformationP();
-   const auto &grid = model.GSH_GridP();
+   const auto &grid = model.GSH_Grid();
    const auto &q = model.qP();
    const int lMax = grid.MaxDegree();
    const std::size_t stride = static_cast<std::size_t>(lMax + 1) * (lMax + 1);
@@ -650,7 +650,7 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
    // force vector is simply a minus one in the lm component on the boundary. We
    // simply need to find its index.
    int npoly = inp_model.q().N() - 1;
-   int lMax = inp_model.GSH_GridP().MaxDegree();
+   int lMax = inp_model.GSH_Grid().MaxDegree();
    int nelem = inp_model.Node_InformationP().NumberOfElements();
    int matlen = nelem * npoly + 1;   // size of matrix
    Eigen::VectorXcd vec_fullforce =
@@ -663,7 +663,7 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
        4.0 * pi_db * inp_model.GravitationalConstant() * std::pow(-1.0, m);
 
    const auto preconditioner = detail::SphericalPreconditionerMatrix(
-       inp_model, inp_model.GSH_GridP().MaxDegree());
+       inp_model, inp_model.GSH_Grid().MaxDegree());
    detail::PreparedSolver<CONJG, decltype(mymatrix)> solver(mymatrix,
                                                             preconditioner);
    const auto result = solver.Solve(vec_fullforce, relerr, true, false);

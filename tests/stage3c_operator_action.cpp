@@ -236,7 +236,11 @@ int main() {
     real_x[i] = 0.03125 * (i + 3);
   }
   const auto expected = direct_weak_action(one_d, grid, no_tensor, x, false, true);
-  require_close(spherical.Apply(x), expected, "spherical full-complex weak action");
+  const auto spherical_actual = spherical.Apply(x);
+  require_close(spherical_actual, expected, "spherical full-complex weak action");
+  (void)spherical.Apply(real_x);
+  require_close(spherical.Apply(x), spherical_actual,
+                "spherical repeated-call buffer reset");
   const auto expected_real = direct_weak_action(
       one_d, grid, no_tensor, real_x.cast<Complex>(), false, true);
   require_close(spherical * real_x, expected_real, "spherical real-vector action");
@@ -282,8 +286,12 @@ int main() {
   };
   const auto mapped_expected = direct_weak_action(
       mapped, grid, mapped_tensor, mapped_x, true, true);
-  require_close(mapped_operator * mapped_x, mapped_expected,
+  const auto mapped_actual = mapped_operator.Apply(mapped_x);
+  require_close(mapped_actual, mapped_expected,
                 "mapped full-complex direct angular quadrature");
+  (void)mapped_operator.Apply(mapped_real_x);
+  require_close(mapped_operator.Apply(mapped_x), mapped_actual,
+                "mapped repeated-call buffer reset");
   const auto mapped_expected_real = direct_weak_action(
       mapped, grid, mapped_tensor, mapped_real_x.cast<Complex>(), true, true);
   require_close(mapped_operator * mapped_real_x, mapped_expected_real,

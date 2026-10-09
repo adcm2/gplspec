@@ -151,31 +151,31 @@ inline void ConstructMappingVectorGradient(
 
          // transforming
          // 00
-         inp_model.GSH_GridP().InverseTransformation(lMax, 0, vec_ddxi0,
+         inp_model.GSH_Grid().InverseTransformation(lMax, 0, vec_ddxi0,
                                                      vec_ddxi0_spatial);
 
          // 0\pm
-         inp_model.GSH_GridP().InverseTransformation(lMax, -1, vec_ddxim,
+         inp_model.GSH_Grid().InverseTransformation(lMax, -1, vec_ddxim,
                                                      vec_ddxim_spatial);
-         inp_model.GSH_GridP().InverseTransformation(lMax, +1, vec_ddxip,
+         inp_model.GSH_Grid().InverseTransformation(lMax, +1, vec_ddxip,
                                                      vec_ddxip_spatial);
 
          //\pm 0
-         inp_model.GSH_GridP().InverseTransformation(lMax, -1, vec_ddxim0,
+         inp_model.GSH_Grid().InverseTransformation(lMax, -1, vec_ddxim0,
                                                      vec_ddxim0_spatial);
-         inp_model.GSH_GridP().InverseTransformation(lMax, +1, vec_ddxip0,
+         inp_model.GSH_Grid().InverseTransformation(lMax, +1, vec_ddxip0,
                                                      vec_ddxip0_spatial);
 
          //\pm \mp
-         inp_model.GSH_GridP().InverseTransformation(lMax, 0, vec_ddxipm,
+         inp_model.GSH_Grid().InverseTransformation(lMax, 0, vec_ddxipm,
                                                      vec_ddxipm_spatial);
-         inp_model.GSH_GridP().InverseTransformation(lMax, 0, vec_ddximp,
+         inp_model.GSH_Grid().InverseTransformation(lMax, 0, vec_ddximp,
                                                      vec_ddximp_spatial);
 
          //\pm \pm
-         inp_model.GSH_GridP().InverseTransformation(lMax, -2, vec_ddximm,
+         inp_model.GSH_Grid().InverseTransformation(lMax, -2, vec_ddximm,
                                                      vec_ddximm_spatial);
-         inp_model.GSH_GridP().InverseTransformation(lMax, +2, vec_ddxipp,
+         inp_model.GSH_Grid().InverseTransformation(lMax, +2, vec_ddxipp,
                                                      vec_ddxipp_spatial);
 
          // finding pm derivative of 0-order part
@@ -190,8 +190,8 @@ inline void ConstructMappingVectorGradient(
          // filling out dxi
          {
             std::size_t idxvec = 0;
-            for (auto it : inp_model.GSH_GridP().CoLatitudes()) {
-               for (auto ip : inp_model.GSH_GridP().Longitudes()) {
+            for (auto it : inp_model.GSH_Grid().CoLatitudes()) {
+               for (auto ip : inp_model.GSH_Grid().Longitudes()) {
                   // going along first row (and transposing)
                   _vec_df[idxelem][idxpoly][idxvec](0, 0) =
                       vec_ddximm_spatial[idxvec];

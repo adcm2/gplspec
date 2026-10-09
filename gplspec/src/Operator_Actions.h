@@ -5,6 +5,7 @@
 #include <FFTWpp/Ranges>
 #include <GSHTrans/All>
 
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <stdexcept>
@@ -56,15 +57,24 @@ Eigen::VectorXcd ApplySpherical1D(const Model &model, const Grid &grid,
              0.0, 1.0, 0.0,
             -1.0, 0.0, 0.0;
 
+   std::vector<Complex> radial_gradient(harmonic_count),
+       plus_gradient(spin_count), minus_gradient(spin_count),
+       harmonic_minus(spin_count), harmonic_zero(harmonic_count),
+       harmonic_plus(spin_count);
+   FFTWpp::vector<Complex> spatial_minus(spatial_count),
+       spatial_zero(spatial_count), spatial_plus(spatial_count),
+       flux_minus(spatial_count), flux_zero(spatial_count),
+       flux_plus(spatial_count);
+
    for (std::size_t element = 0; element < mesh.NumberOfElements(); ++element) {
       const double width = mesh.ElementWidth(element);
       for (std::size_t node = 0; node < mesh.NumNodesWithinElement(); ++node) {
          const double radius = detail::StandardIntervalMap(
              quadrature.X(node), mesh.ElementLowerRadius(element),
              mesh.ElementUpperRadius(element));
-         std::vector<Complex> radial_gradient(harmonic_count, Complex{});
-         std::vector<Complex> plus_gradient(spin_count, Complex{});
-         std::vector<Complex> minus_gradient(spin_count, Complex{});
+         std::fill(radial_gradient.begin(), radial_gradient.end(), Complex{});
+         std::fill(plus_gradient.begin(), plus_gradient.end(), Complex{});
+         std::fill(minus_gradient.begin(), minus_gradient.end(), Complex{});
 
          for (std::size_t local = 0; local < mesh.NumNodesWithinElement(); ++local) {
             const std::size_t radial = mesh.GlobalNodeIndex(element, local);
@@ -90,16 +100,16 @@ Eigen::VectorXcd ApplySpherical1D(const Model &model, const Grid &grid,
             }
          }
 
-         FFTWpp::vector<Complex> spatial_minus(spatial_count, Complex{}),
-             spatial_zero(spatial_count, Complex{}),
-             spatial_plus(spatial_count, Complex{});
+         std::fill(spatial_minus.begin(), spatial_minus.end(), Complex{});
+         std::fill(spatial_zero.begin(), spatial_zero.end(), Complex{});
+         std::fill(spatial_plus.begin(), spatial_plus.end(), Complex{});
          grid.InverseTransformation(degree_max, -1, minus_gradient, spatial_minus);
          grid.InverseTransformation(degree_max, 0, radial_gradient, spatial_zero);
          grid.InverseTransformation(degree_max, 1, plus_gradient, spatial_plus);
 
-         FFTWpp::vector<Complex> flux_minus(spatial_count, Complex{}),
-             flux_zero(spatial_count, Complex{}),
-             flux_plus(spatial_count, Complex{});
+         std::fill(flux_minus.begin(), flux_minus.end(), Complex{});
+         std::fill(flux_zero.begin(), flux_zero.end(), Complex{});
+         std::fill(flux_plus.begin(), flux_plus.end(), Complex{});
          for (std::size_t point = 0; point < spatial_count; ++point) {
             detail::ContractCanonicalTensorVector(
                 tensor, spatial_minus[point], spatial_zero[point],
@@ -107,9 +117,9 @@ Eigen::VectorXcd ApplySpherical1D(const Model &model, const Grid &grid,
                 flux_plus[point]);
          }
 
-         std::vector<Complex> harmonic_minus(spin_count, Complex{}),
-             harmonic_zero(harmonic_count, Complex{}),
-             harmonic_plus(spin_count, Complex{});
+         std::fill(harmonic_minus.begin(), harmonic_minus.end(), Complex{});
+         std::fill(harmonic_zero.begin(), harmonic_zero.end(), Complex{});
+         std::fill(harmonic_plus.begin(), harmonic_plus.end(), Complex{});
          grid.ForwardTransformation(degree_max, -1, flux_minus, harmonic_minus);
          grid.ForwardTransformation(degree_max, 0, flux_zero, harmonic_zero);
          grid.ForwardTransformation(degree_max, 1, flux_plus, harmonic_plus);
@@ -156,7 +166,7 @@ Eigen::VectorXcd ApplyMapped3D(const Model &model,
                                const Eigen::MatrixBase<Derived> &input,
                                bool include_boundary) {
    const auto &mesh = model.Node_InformationP();
-   const auto &grid = model.GSH_GridP();
+   const auto &grid = model.GSH_Grid();
    const auto &quadrature = model.qP();
    const auto derivative = model.GaussDerivative();
    const int degree_max = grid.MaxDegree();
@@ -174,13 +184,22 @@ Eigen::VectorXcd ApplyMapped3D(const Model &model,
    const std::size_t spatial_count =
        grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();
 
+   std::vector<Complex> radial_gradient(harmonic_count),
+       plus_gradient(spin_count), minus_gradient(spin_count),
+       harmonic_minus(spin_count), harmonic_zero(harmonic_count),
+       harmonic_plus(spin_count);
+   FFTWpp::vector<Complex> spatial_minus(spatial_count),
+       spatial_zero(spatial_count), spatial_plus(spatial_count),
+       flux_minus(spatial_count), flux_zero(spatial_count),
+       flux_plus(spatial_count);
+
    for (std::size_t element = 0; element < mesh.NumberOfElements(); ++element) {
       const double width = mesh.ElementWidth(element);
       for (std::size_t node = 0; node < mesh.NumNodesWithinElement(); ++node) {
          const double radius = mesh.NodeRadius(element, node);
-         std::vector<Complex> radial_gradient(harmonic_count, Complex{});
-         std::vector<Complex> plus_gradient(spin_count, Complex{});
-         std::vector<Complex> minus_gradient(spin_count, Complex{});
+         std::fill(radial_gradient.begin(), radial_gradient.end(), Complex{});
+         std::fill(plus_gradient.begin(), plus_gradient.end(), Complex{});
+         std::fill(minus_gradient.begin(), minus_gradient.end(), Complex{});
 
          for (std::size_t local = 0; local < mesh.NumNodesWithinElement(); ++local) {
             const std::size_t radial = mesh.GlobalNodeIndex(element, local);
@@ -204,16 +223,16 @@ Eigen::VectorXcd ApplyMapped3D(const Model &model,
             }
          }
 
-         FFTWpp::vector<Complex> spatial_minus(spatial_count, Complex{}),
-             spatial_zero(spatial_count, Complex{}),
-             spatial_plus(spatial_count, Complex{});
+         std::fill(spatial_minus.begin(), spatial_minus.end(), Complex{});
+         std::fill(spatial_zero.begin(), spatial_zero.end(), Complex{});
+         std::fill(spatial_plus.begin(), spatial_plus.end(), Complex{});
          grid.InverseTransformation(degree_max, -1, minus_gradient, spatial_minus);
          grid.InverseTransformation(degree_max, 0, radial_gradient, spatial_zero);
          grid.InverseTransformation(degree_max, 1, plus_gradient, spatial_plus);
 
-         FFTWpp::vector<Complex> flux_minus(spatial_count, Complex{}),
-             flux_zero(spatial_count, Complex{}),
-             flux_plus(spatial_count, Complex{});
+         std::fill(flux_minus.begin(), flux_minus.end(), Complex{});
+         std::fill(flux_zero.begin(), flux_zero.end(), Complex{});
+         std::fill(flux_plus.begin(), flux_plus.end(), Complex{});
          for (std::size_t point = 0; point < spatial_count; ++point) {
             detail::ContractCanonicalTensorVector(
                 tensor_field[element][node][point], spatial_minus[point],
@@ -221,9 +240,9 @@ Eigen::VectorXcd ApplyMapped3D(const Model &model,
                 flux_zero[point], flux_plus[point]);
          }
 
-         std::vector<Complex> harmonic_minus(spin_count, Complex{}),
-             harmonic_zero(harmonic_count, Complex{}),
-             harmonic_plus(spin_count, Complex{});
+         std::fill(harmonic_minus.begin(), harmonic_minus.end(), Complex{});
+         std::fill(harmonic_zero.begin(), harmonic_zero.end(), Complex{});
+         std::fill(harmonic_plus.begin(), harmonic_plus.end(), Complex{});
          grid.ForwardTransformation(degree_max, -1, flux_minus, harmonic_minus);
          grid.ForwardTransformation(degree_max, 0, flux_zero, harmonic_zero);
          grid.ForwardTransformation(degree_max, 1, flux_plus, harmonic_plus);

@@ -60,9 +60,9 @@ class MappingPerturbation {
 MappingPerturbation::MappingPerturbation(const Density3D &inp_model)
     : _ref_model{inp_model} {
    std::size_t _num_layers = inp_model.Num_Elements();
-   std::size_t spatialsize = inp_model.GSH_GridP().NumberOfCoLatitudes() *
-                             inp_model.GSH_GridP().NumberOfLongitudes();
-   std::size_t lMax = inp_model.GSH_GridP().MaxDegree();
+   std::size_t spatialsize = inp_model.GSH_Grid().NumberOfCoLatitudes() *
+                             inp_model.GSH_Grid().NumberOfLongitudes();
+   std::size_t lMax = inp_model.GSH_Grid().MaxDegree();
 
    // construct dxi = 0
    _vec_dxi = vvveceigvec(
@@ -87,10 +87,10 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
                                          const mapclass &inp_map)
     : _ref_model{inp_model} {
    std::size_t _num_layers = inp_model.Num_Elements();
-   std::size_t spatialsize = inp_model.GSH_GridP().NumberOfCoLatitudes() *
-                             inp_model.GSH_GridP().NumberOfLongitudes();
+   std::size_t spatialsize = inp_model.GSH_Grid().NumberOfCoLatitudes() *
+                             inp_model.GSH_Grid().NumberOfLongitudes();
    std::size_t nnode = inp_model.qP().N();
-   std::size_t lMax = inp_model.GSH_GridP().MaxDegree();
+   std::size_t lMax = inp_model.GSH_Grid().MaxDegree();
 
    // construct dxi = 0
    _vec_dxi = vvveceigvec(
@@ -118,8 +118,8 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
 
          // fill out dxi
          std::size_t idxspatial = 0;
-         for (auto it : inp_model.GSH_GridP().CoLatitudes()) {
-            for (auto ip : inp_model.GSH_GridP().Longitudes()) {
+         for (auto it : inp_model.GSH_Grid().CoLatitudes()) {
+            for (auto ip : inp_model.GSH_Grid().Longitudes()) {
                Eigen::Vector3cd tmpeig = Eigen::Vector3cd::Zero();
                tmpeig(1) =
                    inp_map.RadialMapping(laynum)(raduse, it, ip) * multfact;
@@ -158,11 +158,11 @@ MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
             std::vector<std::complex<double>> vec_lm_dxim(_sizepm, 0.0),
                 vec_lm_dxi0(_size0, 0.0), vec_lm_dxip(_sizepm, 0.0);
 
-            inp_model.GSH_GridP().ForwardTransformation(lMax, -1, vec_dxim,
+            inp_model.GSH_Grid().ForwardTransformation(lMax, -1, vec_dxim,
                                                         vec_lm_dxim);
-            inp_model.GSH_GridP().ForwardTransformation(lMax, 0, vec_dxi0,
+            inp_model.GSH_Grid().ForwardTransformation(lMax, 0, vec_dxi0,
                                                         vec_lm_dxi0);
-            inp_model.GSH_GridP().ForwardTransformation(lMax, 1, vec_dxip,
+            inp_model.GSH_Grid().ForwardTransformation(lMax, 1, vec_dxip,
                                                         vec_lm_dxip);
 
             // std::cout << "\nCheck 2.2\n";
@@ -214,10 +214,10 @@ MappingPerturbation::MappingPerturbation(
                                          const int lmin, const int lmodmax)
     : _ref_model{inp_model} {
    std::size_t _num_layers = inp_model.Num_Elements();
-   std::size_t spatialsize = inp_model.GSH_GridP().NumberOfCoLatitudes() *
-                             inp_model.GSH_GridP().NumberOfLongitudes();
+   std::size_t spatialsize = inp_model.GSH_Grid().NumberOfCoLatitudes() *
+                             inp_model.GSH_Grid().NumberOfLongitudes();
    std::size_t nnode = inp_model.qP().N();
-   std::size_t lMax = inp_model.GSH_GridP().MaxDegree();
+   std::size_t lMax = inp_model.GSH_Grid().MaxDegree();
 
    // Coefficients are owned by the caller and shared with Density3D.
    const std::size_t model_lmax = harmonics.InferredMaximumDegree();
@@ -275,7 +275,7 @@ MappingPerturbation::MappingPerturbation(
    // perform SH transform to get physical outer radius
    // std::cout << "Pre-transformation\n";
 
-   inp_model.GSH_GridP().InverseTransformation(lMax, 0, vec_lm_rad,
+   inp_model.GSH_Grid().InverseTransformation(lMax, 0, vec_lm_rad,
                                                vec_outerradius);
    // _grid.InverseTransformation(lMax, 0, vec_lm_rad_full, vec_outerrad);
    //    std::vector<std::complex<double>> vec_lm_check(coefficientnumberall,
@@ -360,8 +360,8 @@ MappingPerturbation::MappingPerturbation(
 
          // fill out h
          int idxspatial = 0;
-         for (auto it : inp_model.GSH_GridP().CoLatitudes()) {
-            for (auto ip : inp_model.GSH_GridP().Longitudes()) {
+         for (auto it : inp_model.GSH_Grid().CoLatitudes()) {
+            for (auto ip : inp_model.GSH_Grid().Longitudes()) {
                Eigen::Vector3cd tmpeig = Eigen::Vector3cd::Zero();
                tmpeig(1) = vec_houter[idxspatial] * multfact;
                _vec_dxi[idxelem][idxnode][idxspatial] = tmpeig;
@@ -433,11 +433,11 @@ MappingPerturbation::MappingPerturbation(
             std::vector<std::complex<double>> vec_lm_dxim(_sizepm, 0.0),
                 vec_lm_dxi0(_size0, 0.0), vec_lm_dxip(_sizepm, 0.0);
 
-            inp_model.GSH_GridP().ForwardTransformation(lMax, -1, vec_dxim,
+            inp_model.GSH_Grid().ForwardTransformation(lMax, -1, vec_dxim,
                                                         vec_lm_dxim);
-            inp_model.GSH_GridP().ForwardTransformation(lMax, 0, vec_dxi0,
+            inp_model.GSH_Grid().ForwardTransformation(lMax, 0, vec_dxi0,
                                                         vec_lm_dxi0);
-            inp_model.GSH_GridP().ForwardTransformation(lMax, 1, vec_dxip,
+            inp_model.GSH_Grid().ForwardTransformation(lMax, 1, vec_dxip,
                                                         vec_lm_dxip);
 
             // std::cout << "\nCheck 2.2\n";

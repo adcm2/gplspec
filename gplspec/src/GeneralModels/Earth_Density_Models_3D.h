@@ -137,8 +137,7 @@ class Density3D {
    const GaussQuad::Quadrature1D<double> &qP() const { return _q; };
 
    inline auto SpectralElementInformation();
-   inline auto GSH_Grid() const;
-   inline const Grid &GSH_GridP() const;
+   inline const Grid &GSH_Grid() const;
 
    // density
    inline auto Density() const;

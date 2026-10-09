@@ -16,7 +16,7 @@ using Complex = std::complex<double>;
 // The analytic harmonics avoid calling the transform used by FindForce.
 template <class Model>
 Eigen::VectorXcd independent_axisymmetric_force(const Model &model) {
-  const auto grid = model.GSH_Grid();
+  const auto &grid = model.GSH_Grid();
   const auto q = model.q();
   constexpr double pi = std::numbers::pi_v<double>;
   const int lmax = grid.MaxDegree();
