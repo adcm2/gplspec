@@ -42,6 +42,9 @@ class spherical_1D {
    auto Vector_Nodes() const { return _vec_nodes; };
    //    auto All_Nodes() const { return _vec_allnodes; };
    auto Node_Information() { return node_data; };
+   const Radial_Tools::RadialMesh &Node_InformationP() const {
+      return _radial_mesh;
+   }
 
    // interpolation polynomial derivative
    auto GaussDerivative() const { return _mat_gaussderiv; };

@@ -2,6 +2,8 @@
 #define RADIAL_TOOLS_H
 
 #include <GaussQuad/All>
+#include <cassert>
+#include <cstddef>
 #include "Shared_Utilities.h"
 #include <PlanetaryModel/All>
 
@@ -208,6 +210,18 @@ class RadialMesh {
    // return functions of nodes
    auto NumberOfElements() const { return _vec_nodes.size(); };
    auto NumNodesWithinElement() const { return _vec_nodes[0].size(); };
+   std::size_t PolynomialOrder() const {
+      return NumNodesWithinElement() - 1;
+   };
+   std::size_t NumberOfGlobalRadialNodes() const {
+      return NumberOfElements() * PolynomialOrder() + 1;
+   };
+   std::size_t GlobalNodeIndex(std::size_t element,
+                               std::size_t local_node) const {
+      assert(element < NumberOfElements());
+      assert(local_node < NumNodesWithinElement());
+      return element * PolynomialOrder() + local_node;
+   };
    auto NodeRadius(int idxelem, int idxnode) const {
       return _vec_nodes[idxelem][idxnode];
    };
