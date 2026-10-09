@@ -204,3 +204,9 @@ if(BUILD_TESTING)
   set_tests_properties(stage3c_operator_action PROPERTIES
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endif()
+
+add_executable(stage3e_sensitivity stage3e_sensitivity.cpp)
+target_link_libraries(stage3e_sensitivity PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage3e_sensitivity COMMAND stage3e_sensitivity)
+endif()

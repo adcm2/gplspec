@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <stdexcept>
 #include "../Timer_Class.h"
 
 namespace Gravity_Tools {
@@ -30,6 +31,59 @@ struct SolveResult {
    double residual_norm = std::numeric_limits<double>::quiet_NaN();
    double relative_residual = std::numeric_limits<double>::quiet_NaN();
 };
+
+inline void ValidateSensitivityTolerance(double tolerance) {
+   if (!std::isfinite(tolerance) || tolerance <= 0.0) {
+      throw std::invalid_argument(
+          "sensitivity solver tolerance must be finite and positive");
+   }
+}
+
+inline Eigen::VectorXcd
+SensitivitySelectorRhs(const GeneralEarthModels::Density3D &model,
+                       const std::vector<int> &degrees,
+                       const std::vector<int> &orders,
+                       const std::vector<double> &multipliers) {
+   if (degrees.size() != orders.size() || degrees.size() != multipliers.size()) {
+      throw std::invalid_argument(
+          "sensitivity selector degrees, orders, and weights must have equal lengths");
+   }
+
+   const int lmax = model.GSH_Grid().MaxDegree();
+   const std::size_t stride =
+       static_cast<std::size_t>(lmax + 1) * (lmax + 1);
+   const auto &mesh = model.Node_InformationP();
+   const std::size_t radial_count = mesh.NumberOfGlobalRadialNodes();
+   if (radial_count == 0 ||
+       radial_count > static_cast<std::size_t>(
+                          std::numeric_limits<Eigen::Index>::max()) /
+                          stride) {
+      throw std::length_error("sensitivity RHS dimensions are not representable");
+   }
+
+   Eigen::VectorXcd rhs = Eigen::VectorXcd::Zero(
+       static_cast<Eigen::Index>(radial_count * stride));
+   const std::size_t outer_index = (radial_count - 1) * stride;
+   constexpr double legacy_pi = 3.1415926535;
+   const double prefactor = 4.0 * legacy_pi * model.GravitationalConstant();
+   for (std::size_t i = 0; i < degrees.size(); ++i) {
+      const int degree = degrees[i];
+      const int order = orders[i];
+      if (degree < 0 || degree > lmax || order < -degree || order > degree) {
+         throw std::out_of_range("sensitivity harmonic selector is out of range");
+      }
+      if (!std::isfinite(multipliers[i])) {
+         throw std::invalid_argument("sensitivity selector weight must be finite");
+      }
+      const std::size_t harmonic = static_cast<std::size_t>(
+          degree * degree + degree - order);
+      const double phase = order % 2 == 0 ? 1.0 : -1.0;
+      // Assignment preserves the established last-value-wins behavior for duplicates.
+      rhs[static_cast<Eigen::Index>(outer_index + harmonic)] =
+          prefactor * phase * multipliers[i];
+   }
+   return rhs;
+}
 
 template <class Model>
 Eigen::SparseMatrix<std::complex<double>>
@@ -372,6 +426,7 @@ inline auto
 SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
                                    int l, int m,
                                    double relerr = std::pow(10.0, -6.0)) {
+   detail::ValidateSensitivityTolerance(relerr);
    using Complex = std::complex<double>;
    using CONJG = Eigen::ConjugateGradient<
        MatrixReplacement3D<Complex>, Eigen::Lower | Eigen::Upper,
@@ -379,21 +434,9 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
 
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
 
-   // Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);
-   // force vector is simply a minus one in the lm component on the boundary. We
-   // simply need to find its index.
-   int npoly = inp_model.q().N() - 1;
-   int lMax = inp_model.GSH_Grid().MaxDegree();
-   int nelem = inp_model.Node_InformationP().NumberOfElements();
-   int matlen = nelem * npoly + 1;   // size of matrix
-   Eigen::VectorXcd vec_fullforce =
-       Eigen::VectorXcd::Zero(std::pow(lMax + 1, 2) * matlen);
-   std::size_t lmidx = (npoly + npoly * (nelem - 1)) * std::pow(lMax + 1, 2);
-   lmidx += l * l + l - m;
-   double pi_db = 3.1415926535;
-   double ballrad = inp_model.Node_InformationP().OuterRadius();
-   vec_fullforce(lmidx) =
-       4.0 * pi_db * inp_model.GravitationalConstant() * std::pow(-1.0, m);
+   const Eigen::VectorXcd vec_fullforce = detail::SensitivitySelectorRhs(
+       inp_model, std::vector<int>{l}, std::vector<int>{m},
+       std::vector<double>{1.0});
 
    const auto preconditioner = detail::SphericalPreconditionerMatrix(
        inp_model, inp_model.GSH_Grid().MaxDegree());
@@ -409,31 +452,15 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
                                    std::vector<int> l, std::vector<int> m,
                                    std::vector<double> multval,
                                    double relerr = std::pow(10.0, -6.0)) {
-   assert(l.size() == m.size() && "Need same size for l and m");
-   assert(multval.size() == m.size() && "Need same size for l and m");
+   detail::ValidateSensitivityTolerance(relerr);
    using Complex = std::complex<double>;
    using BICGSTAB =
        Eigen::BiCGSTAB<MatrixReplacement3D<std::complex<double>>,
                        Eigen::SphericalGeometryPreconditioner<Complex>>;
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
 
-   // Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);
-   // force vector is simply a minus one in the lm component on the boundary. We
-   // simply need to find its index.
-   int npoly = inp_model.q().N() - 1;
-   int lMax = inp_model.GSH_Grid().MaxDegree();
-   int nelem = inp_model.Node_Information().NumberOfElements();
-   int matlen = nelem * npoly + 1;   // size of matrix
-   Eigen::VectorXcd vec_fullforce =
-       Eigen::VectorXcd::Zero(std::pow(lMax + 1, 2) * matlen);
-   std::size_t lmidx = (npoly + npoly * (nelem - 1)) * std::pow(lMax + 1, 2);
-   for (int i = 0; i < l.size(); ++i) {
-      auto lidx = lmidx + l[i] * l[i] + l[i] - m[i];
-      double pi_db = 3.1415926535;
-      double ballrad = inp_model.Node_Information().OuterRadius();
-      vec_fullforce(lidx) = 4.0 * pi_db * inp_model.GravitationalConstant() *
-                            std::pow(-1.0, m[i]) * multval[i];
-   }
+   const Eigen::VectorXcd vec_fullforce = detail::SensitivitySelectorRhs(
+       inp_model, l, m, multval);
 
    const auto preconditioner = detail::SphericalPreconditionerMatrix(
        inp_model, inp_model.GSH_Grid().MaxDegree());
