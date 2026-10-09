@@ -65,7 +65,6 @@ main() {
    Density3D testconstruct(radius, density, radius, map1, 5, 2, lengthnorm,
                            timenorm, massnorm, maxstep, ballrad);
    auto potential_result = SolvePotential(testconstruct, std::pow(10.0, -12.0));
-   auto stdvec_potsol = ToHarmonicField(testconstruct, potential_result);
    timer1.stop("Time for 3D");
 
    //////////////////////////////////////////////////////////////////
@@ -92,19 +91,17 @@ main() {
 
    // output test
    std::string pathtofolder = "./work/Bench4";
-   testconstruct.PhysicalOutputAtElement(pathtofolder, stdvec_potsol);
-   equivalent_sphere.OutputAtElement(pathtofolder, inp_radii2, vec_exactsol2);
    auto bundle = GPLSpec::FieldBundle::WithSolve(
        potential_result, "clean_bench_4", "mapped_prem", "CG",
        potential_result.final_solve().requested_tolerance);
    bundle.inputs.push_back(GPLSpec::FieldBundle::InputPath(pathtoprem));
    bundle.parameters = {{"polynomial_order", std::to_string(npoly)},
-       {"degree_max", std::to_string(lmax)}, {"max_step_norm", std::to_string(maxstep)},
-       {"exterior_radius_norm", std::to_string(ballrad)},
-       {"mapping_amplitude", std::to_string(h)},
-       {"length_norm_m", std::to_string(lengthnorm)},
-       {"mass_norm_kg", std::to_string(massnorm)},
-       {"time_norm_s", std::to_string(timenorm)}};
+       {"degree_max", std::to_string(lmax)}, {"max_step_norm", GPLSpec::FieldBundle::ParameterNumber(maxstep)},
+       {"exterior_radius_norm", GPLSpec::FieldBundle::ParameterNumber(ballrad)},
+       {"mapping_amplitude", GPLSpec::FieldBundle::ParameterNumber(h)},
+       {"length_norm_m", GPLSpec::FieldBundle::ParameterNumber(lengthnorm)},
+       {"mass_norm_kg", GPLSpec::FieldBundle::ParameterNumber(massnorm)},
+       {"time_norm_s", GPLSpec::FieldBundle::ParameterNumber(timenorm)}};
    GPLSpec::FieldBundle::WriteAngular(
        std::filesystem::path(pathtofolder) / "field_bundle", testconstruct,
        potential_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
@@ -125,7 +122,6 @@ main() {
              vec_exactsol2[spatial_index], spatial_index, emit);
    });
 
-   //    testprem.OutputAtElement(pathtofolder, vec_exactsol);
 
    return 0;
 }

@@ -108,11 +108,8 @@ main() {
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
 
-   // output test
+   // Results are saved to schema-v1 field bundles; see work/plots.md for build, run, and plotting commands.
    std::string pathtofolder = "./work/Bench3";
-   homogeneous_sphere_with_map.PhysicalOutputAtElement(pathtofolder,
-                                                       stdvec_potsol);
-   equivalent_sphere.OutputAtElement(pathtofolder, inp_radii, vec_exactsol);
 
    return 0;
 }

@@ -61,8 +61,6 @@ main() {
                                          map1, npoly, lmax, maxstep, ballrad);
    auto potential_result = SolvePotential(homogeneous_sphere_with_map,
                                           std::pow(10.0, -12.0));
-   auto stdvec_potsol = ToHarmonicField(homogeneous_sphere_with_map,
-                                       potential_result);
    timer1.stop("Time for 3D");
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
@@ -81,19 +79,16 @@ main() {
 
    // output test
    std::string pathtofolder = "./work/Bench3";
-   homogeneous_sphere_with_map.PhysicalOutputAtElement(pathtofolder,
-                                                       stdvec_potsol);
-   equivalent_sphere.OutputAtElement(pathtofolder, inp_radii, vec_exactsol);
    auto bundle = GPLSpec::FieldBundle::WithSolve(
        potential_result, "clean_bench_3", "mapped_homogeneous_sphere", "CG",
        potential_result.final_solve().requested_tolerance);
    bundle.parameters = {{"polynomial_order", std::to_string(npoly)},
-       {"degree_max", std::to_string(lmax)}, {"max_step_norm", std::to_string(maxstep)},
-       {"exterior_radius_norm", std::to_string(ballrad)},
-       {"mapping_amplitude", std::to_string(h)},
-       {"length_norm_m", std::to_string(lengthnorm)},
-       {"mass_norm_kg", std::to_string(massnorm)},
-       {"time_norm_s", std::to_string(timenorm)}};
+       {"degree_max", std::to_string(lmax)}, {"max_step_norm", GPLSpec::FieldBundle::ParameterNumber(maxstep)},
+       {"exterior_radius_norm", GPLSpec::FieldBundle::ParameterNumber(ballrad)},
+       {"mapping_amplitude", GPLSpec::FieldBundle::ParameterNumber(h)},
+       {"length_norm_m", GPLSpec::FieldBundle::ParameterNumber(lengthnorm)},
+       {"mass_norm_kg", GPLSpec::FieldBundle::ParameterNumber(massnorm)},
+       {"time_norm_s", GPLSpec::FieldBundle::ParameterNumber(timenorm)}};
    GPLSpec::FieldBundle::WriteAngular(
        std::filesystem::path(pathtofolder) / "field_bundle",
        homogeneous_sphere_with_map, potential_result.solution,
@@ -110,7 +105,6 @@ main() {
               homogeneous_sphere_with_map, inp_radii, vec_exactsol, 0, emit);
        });
 
-   //    testprem.OutputAtElement(pathtofolder, vec_exactsol);
 
    return 0;
 }

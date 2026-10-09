@@ -36,7 +36,6 @@ main() {
    Density3D testsphere = Density3D::SphericalHomogeneousPlanet(
        nrad, nrho, lengthnorm, timenorm, massnorm, maxstep, ballrad);
    auto potential_result = SolvePotential(testsphere);
-   auto stdvec_potsol = ToHarmonicField(testsphere, potential_result);
    timer1.stop("Time for 3D");
 
    // Compute potential using spherical integration method
@@ -49,12 +48,16 @@ main() {
 
    // Output results to files
    std::string pathtofolder = "./work/Bench1";
-   testsphere.ReferentialOutputAtElement(pathtofolder, stdvec_potsol);
-   testsphere.OutputAtElement(pathtofolder, vec_integral_potential);
-   testsphere.OutputAtElement(pathtofolder, vec_exactsol);
    auto bundle = GPLSpec::FieldBundle::WithSolve(
        potential_result, "clean_bench_1", "homogeneous_sphere", "CG",
        potential_result.final_solve().requested_tolerance);
+   bundle.parameters = {{"normalized_radius", GPLSpec::FieldBundle::ParameterNumber(nrad)},
+       {"normalized_density", GPLSpec::FieldBundle::ParameterNumber(nrho)},
+       {"length_norm_m", GPLSpec::FieldBundle::ParameterNumber(lengthnorm)},
+       {"time_norm_s", GPLSpec::FieldBundle::ParameterNumber(timenorm)},
+       {"mass_norm_kg", GPLSpec::FieldBundle::ParameterNumber(massnorm)},
+       {"max_step_norm", GPLSpec::FieldBundle::ParameterNumber(maxstep)},
+       {"exterior_radius_norm", GPLSpec::FieldBundle::ParameterNumber(ballrad)}};
    GPLSpec::FieldBundle::Writer(std::filesystem::path(pathtofolder) / "field_bundle",
                                 testsphere, bundle).Write([&](auto &&emit) {
       GPLSpec::FieldEvaluation::ForEachAngularGridSample(

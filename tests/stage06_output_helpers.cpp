@@ -86,16 +86,6 @@ std::vector<Eigen::MatrixXcd> original_matrices(int lMax, double alpha,
    return vec_wig;
 }
 
-struct OrderedGrid {
-   void ForwardTransformation(int, int, const std::vector<double> &spatial,
-                              std::vector<std::complex<double>> &coefficients) const {
-      calls.push_back(spatial.front() < 10.0 ? 1 : 2);
-      for (std::size_t i = 0; i < coefficients.size(); ++i) {
-         coefficients[i] = {spatial.front() + static_cast<double>(i), 0.0};
-      }
-   }
-   mutable std::vector<int> calls;
-};
 }  // namespace
 
 int main() {
@@ -112,8 +102,7 @@ int main() {
               "output angle arithmetic differs from the original");
       const auto slice = original_slice_angles(p1, p2);
       if (p1[0] == 0.7) {
-         // This fixture tests whether the original slice and output conventions are distinguishable.
-         // Production RotateSliceToEquator output is covered by the separate baseline output test.
+         // Retain the distinct historical slice-angle convention as a reference check.
          require(slice.alpha != actual.alpha || slice.gamma != actual.gamma,
                  "angle fixture does not distinguish original slice and output conventions");
       }
@@ -133,20 +122,4 @@ int main() {
       }
    }
 
-   OrderedGrid grid;
-   std::vector<double> mapping{2.0, 3.0}, density{20.0, 21.0};
-   std::vector<std::complex<double>> map_nonnegative(6), density_nonnegative(6);
-   std::vector<std::complex<double>> map_full(9), density_full(9);
-   GPLSpec::detail::ForwardAndExpandRealScalarPair(
-       grid, 2, mapping, density, map_nonnegative, density_nonnegative,
-       map_full, density_full);
-   require(grid.calls == std::vector<int>({1, 2}),
-           "paired transformations changed mapping/density call order");
-   std::vector<std::complex<double>> expected_map(9), expected_density(9);
-   GPLSpec::detail::ExpandRealScalarCoefficients(2, map_nonnegative,
-                                                 expected_map);
-   GPLSpec::detail::ExpandRealScalarCoefficients(2, density_nonnegative,
-                                                 expected_density);
-   require(map_full == expected_map && density_full == expected_density,
-           "paired transform expansion differs from the original operation");
 }

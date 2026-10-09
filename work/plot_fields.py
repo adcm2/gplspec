@@ -253,14 +253,15 @@ def power(args):
     for directory in args.bundle:
         manifest, c = load(directory, "power_std")
         mask = selected(c, "degree_power") & (c["element"] == args.element)
-        mask &= c["side"] == args.side
+        mask &= c["radial_node"] == args.radial_node
         indices = np.flatnonzero(mask)
         if not len(indices):
             raise ValueError(f"{directory}: selected power trace is absent")
         indices = indices[np.argsort(c["degree"][indices])]
         ax.plot(c["degree"][indices], c["value_real"][indices], marker=".", label=manifest["dataset"])
     ax.set_yscale("log")
-    ax.set(xlabel="Harmonic degree l", ylabel="Normalized power (1)")
+    ax.set(xlabel="Harmonic degree l", ylabel="Normalized power (1)",
+           title=f"Element {args.element}, local radial node {args.radial_node}")
     ax.legend()
     finish(args.output)
 
@@ -316,7 +317,7 @@ def main():
     p = commands.add_parser("power")
     p.add_argument("bundle", nargs="+")
     p.add_argument("--element", type=int, required=True)
-    p.add_argument("--side", choices=("none", "inner", "outer"), required=True)
+    p.add_argument("--radial-node", type=int, required=True)
     p.add_argument("--output")
     p.set_defaults(run=power)
     p = commands.add_parser("topography")

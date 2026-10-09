@@ -127,18 +127,16 @@ main() {
 
    // output test
    std::string pathtofolder = "./work/Bench5";
-   testconstruct.PhysicalOutputAtElement(pathtofolder, stdvec_potsol);
-   equivalent_sphere.OutputAtElement(pathtofolder, inp_radii2, vec_exactsol2);
    auto bundle = GPLSpec::FieldBundle::WithSolve(
        potential_result, "clean_bench_5", "mapped_lateral_prem", "CG",
        potential_result.final_solve().requested_tolerance);
    bundle.parameters = {{"polynomial_order", std::to_string(npoly)},
-       {"degree_max", std::to_string(lmax)}, {"max_step_norm", std::to_string(maxstep)},
-       {"exterior_radius_norm", std::to_string(ballrad)},
-       {"mapping_amplitude", std::to_string(h)},
-       {"length_norm_m", std::to_string(lengthnorm)},
-       {"mass_norm_kg", std::to_string(massnorm)},
-       {"time_norm_s", std::to_string(timenorm)}};
+       {"degree_max", std::to_string(lmax)}, {"max_step_norm", GPLSpec::FieldBundle::ParameterNumber(maxstep)},
+       {"exterior_radius_norm", GPLSpec::FieldBundle::ParameterNumber(ballrad)},
+       {"mapping_amplitude", GPLSpec::FieldBundle::ParameterNumber(h)},
+       {"length_norm_m", GPLSpec::FieldBundle::ParameterNumber(lengthnorm)},
+       {"mass_norm_kg", GPLSpec::FieldBundle::ParameterNumber(massnorm)},
+       {"time_norm_s", GPLSpec::FieldBundle::ParameterNumber(timenorm)}};
    GPLSpec::FieldBundle::WriteAngular(
        std::filesystem::path(pathtofolder) / "field_bundle", testconstruct,
        potential_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
@@ -157,7 +155,6 @@ main() {
              vec_exactsol2[spatial_index], spatial_index, emit);
    });
 
-   //    testprem.OutputAtElement(pathtofolder, vec_exactsol);
 
    return 0;
 }

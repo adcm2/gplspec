@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <limits>
 #include <optional>
 #include <sstream>
 #include <utility>
@@ -44,6 +45,12 @@ struct RunMetadata {
    std::vector<Solve> solves;
 };
 
+inline void CopyInputProvenance(const RunMetadata &source,
+                                RunMetadata &derived) {
+   derived.inputs = source.inputs;
+   derived.parameters = source.parameters;
+}
+
 inline std::string JsonString(const std::string &value) {
    std::ostringstream out;
    out << '"';
@@ -60,6 +67,14 @@ inline std::string JsonString(const std::string &value) {
       }
    }
    out << '"';
+   return out.str();
+}
+
+inline std::string ParameterNumber(double value) {
+   if (!std::isfinite(value))
+      throw std::invalid_argument("non-finite run parameter");
+   std::ostringstream out;
+   out << std::setprecision(std::numeric_limits<double>::max_digits10) << value;
    return out.str();
 }
 
@@ -291,11 +306,13 @@ inline void WriteAngular(const std::filesystem::path &directory,
                          std::span<const std::complex<double>> solution,
                          FieldEvaluation::Quantity quantity,
                          RunMetadata metadata,
-                         const FieldEvaluation::Rotation *rotation = nullptr) {
+                         const FieldEvaluation::Rotation *rotation = nullptr,
+                         FieldEvaluation::TraceSelection traces =
+                             FieldEvaluation::TraceSelection::Both) {
    Writer(directory, model, std::move(metadata)).Write([&](auto &&emit) {
       FieldEvaluation::ForEachAngularGridSample(model, solution, quantity,
                                                 std::forward<decltype(emit)>(emit),
-                                                rotation);
+                                                rotation, traces);
    });
 }
 
@@ -304,11 +321,13 @@ inline void WriteAngular(const std::filesystem::path &directory,
                          const Eigen::VectorXcd &solution,
                          FieldEvaluation::Quantity quantity,
                          RunMetadata metadata,
-                         const FieldEvaluation::Rotation *rotation = nullptr) {
+                         const FieldEvaluation::Rotation *rotation = nullptr,
+                         FieldEvaluation::TraceSelection traces =
+                             FieldEvaluation::TraceSelection::Both) {
    WriteAngular(directory, model,
        std::span<const std::complex<double>>(solution.data(),
            static_cast<std::size_t>(solution.size())), quantity,
-       std::move(metadata), rotation);
+       std::move(metadata), rotation, traces);
 }
 
 inline void WriteRadialHarmonics(const std::filesystem::path &directory,
@@ -346,6 +365,32 @@ inline void WriteSlice(const std::filesystem::path &directory,
           model, solution, quantity, rotation, azimuths,
           std::forward<decltype(emit)>(emit));
    });
+}
+
+inline void WriteEquatorialSlice(const std::filesystem::path &directory,
+                                 const GeneralEarthModels::Density3D &model,
+                                 std::span<const std::complex<double>> solution,
+                                 FieldEvaluation::Quantity quantity,
+                                 const std::vector<double> &azimuths,
+                                 RunMetadata metadata) {
+   metadata.rotation.reset();
+   Writer(directory, model, std::move(metadata)).Write([&](auto &&emit) {
+      FieldEvaluation::ForEachEquatorialSliceSample(
+          model, solution, quantity, azimuths,
+          std::forward<decltype(emit)>(emit));
+   });
+}
+
+inline void WriteEquatorialSlice(const std::filesystem::path &directory,
+                                 const GeneralEarthModels::Density3D &model,
+                                 const Eigen::VectorXcd &solution,
+                                 FieldEvaluation::Quantity quantity,
+                                 const std::vector<double> &azimuths,
+                                 RunMetadata metadata) {
+   WriteEquatorialSlice(directory, model,
+       std::span<const std::complex<double>>(solution.data(),
+           static_cast<std::size_t>(solution.size())), quantity, azimuths,
+       std::move(metadata));
 }
 
 inline void WriteSlice(const std::filesystem::path &directory,

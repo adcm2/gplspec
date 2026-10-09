@@ -30,6 +30,7 @@ enum class Representation {
    RadialProfile
 };
 enum class TraceSide { None, Inner, Outer };
+enum class TraceSelection { Both, Inner, Outer };
 enum class BoundaryKind { None, Numerical, Material, BodyVacuum, SurfaceWithoutExterior };
 
 inline constexpr std::size_t NoIndex = std::numeric_limits<std::size_t>::max();
@@ -320,7 +321,8 @@ template <class Callback>
 void ForEachAngularGridSample(
     const GeneralEarthModels::Density3D &model,
     std::span<const std::complex<double>> flat_solution, Quantity quantity,
-    Callback &&callback, const Rotation *rotation = nullptr) {
+    Callback &&callback, const Rotation *rotation = nullptr,
+    TraceSelection traces = TraceSelection::Both) {
    detail::ValidateQuantity(quantity);
    if (rotation != nullptr) detail::ValidateRotation(*rotation);
    if (quantity == Quantity::DegreePower)
@@ -432,9 +434,12 @@ void ForEachAngularGridSample(
       }
    };
 
-   for (std::size_t e = 0; e < static_cast<std::size_t>(mesh.NumberOfElements()); ++e) {
-      emit(e, 0, detail::AtLowerTrace(model, e, interfaces));
-      emit(e, mesh.PolynomialOrder(), detail::AtUpperTrace(model, e, interfaces));
+   const auto element_count = static_cast<std::size_t>(mesh.NumberOfElements());
+   for (std::size_t e = 0; e < element_count; ++e) {
+      if (traces != TraceSelection::Inner || e == 0)
+         emit(e, 0, detail::AtLowerTrace(model, e, interfaces));
+      if (traces != TraceSelection::Outer || e + 1 == element_count)
+         emit(e, mesh.PolynomialOrder(), detail::AtUpperTrace(model, e, interfaces));
    }
 }
 
@@ -442,11 +447,12 @@ template <class Callback>
 void ForEachAngularGridSample(
     const GeneralEarthModels::Density3D &model,
     const Eigen::VectorXcd &flat_solution, Quantity quantity,
-    Callback &&callback, const Rotation *rotation = nullptr) {
+    Callback &&callback, const Rotation *rotation = nullptr,
+    TraceSelection traces = TraceSelection::Both) {
    ForEachAngularGridSample(
        model, std::span<const std::complex<double>>(flat_solution.data(),
                                                    static_cast<std::size_t>(flat_solution.size())),
-       quantity, std::forward<Callback>(callback), rotation);
+       quantity, std::forward<Callback>(callback), rotation, traces);
 }
 
 template <class Callback>
@@ -537,8 +543,26 @@ void ForEachRadialHarmonicSample(
    };
 
    for (std::size_t e = 0; e < static_cast<std::size_t>(mesh.NumberOfElements()); ++e) {
-      emit(e, 0, detail::AtLowerTrace(model, e, interfaces));
-      emit(e, mesh.PolynomialOrder(), detail::AtUpperTrace(model, e, interfaces));
+      if (quantity == Quantity::DegreePower) {
+         for (int node = 0; node <= mesh.PolynomialOrder(); ++node) {
+            Sample base;
+            if (node == 0) {
+               base = detail::AtLowerTrace(model, e, interfaces);
+            } else if (node == mesh.PolynomialOrder()) {
+               base = detail::AtUpperTrace(model, e, interfaces);
+            } else {
+               base.element = e;
+               base.material = mesh.LayerNumber(static_cast<int>(e));
+               base.radial_node = node;
+               base.reference_radius_m =
+                   mesh.NodeRadius(static_cast<int>(e), node) * model.LengthNorm();
+            }
+            emit(e, node, base);
+         }
+      } else {
+         emit(e, 0, detail::AtLowerTrace(model, e, interfaces));
+         emit(e, mesh.PolynomialOrder(), detail::AtUpperTrace(model, e, interfaces));
+      }
    }
 }
 
@@ -696,13 +720,13 @@ void ForEachRadialHarmonicSample(
 // Gauss-grid path, this evaluates O(lmax^2) harmonics per requested azimuth;
 // callers should keep the requested angular sample set to a slice/profile.
 template <class Callback>
-void ForEachRotatedSliceSample(
+void ForEachSliceSample(
     const GeneralEarthModels::Density3D &model,
     std::span<const std::complex<double>> flat_solution, Quantity quantity,
-    const Rotation &rotation, std::span<const double> azimuths,
+    const Rotation *rotation, std::span<const double> azimuths,
     Callback &&callback) {
    detail::ValidateQuantity(quantity);
-   detail::ValidateRotation(rotation);
+   if (rotation != nullptr) detail::ValidateRotation(*rotation);
    if (quantity == Quantity::DegreePower)
       throw std::invalid_argument("degree power has no rotated spatial samples");
    const bool needs_solution = detail::RequiresSolution(quantity);
@@ -729,8 +753,11 @@ void ForEachRotatedSliceSample(
    std::vector<std::complex<double>> nonnegative(
        static_cast<std::size_t>((lmax + 1) * (lmax + 2) / 2));
    std::vector<double> spatial(spatial_size), mapping(spatial_size);
-   const auto matrices = GPLSpec::detail::RotationOutputMatrices(
-       lmax, rotation.alpha, rotation.beta, rotation.gamma);
+   std::vector<Eigen::MatrixXcd> matrices;
+   if (rotation != nullptr) {
+      matrices = GPLSpec::detail::RotationOutputMatrices(
+          lmax, rotation->alpha, rotation->beta, rotation->gamma);
+   }
    const auto harmonics = detail::HarmonicsAt(std::numbers::pi / 2.0, lmax);
 
    auto emit = [&](std::size_t element, int node, Sample base) {
@@ -746,7 +773,10 @@ void ForEachRotatedSliceSample(
       model.GSH_Grid().ForwardTransformation(lmax, 0, mapping, nonnegative);
       GPLSpec::detail::ExpandRealScalarCoefficients(lmax, nonnegative,
                                                     coefficients);
-      detail::RotateCoefficients(lmax, coefficients, rotated, matrices);
+      if (rotation != nullptr)
+         detail::RotateCoefficients(lmax, coefficients, rotated, matrices);
+      else
+         std::copy(coefficients.begin(), coefficients.end(), rotated.begin());
       std::copy(rotated.begin(), rotated.end(), rotated_mapping.begin());
       if (needs_solution) {
          std::copy_n(flat_solution.begin() + static_cast<std::ptrdiff_t>(offset),
@@ -766,8 +796,10 @@ void ForEachRotatedSliceSample(
          GPLSpec::detail::ExpandRealScalarCoefficients(lmax, nonnegative,
                                                        coefficients);
       }
-      if (quantity != Quantity::SurfaceRadius)
+      if (quantity != Quantity::SurfaceRadius && rotation != nullptr)
          detail::RotateCoefficients(lmax, coefficients, rotated, matrices);
+      else if (quantity != Quantity::SurfaceRadius)
+         std::copy(coefficients.begin(), coefficients.end(), rotated.begin());
       const double scale = quantity == Quantity::Potential
                                ? model.PotentialNorm()
                                : quantity == Quantity::SensitivityKernel
@@ -807,6 +839,25 @@ void ForEachRotatedSliceSample(
 template <class Callback>
 void ForEachRotatedSliceSample(
     const GeneralEarthModels::Density3D &model,
+    std::span<const std::complex<double>> flat_solution, Quantity quantity,
+    const Rotation &rotation, std::span<const double> azimuths,
+    Callback &&callback) {
+   ForEachSliceSample(model, flat_solution, quantity, &rotation, azimuths,
+                      std::forward<Callback>(callback));
+}
+
+template <class Callback>
+void ForEachEquatorialSliceSample(
+    const GeneralEarthModels::Density3D &model,
+    std::span<const std::complex<double>> flat_solution, Quantity quantity,
+    std::span<const double> azimuths, Callback &&callback) {
+   ForEachSliceSample(model, flat_solution, quantity, nullptr, azimuths,
+                      std::forward<Callback>(callback));
+}
+
+template <class Callback>
+void ForEachRotatedSliceSample(
+    const GeneralEarthModels::Density3D &model,
     const Eigen::VectorXcd &flat_solution, Quantity quantity,
     const Rotation &rotation, std::span<const double> azimuths,
     Callback &&callback) {
@@ -814,6 +865,17 @@ void ForEachRotatedSliceSample(
        model, std::span<const std::complex<double>>(flat_solution.data(),
            static_cast<std::size_t>(flat_solution.size())), quantity, rotation,
        azimuths, std::forward<Callback>(callback));
+}
+
+template <class Callback>
+void ForEachEquatorialSliceSample(
+    const GeneralEarthModels::Density3D &model,
+    const Eigen::VectorXcd &flat_solution, Quantity quantity,
+    std::span<const double> azimuths, Callback &&callback) {
+   ForEachEquatorialSliceSample(
+       model, std::span<const std::complex<double>>(flat_solution.data(),
+           static_cast<std::size_t>(flat_solution.size())), quantity, azimuths,
+       std::forward<Callback>(callback));
 }
 
 }   // namespace GPLSpec::FieldEvaluation

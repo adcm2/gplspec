@@ -55,12 +55,10 @@ main() {
    // get gravitational field
    timer1.start();
    auto full_result = SolvePotential(phobosfull, std::pow(10.0, -6.0));
-   auto stdvec_potsol = ToHarmonicField(phobosfull, full_result);
    timer1.stop("Time for gravity with full model");
 
    timer1.start();
    auto small_result = SolvePotential(phobos, std::pow(10.0, -6.0));
-   auto stdvec_potsol_small = ToHarmonicField(phobos, small_result);
    timer1.stop("Time for gravity with small model");
    /////////////////////////////////////////////////////////////////////////////
 
@@ -75,7 +73,6 @@ main() {
    timer1.start();
    auto mapping_result = SolveMappingPerturbation(
        phobos, testpertmap, std::pow(10.0, -6.0), std::pow(10.0, -6.0));
-   auto stdvec_potsol_perturb = ToHarmonicField(phobos, mapping_result);
    timer1.stop("Time for perturbation calculation");
 
    /////////////////////////////////////////////////////////////////////////////
@@ -98,19 +95,13 @@ main() {
    /////////////////////////////////////////////////////////////////////////////
    /////////////////////////////////////////////////////////////////////////////
    // output test
-   std::string pathtofolder1 = "./work/Phobos/Cartesian";
    std::string pathtofolder2 = "./work/Phobos/Spherical";
    std::string pathtofolder3 = "./work/Phobos/Rotated";
    std::string pathtofolder4 = "./work/Phobos/Perturbed";
-   std::string pathtofile1 = pathtofolder3 + "/MatrixSolution.out";
-   phobosfull.CartesianOutputAtElement(pathtofolder1, stdvec_potsol);
-   phobosfull.PhysicalOutputAtElement(pathtofolder2, stdvec_potsol);
-   phobos.PhysicalOutputRotated(pathtofile1, vec_ang1, vec_ang2, stdvec_potsol);
-   phobos.PhysicalOutputAtElement(pathtofolder4, stdvec_potsol_perturb);
 
    const std::vector<std::pair<std::string, std::string>> run_parameters = {
-       {"physical_density_kg_m-3", std::to_string(physdensity)},
-       {"scaled_density", std::to_string(scaledensity)},
+       {"physical_density_kg_m-3", GPLSpec::FieldBundle::ParameterNumber(physdensity)},
+       {"scaled_density", GPLSpec::FieldBundle::ParameterNumber(scaledensity)},
        {"polynomial_order", std::to_string(npoly)},
        {"degree_max", std::to_string(lMax)},
        {"base_degree", std::to_string(lsmall)},
@@ -157,7 +148,7 @@ main() {
    for (double longitude : phobos.GSH_Grid().Longitudes())
       slice_azimuths.push_back(longitude);
    auto rotated_metadata = GPLSpec::FieldBundle::WithSolve(
-       full_result, "phobos_gravity_perturbation", "full_rotated_slice", "CG",
+      full_result, "phobos_gravity_perturbation", "full_rotated_angular_grid", "CG",
        full_result.final_solve().requested_tolerance);
    rotated_metadata.inputs.push_back(
        GPLSpec::FieldBundle::InputPath(pathtofile));

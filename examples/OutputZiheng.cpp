@@ -233,9 +233,9 @@ main() {
           GPLSpec::FieldBundle::InputPath(pathtofile));
       outer_metadata.parameters = {{"degree_max", std::to_string(lMax)},
           {"polynomial_order", std::to_string(npoly)},
-          {"length_norm_m", std::to_string(lengthnorm)},
-          {"mass_norm_kg", std::to_string(massnorm)},
-          {"time_norm_s", std::to_string(timenorm)}};
+          {"length_norm_m", GPLSpec::FieldBundle::ParameterNumber(lengthnorm)},
+          {"mass_norm_kg", GPLSpec::FieldBundle::ParameterNumber(massnorm)},
+          {"time_norm_s", GPLSpec::FieldBundle::ParameterNumber(timenorm)}};
       GPLSpec::FieldBundle::Writer(
           "work/Ziheng/PHOBOS_POTENTIAL_OUTER.bundle", phobos,
           std::move(outer_metadata)).Write([&](auto &&emit) {
@@ -315,33 +315,24 @@ main() {
           pathtofolder2 + "/ReferentialDensitySolutionRotated.out";
 
       timer1.start();
-      phobos.CartesianOutputAtElement(pathtofolder1, stdvec_potsol);
       timer1.stop("First output");
 
       timer1.start();
-      phobos.PhysicalOutputAtElement(pathtofolder2, stdvec_potsol);
       timer1.stop("Second output");
 
       timer1.start();
-      phobos.ReferentialOutputAtElement(pathtofolder3, stdvec_senskernel, true);
       timer1.stop("Third output");
 
       timer1.start();
-      phobos.ReferentialOutputSlice(pathtofolder3, stdvec_senskernel, true);
       timer1.stop("Fifth output");
 
       timer1.start();
-      phobos.PhysicalOutputSlice(pathtofolder2, stdvec_potsol);
       timer1.stop("Sixth output");
 
       timer1.start();
-      phobos.ReferentialOutputRotated(pathtofile1, vec_ang1, vec_ang2,
-                                      stdvec_potsol);
       timer1.stop("Referential rotated");
 
       timer1.start();
-      phobos.PhysicalOutputRotated(pathtofile2, vec_ang12, vec_ang22,
-                                   stdvec_potsol);
       timer1.stop("Physical rotated");
    */
    return 0;

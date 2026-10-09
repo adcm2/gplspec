@@ -176,71 +176,9 @@ class Density3D {
    // converting between form of solution as single Eigen::Vector to the
    // "standard" vector of vectors
    inline auto SingleEigenVectorToGeneralFormat(const Eigen::VectorXcd &) const;
-   inline auto
-   PowerSTD(const std::vector<std::vector<std::vector<std::complex<double>>>>
-                &vec_pot) const;
    // lower triangle
    inline void SetLowerTriangle();
    //    void SetLowerTriangle() { _spectral_info.set_left_lower(); };
-
-   // rotation to output a specific slice
-   inline auto RotateSliceToEquator(
-       std::vector<double> &, std::vector<double> &,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &);
-   inline void PhysicalOutputRotated(
-       const std::string, std::vector<double> &, std::vector<double> &,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &)
-       const;
-   inline void ReferentialOutputRotated(
-       const std::string, std::vector<double> &, std::vector<double> &,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &)
-       const;
-   // output
-   // void OutputFullInformation(
-   //     const std::string,
-   //     const std::vector<std::vector<std::vector<std::complex<double>>>>
-   //     &) const;
-   inline void ReferentialOutputAtElement(
-       const std::string,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &,
-       bool) const;
-   inline void PhysicalOutputAtElement(
-       const std::string,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &,
-       bool) const;
-   inline void PhysicalOutputSlice(
-       const std::string,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &,
-       bool) const;
-   //    void SphericalHarmonicOutputAtPhysicalRadius(
-   //        const std::string,
-   //        const std::vector<std::vector<std::vector<std::complex<double>>>>
-   //        &) const;
-   inline void ReferentialOutputSlice(
-       const std::string,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &,
-       bool) const;
-   inline void OutputAtElement(
-       const std::string,
-       const std::vector<std::vector<std::complex<double>>> &) const;
-   inline void PhysicalOutputAtElement(
-       const std::string,
-       const std::vector<std::vector<std::complex<double>>> &) const;
-   inline void OutputAtElement(const std::string, const std::vector<double> &) const;
-   inline void OutputAtElement(const std::string, const std::vector<double> &,
-                        const std::vector<double> &) const;
-   inline void OutputAtElement(const std::string,
-                        const std::vector<std::vector<double>> &,
-                        const std::vector<std::vector<double>> &) const;
-   inline void CartesianOutputAtElement(
-       const std::string,
-       const std::vector<std::vector<std::complex<double>>> &) const;
-   inline void CartesianOutputAtElement(
-       const std::string,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &)
-       const;
-   inline void ModelDensityOutputRotated(const std::string, std::vector<double> &,
-                                  std::vector<double> &, bool) const;
 
    // norms
    inline double const LengthNorm() const;

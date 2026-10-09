@@ -27,6 +27,28 @@ void emit(std::ostream& out, const std::string& path, const T& value) {
 }
 
 template<class Model>
+void write_legacy_referential_field(
+    const std::filesystem::path &path, const Model &model,
+    const Eigen::VectorXcd &solution) {
+  std::ofstream file(path);
+  const auto last_element = static_cast<std::size_t>(model.Num_Elements() - 1);
+  GPLSpec::FieldEvaluation::ForEachRadialHarmonicSample(
+      model, solution, GPLSpec::FieldEvaluation::Quantity::Potential,
+      [&](const GPLSpec::FieldEvaluation::Sample &sample) {
+        if (sample.radial_node != 0 &&
+            !(sample.element == last_element &&
+              sample.radial_node == model.Poly_Order())) return;
+        if (sample.degree == 0 && sample.order == 0)
+          file << std::setprecision(16) << sample.reference_radius_m;
+        file << ';' << std::setprecision(16) << sample.value.real()
+             << ';' << sample.value.imag();
+        if (sample.degree == model.GSH_Grid().MaxDegree() &&
+            sample.order == sample.degree)
+          file << '\n';
+      });
+}
+
+template<class Model>
 auto capture(std::ostream& out, const std::string& name, Model& model,
              const std::filesystem::path &output_dir) {
   emit(out, name + "/density", model.Density());
@@ -52,7 +74,7 @@ auto capture(std::ostream& out, const std::string& name, Model& model,
   GPLSpec::FieldBundle::WriteAngular(
       output_dir / "field_bundles" / name, model, result.solution,
       GPLSpec::FieldEvaluation::Quantity::Potential, std::move(metadata));
-  return field;
+  return result.solution;
 }
 
 template<class Model, class Map>
@@ -102,7 +124,9 @@ int main(int argc, char** argv) {
   auto sphere_solution = capture(out, "homogeneous", sphere, argv[1]);
   const std::string output_dir = std::string(argv[1]) + "/homogeneous";
   std::filesystem::create_directories(output_dir);
-  sphere.ReferentialOutputAtElement(output_dir, sphere_solution);
+  write_legacy_referential_field(
+      std::filesystem::path(output_dir) / "MatrixSolution.out", sphere,
+      sphere_solution);
 
   auto layered = Density3D::SphericalLayeredPlanet({0.5, 1.0}, {2.0, 1.0},
                                                     length, time, mass, 0.5, 1.2);

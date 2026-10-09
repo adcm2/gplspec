@@ -112,6 +112,21 @@ int main(int argc, char **argv) {
    }
    const std::size_t angular_count = model.GSH_Grid().Longitudes().size() *
                                      model.GSH_Grid().CoLatitudes().size();
+   std::vector<Sample> outer_cohort, inner_cohort;
+   ForEachAngularGridSample(model, solution, Quantity::Potential,
+                            [&](const Sample &sample) { outer_cohort.push_back(sample); },
+                            nullptr, TraceSelection::Outer);
+   ForEachAngularGridSample(model, solution, Quantity::Potential,
+                            [&](const Sample &sample) { inner_cohort.push_back(sample); },
+                            nullptr, TraceSelection::Inner);
+   require(outer_cohort.size() == (mesh.NumberOfElements() + 1) * angular_count &&
+               inner_cohort.size() == (mesh.NumberOfElements() + 1) * angular_count,
+           "single-side angular cohorts must retain one endpoint per boundary");
+   require(potential.size() == 2 * mesh.NumberOfElements() * angular_count,
+           "default angular trace selection must retain both endpoint sides");
+   require(outer_cohort.front().side == TraceSide::None &&
+               inner_cohort.back().side == TraceSide::None,
+           "matched single-side cohorts must retain their external endpoint");
    require(body_vacuum.size() == 2 * angular_count,
            "body-vacuum surface must emit both material traces");
    for (std::size_t i = 0; i < angular_count; ++i) {
@@ -436,6 +451,53 @@ int main(int argc, char **argv) {
            "tilted axial harmonic did not rotate to the analytic negative x-axis field");
    }
 
+   std::vector<Sample> unrotated_slice, explicit_identity_slice;
+   ForEachEquatorialSliceSample(
+       model, axial_solution, Quantity::Potential, azimuths,
+       [&](const Sample &sample) { unrotated_slice.push_back(sample); });
+   ForEachRotatedSliceSample(
+       model, axial_solution, Quantity::Potential, Rotation{}, azimuths,
+       [&](const Sample &sample) { explicit_identity_slice.push_back(sample); });
+   require(unrotated_slice.size() == explicit_identity_slice.size(),
+           "unrotated and explicit Euler slices must share the sample cohort");
+   for (std::size_t i = 0; i < unrotated_slice.size(); ++i) {
+      const auto &plain = unrotated_slice[i];
+      const auto &legacy = explicit_identity_slice[i];
+      std::vector<double> mapping_values(
+          model.GSH_Grid().Longitudes().size() *
+              model.GSH_Grid().CoLatitudes().size());
+      const auto mapping_node = model.MappingAtRadialNode(
+          static_cast<int>(plain.element), plain.radial_node);
+      std::copy(mapping_node.begin(), mapping_node.end(), mapping_values.begin());
+      const int mapping_lmax = model.GSH_Grid().MaxDegree();
+      std::vector<std::complex<double>> mapping_nonnegative(
+          static_cast<std::size_t>((mapping_lmax + 1) * (mapping_lmax + 2) / 2));
+      std::vector<std::complex<double>> mapping_coefficients(
+          static_cast<std::size_t>((mapping_lmax + 1) * (mapping_lmax + 1)));
+      model.GSH_Grid().ForwardTransformation(mapping_lmax, 0, mapping_values,
+                                             mapping_nonnegative);
+      GPLSpec::detail::ExpandRealScalarCoefficients(
+          mapping_lmax, mapping_nonnegative, mapping_coefficients);
+      const double mapping_value =
+          GPLSpec::FieldEvaluation::detail::EvaluateHarmonicSeries(
+              mapping_lmax, mapping_coefficients,
+              GPLSpec::FieldEvaluation::detail::HarmonicsAt(
+                  std::numbers::pi / 2.0, model.GSH_Grid().MaxDegree()),
+              plain.phi_rad).real();
+      const double expected_plain_radius =
+          (mesh.NodeRadius(static_cast<int>(plain.element), plain.radial_node) +
+           mapping_value) * model.LengthNorm();
+      near(plain.physical_radius_m, expected_plain_radius, 1.0e-12,
+           "unrotated slice mapping differs from its unrotated coefficient field");
+      const double legacy_mapping_factor =
+          std::sqrt(3.1415926535 / std::numbers::pi);
+      const double expected_legacy_radius =
+          (mesh.NodeRadius(static_cast<int>(legacy.element), legacy.radial_node) +
+           mapping_value * legacy_mapping_factor) * model.LengthNorm();
+      near(legacy.physical_radius_m, expected_legacy_radius, 1.0e-12,
+           "explicit Euler slice changed its historical mapping normalization");
+   }
+
    std::vector<Sample> radial;
    ForEachRadialHarmonicSample(model, solution, Quantity::Potential,
                                [&](const Sample &sample) { radial.push_back(sample); });
@@ -475,13 +537,25 @@ int main(int argc, char **argv) {
    require(!degree_power.empty() &&
                degree_power.front().representation == Representation::DegreePower,
            "degree power must use its own dimensionless representation");
+   require(degree_power.size() == static_cast<std::size_t>(mesh.NumberOfElements()) *
+                                      (model.Poly_Order() + 1) * (lmax + 1),
+           "degree power must include every element-local radial node");
+   bool saw_interior_power_node = false;
    for (const auto &sample : degree_power) {
+      if (sample.radial_node > 0 && sample.radial_node < model.Poly_Order()) {
+         saw_interior_power_node = true;
+         require(sample.side == TraceSide::None &&
+                     sample.boundary == BoundaryKind::None,
+                 "interior power samples must not claim an interface side");
+      }
       const double expected = sample.degree == 0 ? 1.0
                               : sample.degree == 1 ? 0.5
                                                    : 0.0;
       near(sample.value.real(), expected, 1.0e-14,
            "degree power normalization differs from sum_m |a_lm|^2/|a_00|^2");
    }
+   require(saw_interior_power_node,
+           "degree power must retain interior local-node metadata");
 
    std::vector<Sample> surface_radius;
    ForEachAngularGridSample(model, std::span<const std::complex<double>>{},
@@ -528,6 +602,9 @@ int main(int argc, char **argv) {
       GPLSpec::FieldBundle::WriteAngular(
           output / "density_referential", model,
           std::span<const std::complex<double>>{}, Quantity::ReferentialDensity,
+          metadata);
+      GPLSpec::FieldBundle::WriteRadialHarmonics(
+          output / "degree_power", model, solution, Quantity::DegreePower,
           metadata);
       GPLSpec::FieldBundle::WriteSlice(
           output / "potential_slice", model, solution, Quantity::Potential,

@@ -55,19 +55,14 @@ main() {
    // get gravitational field
    timer1.start();
    auto potential_result = SolvePotential(phobos, std::pow(10.0, -12.0));
-   auto stdvec_potsol = ToHarmonicField(phobos, potential_result);
    timer1.stop("Time for gravity");
    timer1.start();
-   auto stdvec_potsol2 = ToHarmonicField(
-       phobos, SolvePotential(phobos, std::pow(10.0, -3.0)));
-   timer1.stop("Time for gravity 2");
 
    // get gravitational field
    timer1.start();
    std::vector<int> sensitivity_l{2}, sensitivity_m{0};
    std::vector<double> sensitivity_weight{1.0};
    auto sensitivity_result = SolveSensitivityKernel(phobos, 2, 0);
-   auto stdvec_senskernel = ToHarmonicField(phobos, sensitivity_result);
    timer1.stop("Time for sensitivity kernel");
 
    /////////////////////////////////////////////////////////////////////////////
@@ -91,56 +86,18 @@ main() {
    //////////////////////////////////////////////////////////////////
 
    // output test
-   std::string pathtofolder1 = "./work/Phobos/Cartesian";
    std::string pathtofolder2 = "./work/Phobos/Spherical";
    std::string pathtofolder3 = "./work/Phobos/Sensitivity";
-   std::string pathtofile1 =
-       pathtofolder2 + "/MatrixSolutionReferentialRotated.out";
-   std::string pathtofile2 = pathtofolder2 + "/MatrixSolutionPhysical.out";
-   std::string pathtofile3 = pathtofolder2 + "/MatrixSolutionRotated.out";
-   std::string pathtofile4 =
-       pathtofolder2 + "/PhysicalDensitySolutionRotated.out";
-   std::string pathtofile5 =
-       pathtofolder2 + "/ReferentialDensitySolutionRotated.out";
-
-   timer1.start();
-   phobos.CartesianOutputAtElement(pathtofolder1, stdvec_potsol);
-   timer1.stop("First output");
-
-   timer1.start();
-   phobos.PhysicalOutputAtElement(pathtofolder2, stdvec_potsol);
-   timer1.stop("Second output");
-
-   timer1.start();
-   phobos.ReferentialOutputAtElement(pathtofolder3, stdvec_senskernel, true);
-   timer1.stop("Third output");
-
-   timer1.start();
-   phobos.ReferentialOutputSlice(pathtofolder3, stdvec_senskernel, true);
-   timer1.stop("Fifth output");
-
-   timer1.start();
-   phobos.PhysicalOutputSlice(pathtofolder2, stdvec_potsol);
-   timer1.stop("Sixth output");
-
-   timer1.start();
-   phobos.ReferentialOutputRotated(pathtofile1, vec_ang1, vec_ang2,
-                                   stdvec_potsol);
-   timer1.stop("Referential rotated");
-
-   timer1.start();
-   phobos.PhysicalOutputRotated(pathtofile2, vec_ang12, vec_ang22,
-                                stdvec_potsol);
 
    auto field_bundle = GPLSpec::FieldBundle::WithSolve(
        potential_result, "phobos_gravity", "potential_density_power", "CG",
        potential_result.final_solve().requested_tolerance);
    field_bundle.inputs.push_back(
        GPLSpec::FieldBundle::InputPath(pathtofile));
-   field_bundle.parameters = {{"density_kg_m-3", std::to_string(physdensity)},
-       {"length_norm_m", std::to_string(lengthnorm)},
-       {"mass_norm_kg", std::to_string(massnorm)},
-       {"time_norm_s", std::to_string(timenorm)},
+   field_bundle.parameters = {{"density_kg_m-3", GPLSpec::FieldBundle::ParameterNumber(physdensity)},
+       {"length_norm_m", GPLSpec::FieldBundle::ParameterNumber(lengthnorm)},
+       {"mass_norm_kg", GPLSpec::FieldBundle::ParameterNumber(massnorm)},
+       {"time_norm_s", GPLSpec::FieldBundle::ParameterNumber(timenorm)},
        {"polynomial_order", std::to_string(npoly)},
        {"degree_max", std::to_string(lMax)},
        {"max_step_norm", "0.1"}, {"exterior_radius_norm", "1.5"}};
@@ -165,6 +122,7 @@ main() {
        sensitivity_result, "phobos_gravity", "sensitivity_selector_2_0", "CG",
        sensitivity_result.final_solve().requested_tolerance);
    sensitivity_bundle.inputs = field_bundle.inputs;
+   sensitivity_bundle.parameters = field_bundle.parameters;
    sensitivity_bundle.selector_l = sensitivity_l;
    sensitivity_bundle.selector_m = sensitivity_m;
    sensitivity_bundle.selector_weight = sensitivity_weight;
@@ -188,7 +146,8 @@ main() {
    auto physical_rotated_grid = GPLSpec::FieldBundle::WithSolve(
        potential_result, "phobos_gravity", "physical_rotated_angular_grid", "CG",
        potential_result.final_solve().requested_tolerance);
-   physical_rotated_grid.inputs = field_bundle.inputs;
+   GPLSpec::FieldBundle::CopyInputProvenance(field_bundle,
+                                              physical_rotated_grid);
    physical_rotated_grid.rotation = rotation;
    GPLSpec::FieldBundle::WriteAngular(
        std::filesystem::path(pathtofolder2) / "physical_rotated_grid_bundle",
@@ -198,19 +157,22 @@ main() {
    auto equatorial_metadata = GPLSpec::FieldBundle::WithSolve(
        potential_result, "phobos_gravity", "equatorial_slice", "CG",
        potential_result.final_solve().requested_tolerance);
-   equatorial_metadata.inputs = field_bundle.inputs;
-   GPLSpec::FieldBundle::WriteSlice(
+   GPLSpec::FieldBundle::CopyInputProvenance(field_bundle,
+                                              equatorial_metadata);
+   GPLSpec::FieldBundle::WriteEquatorialSlice(
        std::filesystem::path(pathtofolder2) / "equatorial_slice_bundle", phobos,
        potential_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
-       GPLSpec::FieldEvaluation::Rotation{}, slice_azimuths,
+       slice_azimuths,
        std::move(equatorial_metadata));
+   auto physical_slice_metadata = GPLSpec::FieldBundle::WithSolve(
+       potential_result, "phobos_gravity", "physical_rotated_slice", "CG",
+       potential_result.final_solve().requested_tolerance);
+   GPLSpec::FieldBundle::CopyInputProvenance(field_bundle,
+                                              physical_slice_metadata);
    GPLSpec::FieldBundle::WriteSlice(
        std::filesystem::path(pathtofolder2) / "physical_rotated_slice_bundle", phobos,
        potential_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
-       rotation, slice_azimuths,
-       GPLSpec::FieldBundle::WithSolve(
-           potential_result, "phobos_gravity", "physical_rotated_slice", "CG",
-           potential_result.final_solve().requested_tolerance));
+       rotation, slice_azimuths, std::move(physical_slice_metadata));
    const auto referential_rotation_angles =
        GPLSpec::detail::RotationOutputAnglesFor(vec_ang1, vec_ang2);
    const GPLSpec::FieldEvaluation::Rotation referential_rotation{
@@ -219,7 +181,8 @@ main() {
    auto referential_rotated_grid = GPLSpec::FieldBundle::WithSolve(
        potential_result, "phobos_gravity", "referential_rotated_angular_grid", "CG",
        potential_result.final_solve().requested_tolerance);
-   referential_rotated_grid.inputs = field_bundle.inputs;
+   GPLSpec::FieldBundle::CopyInputProvenance(field_bundle,
+                                              referential_rotated_grid);
    referential_rotated_grid.rotation = referential_rotation;
    GPLSpec::FieldBundle::WriteAngular(
        std::filesystem::path(pathtofolder2) / "referential_rotated_grid_bundle",
@@ -229,7 +192,8 @@ main() {
    auto referential_rotated_metadata = GPLSpec::FieldBundle::WithSolve(
        potential_result, "phobos_gravity", "referential_rotated_slice", "CG",
        potential_result.final_solve().requested_tolerance);
-   referential_rotated_metadata.inputs = field_bundle.inputs;
+   GPLSpec::FieldBundle::CopyInputProvenance(field_bundle,
+                                              referential_rotated_metadata);
    GPLSpec::FieldBundle::WriteSlice(
        std::filesystem::path(pathtofolder2) / "referential_rotated_slice_bundle",
        phobos, potential_result.solution,
@@ -243,7 +207,9 @@ main() {
    auto density_rotation = GPLSpec::FieldBundle::RunMetadata{};
    density_rotation.workflow = "phobos_gravity";
    density_rotation.dataset = "rotated_density_traces";
-   density_rotation.inputs = field_bundle.inputs;
+   GPLSpec::FieldBundle::CopyInputProvenance(field_bundle,
+                                              density_rotation);
+   density_rotation.parameters = field_bundle.parameters;
    density_rotation.rotation = rotation;
    GPLSpec::FieldBundle::Writer(
        std::filesystem::path(pathtofolder2) / "rotated_density_slice_bundle",

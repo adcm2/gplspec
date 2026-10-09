@@ -95,8 +95,6 @@ main() {
    timer1.start();
    auto potential_result = SolvePotential(testtomo, std::pow(10.0, -12.0));
    auto exact_result = SolvePotential(testtomo2, std::pow(10.0, -12.0));
-   auto stdvec_potsol = ToHarmonicField(testtomo, potential_result);
-   auto stdvec_potsol_exact = ToHarmonicField(testtomo2, exact_result);
    timer1.stop("Time for 3D");
 
    // solution using spherical integration method:
@@ -115,7 +113,6 @@ main() {
    MappingPerturbation testpertmap(testtomo, map0);
    auto mapping_result = SolveMappingPerturbation(testtomo, testpertmap,
                                                   std::pow(10.0, -12.0));
-   auto stdvec_potsol1 = ToHarmonicField(testtomo, mapping_result);
 
    // variation with h:
    //    timer1.start();
@@ -135,21 +132,18 @@ main() {
    std::string pathtofolder1 = "./work/Bench8/exact";
    std::string pathtofolder2 = "./work/Bench8/perturbed";
    std::string pathtofolder3 = "./work/Bench8/unperturbed";
-   testtomo.PhysicalOutputAtElement(pathtofolder1, stdvec_potsol_exact);
-   testtomo.PhysicalOutputAtElement(pathtofolder2, stdvec_potsol1);
-   testtomo.PhysicalOutputAtElement(pathtofolder3, stdvec_potsol);
    auto exact_bundle = GPLSpec::FieldBundle::WithSolve(
        exact_result, "clean_bench_8", "exact_mapped_sphere", "CG",
        exact_result.final_solve().requested_tolerance);
    exact_bundle.inputs.push_back(GPLSpec::FieldBundle::InputPath(pathtoprem));
    exact_bundle.inputs.push_back(GPLSpec::FieldBundle::InputPath(pathtotomo));
    exact_bundle.parameters = {{"polynomial_order", std::to_string(npoly)},
-       {"degree_max", std::to_string(lmax)}, {"max_step_norm", std::to_string(maxstep)},
-       {"exterior_radius_norm", std::to_string(ballrad)},
-       {"mapping_amplitude", std::to_string(h)},
-       {"length_norm_m", std::to_string(lengthnorm)},
-       {"mass_norm_kg", std::to_string(massnorm)},
-       {"time_norm_s", std::to_string(timenorm)}};
+       {"degree_max", std::to_string(lmax)}, {"max_step_norm", GPLSpec::FieldBundle::ParameterNumber(maxstep)},
+       {"exterior_radius_norm", GPLSpec::FieldBundle::ParameterNumber(ballrad)},
+       {"mapping_amplitude", GPLSpec::FieldBundle::ParameterNumber(h)},
+       {"length_norm_m", GPLSpec::FieldBundle::ParameterNumber(lengthnorm)},
+       {"mass_norm_kg", GPLSpec::FieldBundle::ParameterNumber(massnorm)},
+       {"time_norm_s", GPLSpec::FieldBundle::ParameterNumber(timenorm)}};
    GPLSpec::FieldBundle::WriteAngular(
        std::filesystem::path(pathtofolder1) / "field_bundle", testtomo2,
        exact_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
@@ -181,12 +175,8 @@ main() {
    //             << std::endl;
    //    }
    //    file2.close();
-   // testtomo.ReferentialOutputAtElement(pathtofolderlm, stdvec_potsol);
-   // testtomo.OutputAtElement(pathtofolderlm, vec_integral_potential);
-   //  equivalent_sphere.OutputAtElement(pathtofolder, inp_radii2,
    //  vec_exactsol2);
 
-   //    testprem.OutputAtElement(pathtofolder, vec_exactsol);
 
    return 0;
 }
