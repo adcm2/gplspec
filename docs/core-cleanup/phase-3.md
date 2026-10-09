@@ -6,6 +6,8 @@ The user authorized continuation of Phase 3 from the reviewed partial checkpoint
 
 Exact Phase 3 baseline: `15582edab8112dbb63e0101be5b26f5135298644` on `refactor/core-cleanup`. For this resumed run, the coordinator recreated its source as a Git archive at `/tmp/gplspec-phase3-resume/baseline` and recorded protected tracked inputs, outputs, frozen references, and experimental files in `/tmp/gplspec-phase3-resume/protected.json`. Earlier detached checkouts and `/tmp` logs are unavailable; archived repository evidence remains historical, while new checks use the recreated baseline and current candidates. The baseline Stage 00 source and all frozen references remain retrievable unchanged. Authorized API and ownership reconstruction may migrate current harnesses while preserving benchmark problems, physical inputs, numerical settings, algorithms, and scientifically meaningful comparisons. Where a retired API exposed intermediate-only arrays, remove only their output records with an explicit old-to-new coverage map and independent replacement checks; retain every scientifically meaningful record and comparator. Do not regenerate or loosen frozen references.
 
+**Current stop status:** 3A/3B work and Stages 3C–3F are complete. Independent Luna reviews and cumulative Sol-high review passed for implementation candidate `8418063561161f89e9b15f0c7040d2207855b255` against the baseline above. Stop here for the user's human review; Phase 4 is not authorized. The complete handoff is [`phase-3-final-handoff.md`](phase-3-final-handoff.md), and the verbatim Sol review is [`evidence/phase3f/sol-high-cumulative-review.md`](evidence/phase3f/sol-high-cumulative-review.md). The documentation-only close-out commit is distinct from the reviewed implementation candidate.
+
 ## Stage sequence and gates
 
 | Stage | Scope | Status |
@@ -16,7 +18,7 @@ Exact Phase 3 baseline: `15582edab8112dbb63e0101be5b26f5135298644` on `refactor/
 | 3C | Source/operator/solver reconstruction in reviewed checkpoints; keep perturbation operations callable; compare old/new performance before old solver retirement. | Stages 3C.1 (`3fb87c9`), 3C.2 (`472c146`), 3C.3 (`dcb1a96`), and 3C.4 (`1570985`) are accepted and committed. Preserve existing solver algorithms, methods, caller tolerances and workflow parameters. |
 | 3D | Consolidate GPLSpec harmonic-call ownership while retaining pinned GSHTrans and grids. | Accepted and committed as `5ee1ed0`; grid accessor migration and operation-local transform workspace passed independent review. |
 | 3E | Rebuild integrals, perturbations, and sensitivity in separately reviewed mathematical checkpoints. | 3E.1 (`8167cb6`), 3E.2 (`47b503b`), 3E.3 (`5f2958e`), and 3E.4 (`9a4f6a1`) are accepted and committed. |
-| 3F | Public API migration and retirement, fresh full validation, matched scientific and performance comparisons. | Accepted by independent Luna; implementation and validation are complete. Cumulative Sol-high review and the user's final review/stop remain the campaign gate. |
+| 3F | Public API migration and retirement, fresh full validation, matched scientific and performance comparisons. | Independent Luna and cumulative Sol-high review passed; locally committed as implementation candidate `8418063`. Phase 3 is complete and stopped with the human review checkpoint OPEN. Phase 4 is not authorized. |
 
 ### Planned review checkpoints within 3C–3F
 
