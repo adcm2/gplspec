@@ -33,8 +33,6 @@ main() {
    double lengthnorm = EarthModels::EarthConstants<FLOAT>().LengthNorm();
    double timenorm = EarthModels::EarthConstants<FLOAT>().TimeNorm();
    double massnorm = EarthModels::EarthConstants<FLOAT>().MassNorm();
-   std::string pathtoprem = "modeldata/prem.200";
-   std::string pathtotomo = "modeldata/S40RTS_dvs.nc";
 
    Timer timer1;
 
@@ -158,9 +156,11 @@ main() {
    auto exact_bundle = GPLSpec::FieldBundle::WithSolve(
        exact_result, "clean_bench_7", "exact_mapped_sphere", "CG",
        exact_result.final_solve().requested_tolerance);
-   exact_bundle.inputs.push_back(GPLSpec::FieldBundle::InputPath(pathtoprem));
-   exact_bundle.inputs.push_back(GPLSpec::FieldBundle::InputPath(pathtotomo));
-   exact_bundle.parameters = {{"polynomial_order", std::to_string(npoly)},
+   exact_bundle.parameters = {{"base_radial_model", "HomogeneousSphere"},
+       {"tomography_model", "TomographyZeroModel"},
+       {"sphere_radius_norm", GPLSpec::FieldBundle::ParameterNumber(normrad)},
+       {"sphere_density", GPLSpec::FieldBundle::ParameterNumber(normrho)},
+       {"polynomial_order", std::to_string(npoly)},
        {"degree_max", std::to_string(lmax)}, {"max_step_norm", GPLSpec::FieldBundle::ParameterNumber(maxstep)},
        {"exterior_radius_norm", GPLSpec::FieldBundle::ParameterNumber(ballrad)},
        {"mapping_amplitude", GPLSpec::FieldBundle::ParameterNumber(h)},
@@ -190,13 +190,25 @@ main() {
        potential_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
        std::move(base_bundle));
 
-   std::string pathtofile = "./work/Bench7/zeroradius/MatrixSolution.out";
-   auto file2 = std::ofstream(pathtofile);
+   const std::filesystem::path sweep_path =
+       "./work/Bench7/zeroradius/MatrixSolution.out";
+   std::filesystem::create_directories(sweep_path.parent_path());
+   std::ofstream file2(sweep_path);
+   if (!file2) {
+      std::cerr << "Unable to open CleanBench 7 sweep output: " << sweep_path
+                << '\n';
+      return 1;
+   }
    for (int idx = 0; idx < lenh; ++idx) {
       file2 << vec_h[idx] << ";" << vec_zerosol[idx] << ";" << vec_exactsol[idx]
             << std::endl;
    }
    file2.close();
+   if (!file2) {
+      std::cerr << "Unable to finish CleanBench 7 sweep output: " << sweep_path
+                << '\n';
+      return 1;
+   }
    //  vec_exactsol2);
 
 

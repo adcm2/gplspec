@@ -41,7 +41,7 @@ python3 work/plot_fields.py topography "$ZIHENG_RUN/work/Ziheng/PhobosRadius.bun
 ```
 
 For the Bench 6 harmonic and sensitivity plots, the producer requires both
-unchanged PREM and S40RTS inputs. Its recorded settings are `npoly=8`,
+unchanged PREM and S40RTS inputs. Its recorded settings are `npoly=12`,
 `lmax=20`, `maxstep=0.05`, and `ballrad=1.2`:
 
 ```sh
@@ -58,7 +58,7 @@ python3 work/run_field_bundle.py --workdir "$BENCH6_RUN" \
 ```
 
 To reproduce the PREM comparison from unchanged `modeldata/prem.200` using the
-recorded workflow settings (`npoly=5`, `lmax=2`, `maxstep=0.01`,
+recorded workflow settings (`npoly=5`, `lmax=2`, `maxstep=0.1`,
 `ballrad=1.2`), configure the producer, link the input into an isolated run
 directory, and invoke its absolute executable path:
 
@@ -128,6 +128,41 @@ boundary rings belonging to each element, with a center fan for the central
 element. No interpolation crosses a material interface. Axes and colorbars
 carry SI units from the bundle contract.
 
+## CleanBench 7 zero-radius sweep
+
+This synthetic workflow uses a unit-radius, unit-density `HomogeneousSphere` and
+`TomographyZeroModel`; it does not consume PREM or S40RTS files. The producer
+retains its original `npoly=5`, `lmax=20`, `maxstep=0.1`, `ballrad=1.5`,
+`h` prompt, and 100 diagnostic amplitudes `h=0, 0.002, ..., 0.198`. The output
+table columns are `h;mapping-perturbation centre potential;analytic exact
+centre potential`, with potential in m² s⁻². Bundle metadata records the
+synthetic model and sphere parameters.
+
+Run it in an isolated directory, then plot the saved diagnostic table with the
+shared CLI:
+
+```sh
+cmake --build build --target clean_bench_7
+BENCH7_RUN=/tmp/gplspec-bench7-sweep-run
+mkdir -p "$BENCH7_RUN"
+printf '0.001\n' | python3 work/run_field_bundle.py --workdir "$BENCH7_RUN" \
+  --bundle work/Bench7/exact/field_bundle \
+  --bundle work/Bench7/perturbed/field_bundle \
+  --bundle work/Bench7/unperturbed/field_bundle -- "$PWD/build/bin/clean_bench_7"
+python3 work/plot_fields.py sweep \
+  "$BENCH7_RUN/work/Bench7/zeroradius/MatrixSolution.out" \
+  --output /tmp/bench7-zero-radius-sweep.png
+```
+
+The left panel keeps the zero-amplitude sample and labels the analytic and
+mapping-perturbation curves correctly. The right panel plots
+`abs(exact-approximate)/max(abs(approximate))*100` and the original quadratic
+guide normalized at the fourth sample (zero-based row index 3). Zero `h` and
+zero-error points are explicitly omitted from the logarithmic panel. The CLI
+requires a finite, three-column table, strictly increasing nonnegative `h`, a
+nonzero approximate-potential scale, and a nonzero error at its positive guide
+anchor.
+
 ## Retired plot scripts and replacement
 
 The old scripts read positional columns from legacy `.out` files. Their plot
@@ -142,7 +177,7 @@ roles now use field-bundle quantities and explicit element/ray selectors:
 | `CleanBench6Plot1.py` | The potential comparison uses the `CleanBench6Plot.py` command. For each sensitivity `(L,M)`, run `radial RUN/work/Bench6/lm/sensitivity_bundle --quantity sensitivity_kernel --representation harmonic_coefficients --degree L --order M --component real` and repeat with `--component imag`. |
 | `CleanBench6Plot_SK.py` | For each sensitivity `(L,M)`, run `radial RUN/work/Bench6/lm/sensitivity_bundle --quantity sensitivity_kernel --representation harmonic_coefficients --degree L --order M --component real` and repeat with `--component imag`. |
 | `CleanBench7Plot.py`, `CleanBench8Plot.py`, `CleanBench9Plot.py`, `CleanBench10Plot.py` | `radial` potential overlays for exact, perturbed, and unperturbed bundles. Omit `--difference` when mappings differ. |
-| `CleanBench7Plot1.py` | `radial` potential overlay for zero-radius and finite-radius perturbation runs; compare the shared reference geometry only. |
+| `CleanBench7Plot1.py` | `sweep RUN/work/Bench7/zeroradius/MatrixSolution.out`; preserves the centre-potential curves and normalized relative-error/quadratic-guide panels from the three-column diagnostic table. |
 | `PhobosFullSlice.py`, `PhobosSlicePlot.py`, `PhobosSlicePlot2.py` | `slice --quantity potential`, `density_physical`, `density_referential`, or `sensitivity_kernel`; each bundle retains its distinct quantity/units. |
 | `PhobosSliceDensity.py` | `slice --quantity density_physical` or `density_referential`. |
 | `PhobosPerturbation.py` | `map` for sampled angular-grid comparisons, or `slice` for equatorial comparison; each perturbation geometry remains a separate field bundle. |

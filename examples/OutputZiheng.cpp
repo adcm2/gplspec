@@ -4,11 +4,8 @@
 #include <gplspec/Timer>
 #include <PlanetaryModel/All>
 #include <TomographyModels/All>
-#include <filesystem>
-#include <iomanip>
 #include <iostream>
 #include <ranges>
-#include <sstream>
 #include <cmath>
 #include <numbers>
 #include <numeric>
@@ -126,23 +123,9 @@ main() {
          }
       }
 
-      std::string pathtofile1 = "work/Ziheng/PhobosRadius.out";
-      std::ofstream file1(pathtofile1);
-      if (!file1) {
-         std::cerr << "Error: unable to open output file: " << pathtofile1
-                   << "\n";
-         return 1;
-      }
-
-      file1.setf(std::ios::fixed);
-      file1 << std::setprecision(16);
-
       double maxrad = 0.0, minrad = 1e10;
       for (int idx = 0; idx < vec_latitudes.size(); ++idx) {
          for (int idx2 = 0; idx2 < vec_longitudes.size(); ++idx2) {
-            file1 << vec_latitudes[idx] << ";" << vec_longitudes[idx2] << ";"
-                  << vec_radius[idx][idx2].real() << "\n";
-
             maxrad = std::max(maxrad, vec_radius[idx][idx2].real());
             minrad = std::min(minrad, vec_radius[idx][idx2].real());
             if (std::abs(vec_radius[idx][idx2].imag()) > 1e-10) {
@@ -153,7 +136,6 @@ main() {
             }
          }
       }
-      file1.close();
       auto surface_metadata = GPLSpec::FieldBundle::RunMetadata{};
       surface_metadata.workflow = "output_ziheng";
       surface_metadata.dataset = "phobos_tablea1_surface_0p5deg";
@@ -172,6 +154,8 @@ main() {
                sample.representation = GPLSpec::FieldEvaluation::Representation::AngularGrid;
                sample.theta_rad = (90.0 - vec_latitudes[ilat]) * pid180;
                sample.phi_rad = vec_longitudes[ilon] * pid180;
+               sample.reference_radius_m =
+                   phobos.Node_Information().PlanetRadius() * phobos.LengthNorm();
                sample.physical_radius_m = vec_radius[ilat][ilon].real();
                sample.value = {sample.physical_radius_m, 0.0};
                emit(sample);
@@ -192,11 +176,7 @@ main() {
    //////////////////////////////////////////////////////////////////
    timer1.start();
    auto phobos_result = SolvePotential(phobos, std::pow(10.0, -12.0));
-   auto stdvec_potsol = ToHarmonicField(phobos, phobos_result);
    timer1.stop("Time for gravity");
-   std::cout << "Size of stdvec_potsol: " << stdvec_potsol.size() << " "
-             << stdvec_potsol[0].size() << " " << stdvec_potsol[0][0].size()
-             << "\n";
 
    std::cout << "Volume: " << phobos.Volume() / std::pow(10.0, 9.0) << "km^3"
              << "\n";
@@ -206,26 +186,8 @@ main() {
    std::cout << "Outermost radius: "
              << phobos.Node_Information().OuterRadius() * phobos.LengthNorm()
              << " m\n";
-   // output outermost:
+   // Export the outermost potential coefficients as a field bundle.
    {
-      std::string pathtofile1 = "work/Ziheng/PHOBOS_POTENTIAL_OUTER.out";
-      std::ofstream file1(pathtofile1);
-      if (!file1) {
-         std::cerr << "Error: unable to open output file: " << pathtofile1
-                   << "\n";
-         return 1;
-      }
-      file1.setf(std::ios::fixed);
-      file1 << std::setprecision(16);
-      std::size_t fidx = 0;
-      for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-         for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
-            file1 << idxl << ";" << idxm << ";"
-                  << stdvec_potsol.back().back()[fidx].real() << ";"
-                  << stdvec_potsol.back().back()[fidx++].imag() << "\n";
-         }
-      }
-      file1.close();
       auto outer_metadata = GPLSpec::FieldBundle::WithSolve(
           phobos_result, "output_ziheng", "phobos_outer_potential_coefficients",
           "CG", phobos_result.final_solve().requested_tolerance);
@@ -263,22 +225,6 @@ main() {
           Density3D::OneDimensionalPlanetFromFile(pathtoprem, 5, 2, 0.001, 1.2);
       auto vec_integral_potential = GravitationalSphericalIntegral(testprem);
 
-      std::string pathtofile1 = "work/Ziheng/PREM200.NO.INTEGRAL.out";
-      std::ofstream file1(pathtofile1);
-      if (!file1) {
-         std::cerr << "Error: unable to open output file: " << pathtofile1
-                   << "\n";
-         return 1;
-      }
-
-      file1.setf(std::ios::fixed);
-      file1 << std::setprecision(16);
-      file1 << 0.0 << ";" << vec_integral_potential[0][0].real() << "\n";
-      for (int idx = 0; idx < vec_integral_potential.size() - 1; ++idx) {
-         file1 << testprem.Node_Information().ElementUpperRadius(idx) << ";"
-               << vec_integral_potential[idx + 1][0].real() << "\n";
-      }
-      file1.close();
       auto integral_metadata = GPLSpec::FieldBundle::RunMetadata{};
       integral_metadata.workflow = "output_ziheng";
       integral_metadata.dataset = "prem200_no_spherical_integral";
@@ -300,40 +246,5 @@ main() {
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
 
-   /*
-      // output test
-      std::string pathtofolder1 = "./work/Phobos/Cartesian";
-      std::string pathtofolder2 = "./work/Phobos/Spherical";
-      std::string pathtofolder3 = "./work/Phobos/Sensitivity";
-      std::string pathtofile1 =
-          pathtofolder2 + "/MatrixSolutionReferentialRotated.out";
-      std::string pathtofile2 = pathtofolder2 + "/MatrixSolutionPhysical.out";
-      std::string pathtofile3 = pathtofolder2 + "/MatrixSolutionRotated.out";
-      std::string pathtofile4 =
-          pathtofolder2 + "/PhysicalDensitySolutionRotated.out";
-      std::string pathtofile5 =
-          pathtofolder2 + "/ReferentialDensitySolutionRotated.out";
-
-      timer1.start();
-      timer1.stop("First output");
-
-      timer1.start();
-      timer1.stop("Second output");
-
-      timer1.start();
-      timer1.stop("Third output");
-
-      timer1.start();
-      timer1.stop("Fifth output");
-
-      timer1.start();
-      timer1.stop("Sixth output");
-
-      timer1.start();
-      timer1.stop("Referential rotated");
-
-      timer1.start();
-      timer1.stop("Physical rotated");
-   */
    return 0;
 }

@@ -55,14 +55,16 @@ def main():
         root = Path(temp)
         bundle = root / "bundle"
         rotated_bundle = root / "rotated_bundle"
+        surface_bundle = root / "surface_bundle"
         input_file = root / "input.txt"
         input_file.write_bytes(b"verified input bytes\n")
         (root / "auxiliary.txt").write_bytes(b"another runtime input\n")
         runner = ROOT / "work" / "run_field_bundle.py"
         subprocess.run([sys.executable, str(runner), "--workdir", str(root),
                         "--input", "input.txt", "--input", "auxiliary.txt",
-                        "--bundle", "bundle", "--bundle", "rotated_bundle", "--",
-                        str(executable), str(bundle), str(rotated_bundle)], check=True)
+                        "--bundle", "bundle", "--bundle", "rotated_bundle",
+                        "--bundle", "surface_bundle", "--", str(executable),
+                        str(bundle), str(rotated_bundle), str(surface_bundle)], check=True)
         manifest, rows = MODULE.open_bundle(bundle)
         data = list(rows)
         assert manifest["schema_version"] == 1
@@ -94,6 +96,15 @@ def main():
         assert all(len({row["theta_rad"] for row in rows}) > 1 and
                    len({row["phi_rad"] for row in rows}) > 1
                    for rows in grid_groups.values())
+        surface_manifest, surface_rows = MODULE.open_bundle(surface_bundle)
+        surface_data = list(surface_rows)
+        assert surface_manifest["schema_version"] == 1
+        assert len(surface_data) == 1
+        assert surface_data[0]["quantity"] == "surface_radius"
+        assert surface_data[0]["radial_node"] == ""
+        with (surface_bundle / "samples.csv").open(newline="", encoding="utf-8") as stream:
+            serialized_surface = next(csv.DictReader(stream))
+        assert serialized_surface["radial_node"] == ""
 
         malformed = root / "malformed"
         copy_bundle(bundle, malformed)

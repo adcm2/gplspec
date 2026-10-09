@@ -33,9 +33,6 @@ main() {
    double lengthnorm = EarthModels::EarthConstants<FLOAT>().LengthNorm();
    double timenorm = EarthModels::EarthConstants<FLOAT>().TimeNorm();
    double massnorm = EarthModels::EarthConstants<FLOAT>().MassNorm();
-   std::string pathtoprem = "modeldata/prem.200";
-   std::string pathtotomo = "modeldata/S40RTS_dvs.nc";
-
    Timer timer1;
 
    //////////////////////////////////////////////////////////////////
@@ -124,9 +121,9 @@ main() {
    auto exact_bundle = GPLSpec::FieldBundle::WithSolve(
        exact_result, "clean_bench_9", "mapped_reference", "CG",
        exact_result.final_solve().requested_tolerance);
-   exact_bundle.inputs.push_back(GPLSpec::FieldBundle::InputPath(pathtoprem));
-   exact_bundle.inputs.push_back(GPLSpec::FieldBundle::InputPath(pathtotomo));
    exact_bundle.parameters = {{"polynomial_order", std::to_string(npoly)},
+       {"normalized_radius", GPLSpec::FieldBundle::ParameterNumber(normrad)},
+       {"normalized_density", GPLSpec::FieldBundle::ParameterNumber(normrho)},
        {"degree_max", std::to_string(lmax)}, {"max_step_norm", GPLSpec::FieldBundle::ParameterNumber(maxstep)},
        {"exterior_radius_norm", GPLSpec::FieldBundle::ParameterNumber(ballrad)},
        {"mapping_amplitude", GPLSpec::FieldBundle::ParameterNumber(h)},

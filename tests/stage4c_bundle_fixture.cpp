@@ -8,7 +8,7 @@
 #include <vector>
 
 int main(int argc, char **argv) {
-   if (argc != 3) throw std::invalid_argument("expected regular and rotated bundle directories");
+   if (argc != 4) throw std::invalid_argument("expected regular, rotated, and surface bundle directories");
    using namespace GeneralEarthModels;
    const auto model = Density3D::SphericalHomogeneousPlanet(
        1.0, 1.0, 6.371e6, 3600.0, 5.972e24, 0.5, 1.2);
@@ -69,4 +69,22 @@ int main(int argc, char **argv) {
               GPLSpec::FieldEvaluation::Quantity::PhysicalDensity,
               emit, &rotation);
        });
+
+   GPLSpec::FieldBundle::RunMetadata surface_metadata;
+   surface_metadata.workflow = "stage4c_roundtrip";
+   surface_metadata.dataset = "surface_radius";
+   const GPLSpec::FieldBundle::Writer surface_writer(
+       argv[3], model, std::move(surface_metadata));
+   surface_writer.Write([&](auto &&emit) {
+      GPLSpec::FieldEvaluation::Sample sample;
+      sample.quantity = GPLSpec::FieldEvaluation::Quantity::SurfaceRadius;
+      sample.representation = GPLSpec::FieldEvaluation::Representation::AngularGrid;
+      sample.radial_node = -1;
+      sample.theta_rad = 0.4;
+      sample.phi_rad = 1.2;
+      sample.reference_radius_m = 6.371e6;
+      sample.physical_radius_m = 6.4e6;
+      sample.value = {sample.physical_radius_m, 0.0};
+      emit(sample);
+   });
 }

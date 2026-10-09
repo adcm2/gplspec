@@ -67,4 +67,4 @@ cd /tmp/gplspec-run
 /absolute/path/to/gplspec/build/bin/clean_bench_1
 ```
 
-The examples do not create their output directories. File-backed examples also expect the tracked `modeldata/` paths relative to the working directory; arrange those inputs in an isolated run directory before launching. Some examples read values from stdin. The [workflow map](benchmark.md) lists each program's prompts, inputs, output paths, and plot consumers. Building an executable does not run or validate its scientific workflow.
+Field-bundle writers create their output directories. File-backed examples expect the tracked `modeldata/` paths relative to the working directory; link or copy those inputs into an isolated run directory before launching. Some examples read values from stdin. The [workflow map](benchmark.md) lists each program's prompts, inputs, and effective settings. The [bundle plotting guide](work/plots.md) documents current bundle paths and plot commands. Building an executable does not run or validate its scientific workflow.

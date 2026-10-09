@@ -168,13 +168,17 @@ inline void WriteSample(std::ostream &out, const FieldEvaluation::Sample &s) {
          throw std::invalid_argument("infinite sample value cannot be serialized");
    if (!std::isfinite(s.value.real()) || !std::isfinite(s.value.imag()))
       throw std::invalid_argument("sample value must be finite");
+   if (s.radial_node < -1)
+      throw std::invalid_argument("radial node index must be nonnegative or absent");
    out << QuantityName(s.quantity) << ',' << RepresentationName(s.representation)
        << ',' << BoundaryName(s.boundary) << ',' << SideName(s.side) << ','
        << OptionalIndex(s.element) << ',' << OptionalIndex(s.numerical_interface)
        << ',' << OptionalIndex(s.material_interface) << ','
        << OptionalIndex(s.inner_element) << ',' << OptionalIndex(s.outer_element)
        << ',' << s.material << ',' << s.inner_material << ',' << s.outer_material
-       << ',' << s.degree << ',' << s.order << ',' << s.radial_node << ','
+       << ',' << s.degree << ',' << s.order << ',';
+   if (s.radial_node >= 0) out << s.radial_node;
+   out << ','
        << std::setprecision(std::numeric_limits<double>::max_digits10);
    auto number = [&](double value) { if (std::isfinite(value)) out << value; };
    number(s.reference_radius_m); out << ','; number(s.physical_radius_m); out << ',';

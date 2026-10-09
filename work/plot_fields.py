@@ -6,6 +6,7 @@ Commands:
   slice        plot one explicitly evaluated rotated slice
   power        compare normalized degree power at selected radial samples
   topography   plot physical surface radius from TABLEA1 samples
+  sweep        plot the CleanBench 7 centre-potential diagnostic table
 """
 import argparse
 from collections import defaultdict
@@ -281,6 +282,62 @@ def topography(args):
            title=f"{manifest['dataset']} surface")
     finish(args.output)
 
+def load_sweep_table(path):
+    """Load the retained three-column CleanBench 7 diagnostic table."""
+    try:
+        values = np.loadtxt(path, delimiter=";", ndmin=2, dtype=float)
+    except (OSError, ValueError) as exc:
+        raise ValueError(f"cannot read numeric semicolon table {path}: {exc}") from exc
+    if values.ndim != 2 or values.shape[1] != 3 or values.shape[0] < 4:
+        raise ValueError("sweep table must have at least four rows and exactly three columns")
+    if not np.all(np.isfinite(values)):
+        raise ValueError("sweep table contains a non-finite value")
+    h, approximate, exact = values.T
+    if np.any(h < 0) or np.any(np.diff(h) <= 0):
+        raise ValueError("sweep amplitudes must be nonnegative and strictly increasing")
+    normalization = float(np.max(np.abs(approximate)))
+    if not np.isfinite(normalization) or normalization <= 0:
+        raise ValueError("mapping-perturbation centre potentials must have nonzero scale")
+    with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+        relative_error = np.abs(exact - approximate) / normalization
+    if not np.all(np.isfinite(relative_error)):
+        raise ValueError("sweep relative errors are not finite")
+    anchor = 3
+    if h[anchor] <= 0 or relative_error[anchor] <= 0:
+        raise ValueError("fourth sample must have positive h and nonzero relative error for the quadratic guide")
+    with np.errstate(over="ignore", invalid="ignore"):
+        quadratic_prediction = relative_error[anchor] * (h / h[anchor]) ** 2
+    if not np.all(np.isfinite(quadratic_prediction)):
+        raise ValueError("quadratic guide values are not finite")
+    return h, approximate, exact, relative_error, quadratic_prediction
+
+
+def sweep_plot(args):
+    h, approximate, exact, relative_error, quadratic_prediction = load_sweep_table(args.table)
+    fig, axes = plt.subplots(1, 2, figsize=(11, 5))
+    axes[0].plot(h, exact, "b-", linewidth=2, label="Analytic exact")
+    axes[0].plot(h, approximate, "r--", linewidth=2,
+                 label="Mapping-perturbation approximation")
+    axes[0].set(xlabel="Mapping amplitude h",
+                ylabel="Centre potential (m² s⁻²)",
+                title="CleanBench 7 centre potential")
+    axes[0].legend(fontsize=8)
+
+    # h=0 belongs in the potential panel; zero and zero-error values cannot
+    # appear on logarithmic axes, so mask them explicitly in the error panel.
+    valid_error = (h > 0) & (relative_error > 0)
+    valid_prediction = (h > 0) & (quadratic_prediction > 0)
+    axes[1].loglog(h[valid_error], relative_error[valid_error] * 100.0,
+                   "b.", label="Relative error")
+    axes[1].loglog(h[valid_prediction], quadratic_prediction[valid_prediction] * 100.0,
+                   "r--", label="Quadratic guide (fourth sample)")
+    axes[1].set(xlabel="Mapping amplitude h", ylabel="Relative error (%)",
+                title="Relative error and quadratic guide")
+    axes[1].legend(fontsize=8)
+    fig.tight_layout()
+    finish(args.output)
+
+
 def finish(output):
     if output:
         plt.savefig(output, dpi=180, bbox_inches="tight")
@@ -324,6 +381,10 @@ def main():
     p.add_argument("bundle")
     p.add_argument("--output")
     p.set_defaults(run=topography)
+    p = commands.add_parser("sweep", help="plot the CleanBench 7 centre-potential sweep table")
+    p.add_argument("table", help="three-column semicolon table: h;approximate;exact")
+    p.add_argument("--output")
+    p.set_defaults(run=sweep_plot)
     args = parser.parse_args()
     args.run(args)
 
