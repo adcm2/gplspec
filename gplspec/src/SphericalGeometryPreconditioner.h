@@ -42,13 +42,8 @@ template <typename Scalar_> class SphericalGeometryPreconditioner {
    SphericalGeometryPreconditioner &factorize(const MatType &mat) {
       matsize[0] = mat.rows();
       matsize[1] = mat.cols();
-      {
-         Eigen::SparseMatrix<Scalar> smid;
-         smid.resize(matsize[0], matsize[1]);
-         smid.setIdentity();
-         chol_solver.compute(smid);
-      }
       m_isInitialized = true;
+      m_hasMatrix = false;
       return *this;
    }
 
@@ -64,12 +59,16 @@ template <typename Scalar_> class SphericalGeometryPreconditioner {
    template <typename MatType>
    SphericalGeometryPreconditioner &addmatrix(const MatType &mat) {
       chol_solver.compute(mat);
+      m_hasMatrix = true;
       return *this;
    }
 
    template <typename Rhs, typename Dest>
    void _solve_impl(const Rhs &b, Dest &x) const {
-      x = chol_solver.solve(b);
+      if (m_hasMatrix)
+         x = chol_solver.solve(b);
+      else
+         x = b;
    }
 
    // solve call required by IterativeSolverBase
@@ -85,13 +84,17 @@ template <typename Scalar_> class SphericalGeometryPreconditioner {
       return Solve<SphericalGeometryPreconditioner, Rhs>(*this, b.derived());
    }
 
-   ComputationInfo info() { return chol_solver.info(); }
+   ComputationInfo info() const {
+      if (!m_isInitialized) return Eigen::InvalidInput;
+      return m_hasMatrix ? chol_solver.info() : Eigen::Success;
+   }
 
  protected:
    // Vector m_invdiag;
    // Matrix<Scalar, Dynamic, Dynamic> m_val;
    std::vector<std::size_t> matsize{0, 0};
    bool m_isInitialized;
+   bool m_hasMatrix = false;
    SimplicialLDLT<SparseMatrix<Scalar>, Eigen::Lower> chol_solver;
 };
 

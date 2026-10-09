@@ -1,0 +1,75 @@
+{
+  "source_commit": "15582edab8112dbb63e0101be5b26f5135298644",
+  "harness_source": "baseline-performance.cpp",
+  "threads": 1,
+  "batch_seconds": 0.25,
+  "runs": [
+    {
+      "scenario": "mapped",
+      "sample": 1,
+      "exit_code": 3,
+      "elapsed_seconds": 1.5682152040001256,
+      "files": {
+        "mapped-1.csv": "da51cdb0ba86d8df269922f3512910a1fd0659936f53068372b8afae9d69e4b9",
+        "mapped-1.stderr": "a113e89f2b5906ee454e0e2c95888a4e4e0ccea717e55704f4a62cabd9159ef3",
+        "mapped-1.rss": "643a18fea6d03ed78d25104356f82548fde9a7cf8193578df31dbf47e6cf7e0a"
+      }
+    },
+    {
+      "scenario": "mapped",
+      "sample": 2,
+      "exit_code": 3,
+      "elapsed_seconds": 1.5568807649999599,
+      "files": {
+        "mapped-2.csv": "c9e34408708c909ee34c31d1be1c4d61dad7198e9a47341a6a9f57fb95b2de9f",
+        "mapped-2.stderr": "d9806e4c6a27ef4ad2b9c335656b8becfed48e4bbe694d28c440207d3aad4e4b",
+        "mapped-2.rss": "e8e01923d6e25b379472435782d5cabc5f03f16cf74efb27a4528624c8fe3a6a"
+      }
+    },
+    {
+      "scenario": "mapped",
+      "sample": 3,
+      "exit_code": 3,
+      "elapsed_seconds": 1.5669605279999814,
+      "files": {
+        "mapped-3.csv": "5d1276d86875f85e042e57ffbd06dcc2d0173bed0a1a449698313c13186bb9ce",
+        "mapped-3.stderr": "644f08443854b6f135c5c3206d6867966f1dcdb8c3f8150db29ec383cc387621",
+        "mapped-3.rss": "d99e1dcc94b199fce21ae6e4c8294d558bbd6f99dc2982b3700ff773dfe98baa"
+      }
+    },
+    {
+      "scenario": "file_backed",
+      "sample": 1,
+      "exit_code": 3,
+      "elapsed_seconds": 2.1844802919999893,
+      "files": {
+        "file_backed-1.csv": "62232bb2b4205c37b528763e6df52c79eee3c8c68e5b7d60777ee03ee33a885a",
+        "file_backed-1.stderr": "e86c909cddb34ee04d6461c9fa8bb3edd8bd2228f9969fd60efb21559b070709",
+        "file_backed-1.rss": "c729660cd663839d794cd4dd872bf80687f535e0ed34a448550286f77b78d6dd"
+      }
+    },
+    {
+      "scenario": "file_backed",
+      "sample": 2,
+      "exit_code": 3,
+      "elapsed_seconds": 2.145167949000097,
+      "files": {
+        "file_backed-2.csv": "56c5aafd42ec177e460396e9501df03a94527b484983288d3f9042e9f83fe119",
+        "file_backed-2.stderr": "e86c909cddb34ee04d6461c9fa8bb3edd8bd2228f9969fd60efb21559b070709",
+        "file_backed-2.rss": "b6054a8c5cb796e26abff017b2c00d02f6a7acef5f4564984bfa6f62a9d1cbd4"
+      }
+    },
+    {
+      "scenario": "file_backed",
+      "sample": 3,
+      "exit_code": 3,
+      "elapsed_seconds": 2.1849317569999585,
+      "files": {
+        "file_backed-3.csv": "604f8258ee9b66378d58d38532934e890e72c662ea851032055e1c3ed60385bb",
+        "file_backed-3.stderr": "e86c909cddb34ee04d6461c9fa8bb3edd8bd2228f9969fd60efb21559b070709",
+        "file_backed-3.rss": "514f05edafbf4d57a6530d729ecfb5f5302502515cf1b742ddd2ebc33a9cdbd0"
+      }
+    }
+  ],
+  "interpretation": "Exit3 preserves historical requested-residual gate; workflow residual observations accepted by user; report independently, do not reinterpret as blanket accuracy failure."
+}

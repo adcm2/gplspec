@@ -6,16 +6,89 @@
 #include "../Radial_Tools.h"
 #include "../Shared_Utilities.h"
 #include "Earth_General_Models_1D.h"
+#include "../SphericalGeometryPreconditioner.h"
+#include <Eigen/IterativeLinearSolvers>
+#include <Eigen/SparseCore>
 #include <GSHTrans/All>
 #include <GaussQuad/All>
 #include <Interpolation/All>
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include "../Timer_Class.h"
 
 namespace Gravity_Tools {
 
 namespace detail {
+
+struct SolveResult {
+   Eigen::VectorXcd solution;
+   Eigen::ComputationInfo status = Eigen::InvalidInput;
+   Eigen::Index iterations = 0;
+   double requested_tolerance = 0.0;
+   double recursive_error = std::numeric_limits<double>::quiet_NaN();
+   double residual_norm = std::numeric_limits<double>::quiet_NaN();
+   double relative_residual = std::numeric_limits<double>::quiet_NaN();
+};
+
+template <class Model>
+Eigen::SparseMatrix<std::complex<double>>
+SphericalPreconditionerMatrix(Model &model, int lmax) {
+   Eigen::SparseMatrix<std::complex<double>> matrix =
+       -model.SpectralElementInformation().template fullmatrix<std::complex<double>>(
+           0, lmax);
+   matrix.makeCompressed();
+   return matrix;
+}
+
+template <class Solver, class Operator>
+class PreparedSolver {
+ public:
+   // The action is borrowed and must outlive this prepared solver.
+   PreparedSolver(const Operator &op,
+                  const Eigen::SparseMatrix<std::complex<double>> &preconditioner)
+       : _operator(&op) {
+      _solver.compute(op);
+      _solver.preconditioner().addmatrix(preconditioner);
+   }
+   PreparedSolver(Operator &&,
+                  const Eigen::SparseMatrix<std::complex<double>> &) = delete;
+   PreparedSolver(const Operator &&,
+                  const Eigen::SparseMatrix<std::complex<double>> &) = delete;
+
+   SolveResult Solve(const Eigen::VectorXcd &rhs, double tolerance,
+                     bool use_preconditioned_guess,
+                     bool calculate_residual = true) {
+      _solver.setTolerance(tolerance);
+      SolveResult result;
+      result.requested_tolerance = tolerance;
+      if (use_preconditioned_guess) {
+         const Eigen::VectorXcd guess = _solver.preconditioner().solve(rhs);
+         result.solution = _solver.solveWithGuess(rhs, guess);
+      } else {
+         result.solution = _solver.solve(rhs);
+      }
+      result.status = _solver.info();
+      result.iterations = _solver.iterations();
+      result.recursive_error = _solver.error();
+      if (calculate_residual) {
+         const Eigen::VectorXcd residual = rhs - (*_operator * result.solution);
+         result.residual_norm = residual.norm();
+         const double rhs_norm = rhs.norm();
+         result.relative_residual =
+             rhs_norm == 0.0
+                 ? (result.residual_norm == 0.0
+                        ? 0.0
+                        : std::numeric_limits<double>::infinity())
+                 : result.residual_norm / rhs_norm;
+      }
+      return result;
+   }
+
+ private:
+   const Operator *_operator;
+   Solver _solver;
+};
 
 inline double RadialSourceWeight(const Radial_Tools::RadialMesh &mesh,
                                 const GaussQuad::Quadrature1D<double> &q,
@@ -513,89 +586,52 @@ AdvectiveBoundaryPerturbation(GeneralEarthModels::Density3D &inp_model,
    return vec_output2;
 };
 
-// find potential
 template <class Grid>
-inline auto
-FindGravitationalPotential(GeneralEarthModels::spherical_1D &inp_model,
-                           Grid &grid, double relerr = std::pow(10.0, -6.0)) {
+inline detail::SolveResult
+SolveGravitationalPotential(GeneralEarthModels::spherical_1D &inp_model,
+                            Grid &grid, double relerr = std::pow(10.0, -6.0)) {
    using Complex = std::complex<double>;
    using BICGSTAB =
        Eigen::BiCGSTAB<MatrixReplacement<std::complex<double>>,
                        Eigen::SphericalGeometryPreconditioner<Complex>>;
-
-   // preconditioning matrix
-   Eigen::SparseMatrix<std::complex<double>> testmat =
-       -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           0, grid.MaxDegree());
-   testmat.makeCompressed();
-
-   // pseudospectral matrix replacement
    MatrixReplacement<std::complex<double>> mymatrix(inp_model, grid);
-
-   // get force vector
    Eigen::VectorXcd vec_fullforce =
        Gravity_Tools::FindForce(inp_model, grid.MaxDegree());
+   const auto preconditioner =
+       detail::SphericalPreconditionerMatrix(inp_model, grid.MaxDegree());
+   detail::PreparedSolver<BICGSTAB, decltype(mymatrix)> solver(mymatrix,
+                                                               preconditioner);
+   return solver.Solve(vec_fullforce, relerr, false);
+}
 
-   // solve using BICGSTAB
-   BICGSTAB solver;
-   solver.compute(mymatrix);
-   solver.preconditioner().addmatrix(testmat);
-   solver.setTolerance(relerr);
-   Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
-
-   // add dimension:
-   // for (int idx = 0; idx < testsol.size(); ++idx) {
-   //    testsol(idx) *= inp_model.PotentialNorm();
-   // }
-   return testsol;
+template <class Grid>
+inline Eigen::VectorXcd
+FindGravitationalPotential(GeneralEarthModels::spherical_1D &inp_model,
+                           Grid &grid, double relerr = std::pow(10.0, -6.0)) {
+   return SolveGravitationalPotential(inp_model, grid, relerr).solution;
 };
 
 // 3D solver
-inline auto
-FindGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
-                           double relerr = std::pow(10.0, -6.0)) {
+inline detail::SolveResult
+SolveGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
+                            double relerr = std::pow(10.0, -6.0)) {
    using Complex = std::complex<double>;
-   using BICGSTAB =
-       Eigen::BiCGSTAB<MatrixReplacement3D<std::complex<double>>,
-                       Eigen::SphericalGeometryPreconditioner<Complex>>;
    using CONJG = Eigen::ConjugateGradient<
        MatrixReplacement3D<Complex>, Eigen::Lower | Eigen::Upper,
        Eigen::SphericalGeometryPreconditioner<Complex>>;
-   // preconditioning matrix
-   Eigen::SparseMatrix<std::complex<double>> testmat =
-       -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           0, inp_model.GSH_Grid().MaxDegree());
-   testmat.makeCompressed();
-
-   // pseudospectral matrix replacement
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
-
-   // get force vector
    Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);
-   // Eigen::VectorXcd vec_ff2 = vec_fullforce * 0.0;
-   // std::cout << vec_ff2.size() << "\n";
-   // Eigen::VectorXcd vec_ff2 =
-   //     Eigen::VectorXcd::Constant(vec_fullforce.size(), 1.0);
+   const auto preconditioner = detail::SphericalPreconditionerMatrix(
+       inp_model, inp_model.GSH_Grid().MaxDegree());
+   detail::PreparedSolver<CONJG, decltype(mymatrix)> solver(mymatrix,
+                                                            preconditioner);
+   return solver.Solve(vec_fullforce, relerr, true);
+}
 
-   // solve using BICGSTAB
-   std::cout << "Force declared\n";
-   // BICGSTAB solver;
-   CONJG solver;
-   solver.compute(mymatrix);
-   solver.preconditioner().addmatrix(testmat);
-   solver.setTolerance(relerr);
-   // solver.setMaxIterations(10);
-   Eigen::VectorXcd vecguess = solver.preconditioner().solve(vec_fullforce);
-   std::cout << "Preconditioner done\n";
-   Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
-   // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
-   std::cout << "Number of iterations: " << solver.iterations() << "\n";
-   std::cout << "Requested tolerance: " << solver.tolerance() << "\n";
-   // for (int idx = 0; idx < testsol.size(); ++idx) {
-   //    testsol(idx) *= inp_model.PotentialNorm();
-   // }
-   auto retsol = inp_model.SingleEigenVectorToGeneralFormat(testsol);
-   return retsol;
+inline auto FindGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
+                                      double relerr = std::pow(10.0, -6.0)) {
+   const auto result = SolveGravitationalPotential(inp_model, relerr);
+   return inp_model.SingleEigenVectorToGeneralFormat(result.solution);
 };
 
 // 3D solver
@@ -604,20 +640,10 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
                                    int l, int m,
                                    double relerr = std::pow(10.0, -6.0)) {
    using Complex = std::complex<double>;
-   using BICGSTAB =
-       Eigen::BiCGSTAB<MatrixReplacement3D<std::complex<double>>,
-                       Eigen::SphericalGeometryPreconditioner<Complex>>;
    using CONJG = Eigen::ConjugateGradient<
        MatrixReplacement3D<Complex>, Eigen::Lower | Eigen::Upper,
        Eigen::SphericalGeometryPreconditioner<Complex>>;
 
-   // preconditioning matrix
-   Eigen::SparseMatrix<std::complex<double>> testmat =
-       -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           0, inp_model.GSH_GridP().MaxDegree());
-   testmat.makeCompressed();
-
-   // pseudospectral matrix replacement
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
 
    // Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);
@@ -636,21 +662,12 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
    vec_fullforce(lmidx) =
        4.0 * pi_db * inp_model.GravitationalConstant() * std::pow(-1.0, m);
 
-   // solve using BICGSTAB
-   std::cout << "Force declared\n";
-   CONJG solver;
-   solver.compute(mymatrix);
-   solver.preconditioner().addmatrix(testmat);
-   solver.setTolerance(relerr);
-   Eigen::VectorXcd vecguess = solver.preconditioner().solve(vec_fullforce);
-   Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
-   // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
-   std::cout << "Number of iterations: " << solver.iterations() << "\n";
-   // for (int idx = 0; idx < testsol.size(); ++idx) {
-   //    testsol(idx) *= inp_model.PotentialNorm();
-   // }
-   auto retsol = inp_model.SingleEigenVectorToGeneralFormat(testsol);
-   return retsol;
+   const auto preconditioner = detail::SphericalPreconditionerMatrix(
+       inp_model, inp_model.GSH_GridP().MaxDegree());
+   detail::PreparedSolver<CONJG, decltype(mymatrix)> solver(mymatrix,
+                                                            preconditioner);
+   const auto result = solver.Solve(vec_fullforce, relerr, true, false);
+   return inp_model.SingleEigenVectorToGeneralFormat(result.solution);
 };
 
 // 3D solver
@@ -665,14 +682,6 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
    using BICGSTAB =
        Eigen::BiCGSTAB<MatrixReplacement3D<std::complex<double>>,
                        Eigen::SphericalGeometryPreconditioner<Complex>>;
-
-   // preconditioning matrix
-   Eigen::SparseMatrix<std::complex<double>> testmat =
-       -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           0, inp_model.GSH_Grid().MaxDegree());
-   testmat.makeCompressed();
-
-   // pseudospectral matrix replacement
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
 
    // Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);
@@ -693,21 +702,12 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
                             std::pow(-1.0, m[i]) * multval[i];
    }
 
-   // solve using BICGSTAB
-   std::cout << "Force declared\n";
-   BICGSTAB solver;
-   solver.compute(mymatrix);
-   solver.preconditioner().addmatrix(testmat);
-   solver.setTolerance(relerr);
-   Eigen::VectorXcd vecguess = solver.preconditioner().solve(vec_fullforce);
-   Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
-   // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
-   std::cout << "Number of iterations: " << solver.iterations() << "\n";
-   // for (int idx = 0; idx < testsol.size(); ++idx) {
-   //    testsol(idx) *= inp_model.PotentialNorm();
-   // }
-   auto retsol = inp_model.SingleEigenVectorToGeneralFormat(testsol);
-   return retsol;
+   const auto preconditioner = detail::SphericalPreconditionerMatrix(
+       inp_model, inp_model.GSH_Grid().MaxDegree());
+   detail::PreparedSolver<BICGSTAB, decltype(mymatrix)> solver(mymatrix,
+                                                               preconditioner);
+   const auto result = solver.Solve(vec_fullforce, relerr, true, false);
+   return inp_model.SingleEigenVectorToGeneralFormat(result.solution);
 };
 
 // 3D solver
@@ -725,12 +725,6 @@ FindGravitationalPotentialPerturbation(
        MatrixReplacement3D<Complex>, Eigen::Lower | Eigen::Upper,
        Eigen::SphericalGeometryPreconditioner<Complex>>;
    Timer _timer;
-   // preconditioning matrix
-   Eigen::SparseMatrix<std::complex<double>> testmat =
-       -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           0, inp_model.GSH_Grid().MaxDegree());
-   testmat.makeCompressed();
-
    // pseudospectral matrix replacement
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
    MatrixReplacement3D<std::complex<double>> matrixpert(
@@ -743,37 +737,21 @@ FindGravitationalPotentialPerturbation(
    // Eigen::VectorXcd vec_ff2 =
    //     Eigen::VectorXcd::Constant(vec_fullforce.size(), 1.0);
 
-   // solve using BICGSTAB
-   std::cout << "Force declared\n";
-   // BICGSTAB solver;
-   CONJG solver;
+   const auto preconditioner = detail::SphericalPreconditionerMatrix(
+       inp_model, inp_model.GSH_Grid().MaxDegree());
+   detail::PreparedSolver<CONJG, decltype(mymatrix)> solver(mymatrix,
+                                                            preconditioner);
    _timer.start();
-   solver.compute(mymatrix);
-   solver.preconditioner().addmatrix(testmat);
-   solver.setTolerance(relerr1);
-   Eigen::VectorXcd vecguess = solver.preconditioner().solve(vec_fullforce);
-   Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
+   const auto base_result = solver.Solve(vec_fullforce, relerr1, true, false);
    _timer.stop("Time for base solution");
-   // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
-   std::cout << "Number of iterations: " << solver.iterations() << "\n";
-
-   Eigen::VectorXcd vec_pertforce = -(matrixpert * testsol);
-
-   std::cout << "Square norm: " << vec_pertforce.squaredNorm() << "\n";
+   Eigen::VectorXcd vec_pertforce = -(matrixpert * base_result.solution);
 
    _timer.start();
-   Eigen::VectorXcd vecguess2 = solver.preconditioner().solve(vec_pertforce);
-   solver.setTolerance(relerr2);
-   Eigen::VectorXcd vecpertsol =
-       solver.solveWithGuess(vec_pertforce, vecguess2);
-   // Eigen::VectorXcd vecpertsol = solver2.solve(vec_pertforce);
-   std::cout << "Number of iterations for perturbation solution: "
-             << solver.iterations() << "\n";
+   const auto perturbation_result =
+       solver.Solve(vec_pertforce, relerr2, true, false);
    _timer.stop("Time for perturbation solution");
-   Eigen::VectorXcd fullsol = testsol + vecpertsol;
-   // for (int idx = 0; idx < testsol.size(); ++idx) {
-   //    testsol(idx) *= inp_model.PotentialNorm();
-   // }
+   Eigen::VectorXcd fullsol =
+       base_result.solution + perturbation_result.solution;
    auto retsol = inp_model.SingleEigenVectorToGeneralFormat(fullsol);
    return retsol;
 };
@@ -790,15 +768,7 @@ FindGravitationalPotentialClassicalPerturbation(
        Eigen::BiCGSTAB<MatrixReplacement3D<std::complex<double>>,
                        Eigen::SphericalGeometryPreconditioner<Complex>>;
 
-   // preconditioning matrix
-   Eigen::SparseMatrix<std::complex<double>> testmat =
-       -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           0, inp_model.GSH_Grid().MaxDegree());
-   testmat.makeCompressed();
-
-   // pseudospectral matrix replacement
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
-   // MatrixReplacement3D<std::complex<double>> matrixpert(inp_model, inp_map);
 
    // get force vector
    Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);
@@ -807,37 +777,20 @@ FindGravitationalPotentialClassicalPerturbation(
    // Eigen::VectorXcd vec_ff2 =
    //     Eigen::VectorXcd::Constant(vec_fullforce.size(), 1.0);
 
-   // solve using BICGSTAB
-   std::cout << "Force declared\n";
-   BICGSTAB solver;
-   solver.compute(mymatrix);
-   solver.preconditioner().addmatrix(testmat);
-   solver.setTolerance(relerr);
-   Eigen::VectorXcd vecguess = solver.preconditioner().solve(vec_fullforce);
-   Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
-   // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
-   std::cout << "Number of iterations: " << solver.iterations() << "\n";
+   const auto preconditioner = detail::SphericalPreconditionerMatrix(
+       inp_model, inp_model.GSH_Grid().MaxDegree());
+   detail::PreparedSolver<BICGSTAB, decltype(mymatrix)> solver(mymatrix,
+                                                               preconditioner);
+   const auto base_result = solver.Solve(vec_fullforce, relerr, true, false);
 
    Eigen::VectorXcd testforce =
        FindBoundaryPerturbationForce(inp_model, inp_map);
-
-   // Eigen::VectorXcd vec_pertforce = -(matrixpert * testsol);
-   // BICGSTAB solver2;
-   // solver2.compute(mymatrix);
-   // solver2.preconditioner().addmatrix(testmat);
-   // solver2.setTolerance(relerr);
-   Eigen::VectorXcd vecguess2 = solver.preconditioner().solve(testforce);
-   Eigen::VectorXcd vecpertsol = solver.solveWithGuess(testforce, vecguess2);
-   // Eigen::VectorXcd vecpertsol = solver2.solve(testforce);
-   std::cout << "Number of iterations for boundary perturbation solution: "
-             << solver.iterations() << "\n";
+   const auto perturbation_result = solver.Solve(testforce, relerr, true, false);
    Eigen::VectorXcd advectpert =
-       AdvectiveBoundaryPerturbation(inp_model, inp_map, testsol);
+       AdvectiveBoundaryPerturbation(inp_model, inp_map, base_result.solution);
 
-   Eigen::VectorXcd fullsol = testsol + advectpert - vecpertsol;
-   // for (int idx = 0; idx < testsol.size(); ++idx) {
-   //    testsol(idx) *= inp_model.PotentialNorm();
-   // }
+   Eigen::VectorXcd fullsol = base_result.solution + advectpert -
+                              perturbation_result.solution;
    auto retsol = inp_model.SingleEigenVectorToGeneralFormat(fullsol);
    return retsol;
 };

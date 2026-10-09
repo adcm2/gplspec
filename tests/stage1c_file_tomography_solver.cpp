@@ -83,6 +83,8 @@ Eigen::VectorXcd independent_axisymmetric_force(const Model &model) {
 int main() {
   using Model = GeneralEarthModels::Density3D;
   using Operator = MatrixReplacement3D<Complex>;
+  using SphericalOperator = MatrixReplacement<Complex>;
+  using SphericalGrid = SphericalOperator::Grid;
   using Preconditioner = Eigen::SphericalGeometryPreconditioner<Complex>;
   using Solver = Eigen::ConjugateGradient<Operator, Eigen::Lower | Eigen::Upper,
                                           Preconditioner>;
@@ -124,33 +126,56 @@ int main() {
     throw std::runtime_error("file-backed source quadrature mismatch");
   }
 
-  Eigen::SparseMatrix<Complex> preconditioner_matrix =
-      -model.SpectralElementInformation().fullmatrix<Complex>(
-          0, model.GSH_Grid().MaxDegree());
-  preconditioner_matrix.makeCompressed();
-  Solver solver;
-  solver.compute(op);
-  solver.preconditioner().addmatrix(preconditioner_matrix);
-  solver.setTolerance(tolerance);
-  const Eigen::VectorXcd guess = solver.preconditioner().solve(force);
+  const auto preconditioner_matrix =
+      Gravity_Tools::detail::SphericalPreconditionerMatrix(
+          model, model.GSH_Grid().MaxDegree());
+  Gravity_Tools::detail::PreparedSolver<Solver, Operator> solver(
+      op, preconditioner_matrix);
+  Preconditioner guess_preconditioner;
+  guess_preconditioner.compute(op);
+  guess_preconditioner.addmatrix(preconditioner_matrix);
+  const Eigen::VectorXcd guess = guess_preconditioner.solve(force);
   const double guess_relative_residual = (force - op * guess).norm() / force.norm();
-  const Eigen::VectorXcd solution = solver.solveWithGuess(force, guess);
+  const auto solve_result = solver.Solve(force, tolerance, true);
+  const Eigen::VectorXcd &solution = solve_result.solution;
   const double update_relative_norm = (solution - guess).norm() / guess.norm();
-  const double absolute_residual = (force - op * solution).norm();
-  const double relative_residual = absolute_residual / force.norm();
-  if (solver.info() != Eigen::Success || !solution.allFinite() ||
-      !std::isfinite(solver.error()) ||
+  const double independently_measured_residual = (force - op * solution).norm();
+  const double absolute_residual = solve_result.residual_norm;
+  const double relative_residual = solve_result.relative_residual;
+  if (solve_result.status != Eigen::Success || !solution.allFinite() ||
+      !std::isfinite(solve_result.recursive_error) ||
       !std::isfinite(absolute_residual) || !std::isfinite(relative_residual) ||
+      !std::isfinite(guess_relative_residual) ||
+      std::abs(independently_measured_residual - absolute_residual) >
+          1e-13 * std::max(1.0, independently_measured_residual) ||
       relative_residual > tolerance) {
-    std::cerr << "file-backed solver info=" << solver.info()
-              << " iterations=" << solver.iterations()
+    std::cerr << "file-backed solver info=" << solve_result.status
+              << " iterations=" << solve_result.iterations
+              << " requested_tolerance=" << solve_result.requested_tolerance
               << " initial_guess_relative_residual=" << guess_relative_residual
               << " update_relative_norm=" << update_relative_norm
-              << " reported_error=" << solver.error()
+              << " recursive_error=" << solve_result.recursive_error
               << " absolute_residual=" << absolute_residual
               << " independent_relative_residual=" << relative_residual << '\n';
     throw std::runtime_error("file-backed gravity solve failed its diagnostics");
   }
+
+  const double stricter_tolerance =
+      std::min(tolerance, 0.1 * guess_relative_residual);
+  const auto updated_result =
+      solver.Solve(force, stricter_tolerance, true);
+  const double strict_update_norm =
+      (updated_result.solution - guess).norm() / guess.norm();
+  if (updated_result.status != Eigen::Success || !(strict_update_norm > 0.0) ||
+      !(updated_result.residual_norm < absolute_residual))
+    throw std::runtime_error("tight solve did not improve the preconditioned guess");
+
+  const Eigen::VectorXcd zero_rhs = Eigen::VectorXcd::Zero(force.size());
+  const auto zero_result = solver.Solve(zero_rhs, tolerance, true);
+  if (zero_result.status != Eigen::Success ||
+      zero_result.residual_norm != 0.0 || zero_result.relative_residual != 0.0 ||
+      zero_result.solution.norm() != 0.0)
+    throw std::runtime_error("zero-RHS solve diagnostics are not well-defined");
 
   const auto public_solution = Gravity_Tools::FindGravitationalPotential(model, tolerance);
   const auto expected_public_solution = model.SingleEigenVectorToGeneralFormat(solution);
@@ -181,6 +206,60 @@ int main() {
   if (finite_values == 0 || public_difference > 1e-12 * std::max(1.0, public_scale))
     throw std::runtime_error("public file-backed solution differs from diagnosed iterative solution");
 
+  const auto public_diagnostic =
+      Gravity_Tools::SolveGravitationalPotential(model, tolerance);
+  if (public_diagnostic.status != Eigen::Success ||
+      !std::isfinite(public_diagnostic.recursive_error) ||
+      public_diagnostic.relative_residual > tolerance ||
+      (public_diagnostic.solution - solution).norm() >
+          1e-12 * std::max(1.0, solution.norm()))
+    throw std::runtime_error("public solve diagnostics differ from prepared solve");
+
+  Eigen::SphericalGeometryPreconditioner<Complex> identity_preconditioner;
+  identity_preconditioner.compute(op);
+  const Eigen::VectorXcd identity_probe = Eigen::VectorXcd::LinSpaced(
+      op.cols(), Complex(1.0, 0.5), Complex(2.0, -0.25));
+  if ((identity_preconditioner.solve(identity_probe) - identity_probe).norm() != 0.0 ||
+      identity_preconditioner.info() != Eigen::Success)
+    throw std::runtime_error("unconfigured preconditioner must apply identity");
+
+  const auto radial_quadrature =
+      GaussQuad::GaussLobattoLegendreQuadrature1D<double>(4);
+  GeneralEarthModels::spherical_1D radial_model(
+      "modeldata/PREM500", radial_quadrature, 0.5, 1.2);
+  SphericalGrid spherical_grid(2, 2);
+  SphericalOperator spherical_operator(radial_model, spherical_grid);
+  const auto spherical_force = Gravity_Tools::FindForce(radial_model, 2);
+  using SphericalSolver = Eigen::BiCGSTAB<
+      SphericalOperator, Eigen::SphericalGeometryPreconditioner<Complex>>;
+  const auto spherical_preconditioner =
+      Gravity_Tools::detail::SphericalPreconditionerMatrix(radial_model, 2);
+  Gravity_Tools::detail::PreparedSolver<SphericalSolver, SphericalOperator>
+      spherical_solver(spherical_operator, spherical_preconditioner);
+  Eigen::SphericalGeometryPreconditioner<Complex> spherical_guess_preconditioner;
+  spherical_guess_preconditioner.compute(spherical_operator);
+  spherical_guess_preconditioner.addmatrix(spherical_preconditioner);
+  const Eigen::VectorXcd spherical_guess =
+      spherical_guess_preconditioner.solve(spherical_force);
+  const auto spherical_result =
+      spherical_solver.Solve(spherical_force, tolerance, false);
+  const double spherical_update_norm =
+      (spherical_result.solution - spherical_guess).norm();
+  const double spherical_true_residual =
+      (spherical_force - spherical_operator * spherical_result.solution).norm();
+  const auto public_spherical = Gravity_Tools::SolveGravitationalPotential(
+      radial_model, spherical_grid, tolerance);
+  if (spherical_result.status != Eigen::Success ||
+      !std::isfinite(spherical_result.recursive_error) ||
+      !std::isfinite(spherical_result.relative_residual) ||
+      !(spherical_update_norm > 0.0) ||
+      std::abs(spherical_true_residual - spherical_result.residual_norm) >
+          1e-13 * std::max(1.0, spherical_true_residual) ||
+      spherical_result.relative_residual > tolerance ||
+      (public_spherical.solution - spherical_result.solution).norm() >
+          1e-12 * std::max(1.0, spherical_result.solution.norm()))
+    throw std::runtime_error("spherical BiCGSTAB solve contract failed");
+
   struct SmoothMapping {
     auto RadialMapping(int) const {
       return [](double r, double theta, double phi) {
@@ -193,37 +272,59 @@ int main() {
   Model mapped_model(base, PlanetaryModel::TomographyZeroModel(), mapping,
                      2, 2, 0.5, 1.2);
   Operator mapped_op(mapped_model);
-  Eigen::SparseMatrix<Complex> mapped_preconditioner_matrix =
-      -mapped_model.SpectralElementInformation().fullmatrix<Complex>(
-          0, mapped_model.GSH_Grid().MaxDegree());
-  mapped_preconditioner_matrix.makeCompressed();
   const Eigen::VectorXcd mapped_force = Gravity_Tools::FindForce(mapped_model);
-  Solver mapped_solver;
-  mapped_solver.compute(mapped_op);
-  mapped_solver.preconditioner().addmatrix(mapped_preconditioner_matrix);
-  mapped_solver.setTolerance(tolerance);
+  const auto mapped_preconditioner_matrix =
+      Gravity_Tools::detail::SphericalPreconditionerMatrix(
+          mapped_model, mapped_model.GSH_Grid().MaxDegree());
+  Gravity_Tools::detail::PreparedSolver<Solver, Operator> mapped_solver(
+      mapped_op, mapped_preconditioner_matrix);
+  Preconditioner mapped_guess_preconditioner;
+  mapped_guess_preconditioner.compute(mapped_op);
+  mapped_guess_preconditioner.addmatrix(mapped_preconditioner_matrix);
   const Eigen::VectorXcd mapped_guess =
-      mapped_solver.preconditioner().solve(mapped_force);
-  const Eigen::VectorXcd mapped_solution =
-      mapped_solver.solveWithGuess(mapped_force, mapped_guess);
-  const double mapped_absolute_residual =
+      mapped_guess_preconditioner.solve(mapped_force);
+  const double mapped_guess_relative_residual =
+      (mapped_force - mapped_op * mapped_guess).norm() / mapped_force.norm();
+  const auto mapped_result = mapped_solver.Solve(mapped_force, tolerance, true);
+  const Eigen::VectorXcd &mapped_solution = mapped_result.solution;
+  const double mapped_update_relative_norm =
+      (mapped_solution - mapped_guess).norm() / mapped_guess.norm();
+  const double mapped_independently_measured_residual =
       (mapped_force - mapped_op * mapped_solution).norm();
-  const double mapped_relative_residual =
-      mapped_absolute_residual / mapped_force.norm();
-  if (mapped_solver.info() != Eigen::Success || !mapped_solution.allFinite() ||
-      mapped_solver.iterations() < 2 || !std::isfinite(mapped_solver.error()) ||
+  const double mapped_absolute_residual = mapped_result.residual_norm;
+  const double mapped_relative_residual = mapped_result.relative_residual;
+  if (mapped_result.status != Eigen::Success || !mapped_solution.allFinite() ||
+      mapped_result.iterations < 2 || !std::isfinite(mapped_result.recursive_error) ||
       !std::isfinite(mapped_absolute_residual) ||
-      !std::isfinite(mapped_relative_residual) || mapped_force.norm() == 0.0 ||
+      !std::isfinite(mapped_relative_residual) ||
+      !std::isfinite(mapped_guess_relative_residual) ||
+      !(mapped_update_relative_norm > 0.0) ||
+      std::abs(mapped_independently_measured_residual - mapped_absolute_residual) >
+          1e-13 * std::max(1.0, mapped_independently_measured_residual) ||
+      mapped_force.norm() == 0.0 ||
       mapped_relative_residual > tolerance) {
-    std::cerr << "mapped solver info=" << mapped_solver.info()
-              << " iterations=" << mapped_solver.iterations()
-              << " reported_error=" << mapped_solver.error()
+    std::cerr << "mapped solver info=" << mapped_result.status
+              << " iterations=" << mapped_result.iterations
+              << " requested_tolerance=" << mapped_result.requested_tolerance
+              << " initial_guess_relative_residual="
+              << mapped_guess_relative_residual
+              << " update_relative_norm=" << mapped_update_relative_norm
+              << " recursive_error=" << mapped_result.recursive_error
               << " absolute_residual=" << mapped_absolute_residual
               << " independent_relative_residual=" << mapped_relative_residual << '\n';
     throw std::runtime_error("mapped gravity solve failed its diagnostics");
   }
   const auto mapped_public_solution =
       Gravity_Tools::FindGravitationalPotential(mapped_model, tolerance);
+  const auto mapped_public_diagnostic =
+      Gravity_Tools::SolveGravitationalPotential(mapped_model, tolerance);
+  if (mapped_public_diagnostic.status != Eigen::Success ||
+      !std::isfinite(mapped_public_diagnostic.recursive_error) ||
+      mapped_public_diagnostic.relative_residual > tolerance ||
+      (mapped_public_diagnostic.solution - mapped_solution).norm() >
+          1e-12 * std::max(1.0, mapped_solution.norm()))
+    throw std::runtime_error(
+        "public mapped solve diagnostics differ from prepared solve");
   const auto expected_mapped_solution =
       mapped_model.SingleEigenVectorToGeneralFormat(mapped_solution);
   if (mapped_public_solution.size() != expected_mapped_solution.size())
@@ -257,16 +358,21 @@ int main() {
 
   std::cout << "rows=" << op.rows() << " force_norm=" << force.norm()
             << " quadrature_max_abs_error=" << max_source_error
-            << " iterations=" << solver.iterations()
+            << " iterations=" << solve_result.iterations
+            << " recursive_error=" << solve_result.recursive_error
             << " initial_guess_relative_residual=" << guess_relative_residual
             << " update_relative_norm=" << update_relative_norm
-            << " solver_error=" << solver.error()
+            << " tight_update_relative_norm=" << strict_update_norm
             << " absolute_residual=" << absolute_residual
             << " independent_relative_residual=" << relative_residual
             << " public_difference=" << public_difference
             << " public_finite_values=" << finite_values
             << " mapped_rows=" << mapped_op.rows()
-            << " mapped_iterations=" << mapped_solver.iterations()
+            << " mapped_iterations=" << mapped_result.iterations
+            << " mapped_recursive_error=" << mapped_result.recursive_error
+            << " mapped_initial_guess_relative_residual="
+            << mapped_guess_relative_residual
+            << " mapped_update_relative_norm=" << mapped_update_relative_norm
             << " mapped_independent_relative_residual=" << mapped_relative_residual
             << " mapped_public_difference=" << mapped_public_difference
             << " mapped_public_finite_values=" << mapped_finite_values << '\n';
