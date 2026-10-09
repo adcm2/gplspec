@@ -8,7 +8,6 @@
 #include <complex>
 #include <cstddef>
 
-#include "GeneralModels/Earth_General_Models_3D.h"
 #include "GeneralModels/Earth_General_Models_1D.h"
 #include "Operator_Actions.h"
 

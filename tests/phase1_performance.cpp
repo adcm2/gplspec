@@ -137,7 +137,7 @@ void benchmark_mapped(const std::string &process) {
 
   Eigen::SparseMatrix<Complex> preconditioner_matrix =
       -model.SpectralElementInformation().fullmatrix<Complex>(
-          0, model.GSH_Grid().MaxDegree());
+          model.Node_InformationP(), 0, model.GSH_Grid().MaxDegree());
   preconditioner_matrix.makeCompressed();
   const Eigen::VectorXcd force = Gravity_Tools::FindForce(model);
   Solver solver;

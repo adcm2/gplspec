@@ -36,7 +36,7 @@ Eigen::SparseMatrix<std::complex<double>>
 SphericalPreconditionerMatrix(Model &model, int lmax) {
    Eigen::SparseMatrix<std::complex<double>> matrix =
        -model.SpectralElementInformation().template fullmatrix<std::complex<double>>(
-           0, lmax);
+           model.Node_InformationP(), 0, lmax);
    matrix.makeCompressed();
    return matrix;
 }

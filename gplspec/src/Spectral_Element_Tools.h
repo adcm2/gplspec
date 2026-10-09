@@ -154,8 +154,8 @@ class MatrixWeakForm {
    MatrixWeakForm() {};
    // MatrixWeakForm(const std::vector<double> &,
    //                const GaussQuad::Quadrature1D<double> &);
-   inline MatrixWeakForm(const Radial_Tools::RadialMesh &,
-                  const GaussQuad::Quadrature1D<double> &);
+   inline explicit MatrixWeakForm(
+       const GaussQuad::Quadrature1D<double> &);
 
    // optional arguments:
    void add_dtn_map() { dirtoneum = true; };
@@ -164,19 +164,19 @@ class MatrixWeakForm {
    void set_left_lower() { leftlowertriangle = true; };
 
    // output matrix element
-   inline double matrixelement(int, int, int, int);
+   inline double matrixelement(const Radial_Tools::RadialMesh &, int, int, int,
+                               int);
 
    // function to return the full spectral element matrix
    template <typename MSCALAR>
-   Eigen::SparseMatrix<MSCALAR> fullmatrix(int, int);
+   Eigen::SparseMatrix<MSCALAR> fullmatrix(const Radial_Tools::RadialMesh &, int,
+                                            int);
 
  private:
-   double outerradius;
    GaussQuad::Quadrature1D<double> _q;
-   int _numlayers, _polyord;
+   int _polyord;
    // std::vector<double> _vec_insp;
    std::vector<std::vector<std::vector<double>>> mat_gauss_deriv;
-   Radial_Tools::RadialMesh _radial_mesh;
    bool dirtoneum{true}, leftlowertriangle{false};
 };
 
@@ -222,17 +222,9 @@ class MatrixWeakForm {
 //    };
 // };
 
-MatrixWeakForm::MatrixWeakForm(const Radial_Tools::RadialMesh &radial_mesh,
-                               const GaussQuad::Quadrature1D<double> &q)
-    : outerradius{radial_mesh.OuterRadius()}, _radial_mesh{radial_mesh} {
-
-   // fill out private variables
-   if (_radial_mesh.NumberOfElements() < 2) {
-      assert("Need to have a model with more than one element.");
-   };
-   _numlayers = _radial_mesh.NumberOfElements();
-   _polyord = q.N() - 1;
-   _q = q;
+MatrixWeakForm::MatrixWeakForm(
+    const GaussQuad::Quadrature1D<double> &q)
+    : _polyord(q.N() - 1), _q(q) {
 
    // finding values of derivatives at polynomial nodes
    auto pleg = Interpolation::LagrangePolynomial(_q.Points().begin(),
@@ -255,24 +247,23 @@ MatrixWeakForm::MatrixWeakForm(const Radial_Tools::RadialMesh &radial_mesh,
 };
 
 double
-MatrixWeakForm::matrixelement(int laynum, int l, int i, int j) {
-
-   assert((laynum > -1 && laynum < _numlayers + 1) && "Not a layer");
+MatrixWeakForm::matrixelement(const Radial_Tools::RadialMesh &radial_mesh,
+                              int element, int l, int i, int j) {
 
    // main integral, ie r^2 f_1 f_2
    double tmp = 0.0;
    for (int idxk = 0; idxk < _polyord + 1; ++idxk) {
-      double tmp1 = _radial_mesh.NodeRadius(laynum, idxk);
+      double tmp1 = radial_mesh.NodeRadius(element, idxk);
       tmp += tmp1 * tmp1 * mat_gauss_deriv[idxk][i][j] * _q.W(idxk);
    }
-   tmp *= 2.0 / _radial_mesh.ElementWidth(laynum);
+   tmp *= 2.0 / radial_mesh.ElementWidth(element);
 
    // additional diagonal term
    if (i == j) {
       double Omega_l0_two_square =
           static_cast<double>(l) * static_cast<double>(l + 1);
       tmp += Omega_l0_two_square * _q.W(i) * 0.5 *
-             _radial_mesh.ElementWidth(laynum);
+             radial_mesh.ElementWidth(element);
    }
 
    return tmp;
@@ -280,24 +271,30 @@ MatrixWeakForm::matrixelement(int laynum, int l, int i, int j) {
 
 template <typename MSCALAR>
 Eigen::SparseMatrix<MSCALAR>
-MatrixWeakForm::fullmatrix(int lmin, int lmax) {
+MatrixWeakForm::fullmatrix(const Radial_Tools::RadialMesh &radial_mesh,
+                           int lmin, int lmax) {
+
+   const int num_elements = radial_mesh.NumberOfElements();
+   assert(num_elements > 0 && "Need to have at least one element.");
+   assert(radial_mesh.PolynomialOrder() ==
+          static_cast<std::size_t>(_polyord));
 
    // declare indexing class instance
    MatrixIndices myindex(lmin, lmax, this->_polyord);
 
    Eigen::SparseMatrix<MSCALAR> mat_return;
-   mat_return.resize(myindex.matrixdimension(this->_numlayers),
-                     myindex.matrixdimension(this->_numlayers));
+   mat_return.resize(myindex.matrixdimension(num_elements),
+                     myindex.matrixdimension(num_elements));
 
    // tripletlist vector
    using T = Eigen::Triplet<MSCALAR>;
    std::vector<T> tripletlist;
    tripletlist.reserve(
-       (_numlayers * (((_polyord + 1) * (_polyord + 2)) / 2 - 1) + 1) *
+       (num_elements * (((_polyord + 1) * (_polyord + 2)) / 2 - 1) + 1) *
        std::pow(lmax + 1, 2));
 
    // filling out matrix
-   for (int idxelem = 0; idxelem < this->_numlayers; ++idxelem) {
+   for (int idxelem = 0; idxelem < num_elements; ++idxelem) {
       // over elements
       // loop of polynomial orders
       for (int idxi = 0; idxi < this->_polyord + 1; ++idxi) {
@@ -316,7 +313,8 @@ MatrixWeakForm::fullmatrix(int lmin, int lmax) {
 
             // loop over l's and m's
             for (int idxl = lmin; idxl < lmax + 1; ++idxl) {   // over l
-               auto tmp = this->matrixelement(idxelem, idxl, idxi, idxj);
+               auto tmp = this->matrixelement(radial_mesh, idxelem, idxl, idxi,
+                                              idxj);
 
                // tmp doesn't change between different m's for the same l
                for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {   // over m
@@ -334,8 +332,8 @@ MatrixWeakForm::fullmatrix(int lmin, int lmax) {
 
       for (int idxl = lmin; idxl < lmax + 1; ++idxl) {
          std::size_t xidx =
-             myindex.fullindex(_numlayers - 1, idxl, -idxl, _polyord);
-         auto tmp = static_cast<MSCALAR>(idxl + 1) * outerradius;
+             myindex.fullindex(num_elements - 1, idxl, -idxl, _polyord);
+         auto tmp = static_cast<MSCALAR>(idxl + 1) * radial_mesh.OuterRadius();
 
          // tmp doesn't change between different m's for the same l
          for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {

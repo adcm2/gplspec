@@ -34,8 +34,12 @@ int main() {
   const Scalar xay = x.dot(ay);
   const Scalar ax_y = ax.dot(y);
   const auto force = Gravity_Tools::FindForce(model, lmax);
-  const auto element_radii = model.Node_Information().ElementNodes();
-  const auto interface_indices = model.Node_Information().idx_discont();
+  const auto &mesh = model.Node_InformationP();
+  std::vector<std::size_t> interface_indices{0};
+  for (std::size_t element = 1; element < mesh.NumberOfElements(); ++element) {
+    if (mesh.LayerNumber(element) != mesh.LayerNumber(element - 1))
+      interface_indices.push_back(element);
+  }
 
   std::cout << std::setprecision(17);
   std::cout << "rows," << op.rows() << '\n';
@@ -50,14 +54,15 @@ int main() {
               << force(i).imag() << '\n';
   std::cout << "xAy," << xay.real() << ',' << xay.imag() << '\n';
   std::cout << "Ax_y," << ax_y.real() << ',' << ax_y.imag() << '\n';
-  std::cout << "origin,0," << element_radii.front() << ','
+  std::cout << "origin,0," << mesh.ElementLowerRadius(0) << ','
             << ax(0).real() << ',' << ax(0).imag() << '\n';
   for (std::size_t layer = 1; layer < interface_indices.size(); ++layer) {
     const auto radial_node = interface_indices[layer];
     const auto spectral_index = radial_node * (model.Poly_Order()) *
                                 GSHTrans::GSHIndices<GSHTrans::All>(
                                     lmax, lmax, 0).Size();
-    std::cout << "interface," << layer << ',' << element_radii[radial_node]
+    std::cout << "interface," << layer << ','
+              << mesh.NodeRadius(radial_node, 0)
               << ',' << ax(spectral_index).real() << ','
               << ax(spectral_index).imag() << '\n';
   }

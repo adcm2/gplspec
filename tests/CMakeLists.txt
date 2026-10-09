@@ -62,6 +62,14 @@ if(BUILD_TESTING)
   add_test(NAME stage3c_source_discretization COMMAND stage3c_source_discretization)
 endif()
 
+add_executable(stage3c_geometry_ownership stage3c_geometry_ownership.cpp)
+target_link_libraries(stage3c_geometry_ownership PRIVATE gplspec)
+target_compile_definitions(stage3c_geometry_ownership PRIVATE
+  GPLSPEC_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+if(BUILD_TESTING)
+  add_test(NAME stage3c_geometry_ownership COMMAND stage3c_geometry_ownership)
+endif()
+
 add_executable(stage03_utilities stage03_utilities.cpp)
 target_link_libraries(stage03_utilities PRIVATE gplspec)
 if(BUILD_TESTING)

@@ -685,7 +685,7 @@ Density3D::Density3D(
    // //////////////////////////////////////////////////////////////////////
 
    // finding the spectral element grid
-   _spectral_info = SpectralElementTools::MatrixWeakForm(node_data, _q);
+   _spectral_info = SpectralElementTools::MatrixWeakForm(_q);
 
    // std::cout << "Hello\n";
    // density
@@ -1135,7 +1135,7 @@ Density3D::Density3D(double physicalradius, double physicaldensity,
    //////////////////////////////////////////////////////////////////////
 
    // finding the spectral element grid
-   _spectral_info = SpectralElementTools::MatrixWeakForm(node_data, _q);
+   _spectral_info = SpectralElementTools::MatrixWeakForm(_q);
 
    // std::cout << "Hello\n";
    // density
@@ -1601,7 +1601,7 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
    //////////////////////////////////////////////////////////////////////
 
    // finding the spectral element grid
-   _spectral_info = SpectralElementTools::MatrixWeakForm(node_data, _q);
+   _spectral_info = SpectralElementTools::MatrixWeakForm(_q);
 
    // lambda to convert between radius and depth (as in depth needed for
    // tomography model)
@@ -1715,7 +1715,7 @@ Density3D::Density3D(const model &inp_model, const tomomodel &tomo_model,
        GPLSpec::detail::GaussDerivativeMatrix(_q, _poly_ord);
    // std::cout << "Hello 4\n";
    // finding the spectral element grid
-   _spectral_info = SpectralElementTools::MatrixWeakForm(node_data, _q);
+   _spectral_info = SpectralElementTools::MatrixWeakForm(_q);
 
    // lambda to convert between radius and depth (as in depth needed for
    // tomography model)

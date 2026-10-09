@@ -127,7 +127,7 @@ class Density3D {
    // info on nodes
    inline auto Num_Elements() const;
    inline auto Poly_Order() const;
-   inline auto Node_Information() const;
+   inline const Radial_Tools::RadialMesh &Node_Information() const;
    inline const Radial_Tools::RadialMesh &Node_InformationP() const;
 
    // interpolation polynomial derivative

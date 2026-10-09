@@ -53,7 +53,8 @@ main() {
    // testing preconditioner
    Eigen::SparseMatrix<std::complex<double>> testmat =
        -testtomo.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           0, testtomo.GSH_Grid().MaxDegree());
+           testtomo.Node_InformationP(), 0,
+           testtomo.GSH_Grid().MaxDegree());
    testmat.makeCompressed();
    //    std::cout << "\n\n" << testmat.block(0, 26, 200, 1) << "\n\n";
    //    std::cout << "\n\n" << testmat.block(0, 0, 30, 1) << "\n\n";

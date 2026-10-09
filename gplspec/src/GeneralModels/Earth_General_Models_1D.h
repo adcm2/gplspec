@@ -15,7 +15,6 @@
 // spherically symmetric 1D model
 namespace GeneralEarthModels {
 
-// class spherical_test : public Radial_Tools::node_info
 class spherical_1D {
  public:
    spherical_1D() {};   // default
@@ -36,12 +35,12 @@ class spherical_1D {
    /////////////////////////////////////////////////////
    /////////////////////////////////////////////////////
 
-   // info on nodes
+   // info on the single canonical radial mesh
    auto Num_Elements() const { return _num_layers; };
    auto Poly_Order() const { return _poly_ord; };
-   auto Vector_Nodes() const { return _vec_nodes; };
-   //    auto All_Nodes() const { return _vec_allnodes; };
-   auto Node_Information() { return node_data; };
+   const Radial_Tools::RadialMesh &Node_Information() const {
+      return _radial_mesh;
+   }
    const Radial_Tools::RadialMesh &Node_InformationP() const {
       return _radial_mesh;
    }
@@ -101,13 +100,10 @@ class spherical_1D {
        gravitational_constant, gravitational_constant_norm, potential_norm;
    bool _isisotropic;
    std::vector<std::vector<bool>> _vec_issolid;
-   std::vector<int> _vec_discontinuity_indices, _vec_laynum;
-   std::vector<double> _vec_nodes, _vec_allnodes;
    std::vector<std::vector<double>> _vec_density, _vec_VP, _vec_VPV, _vec_VPH,
        _vec_VS, _vec_VSV, _vec_VSH, _vec_Eta, _vec_A, _vec_C, _vec_N, _vec_L,
        _vec_F, _vec_Kappa, _vec_Mu;
    GaussQuad::Quadrature1D<double> _q;
-   Radial_Tools::node_info node_data;
    Radial_Tools::RadialMesh _radial_mesh;
    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> _mat_gaussderiv;
    SpectralElementTools::MatrixWeakForm _spectral_info;
@@ -134,16 +130,9 @@ spherical_1D::spherical_1D(const model &inp_model,
    // polynomial order
    _poly_ord = _q.N() - 1;
 
-   // find nodes and number of layers in final stored model
-   _vec_nodes = Radial_Tools::Radial_Node(inp_model, max_radial_step, maxrad);
-   _vec_allnodes = Radial_Tools::All_Node(_vec_nodes, q);
-   _num_layers = _vec_nodes.size() - 1;
-
-   // constructing the class instance that stores all the information about
-   // the nodes
-   node_data = Radial_Tools::node_info(inp_model, q, max_radial_step, maxrad);
-   _radial_mesh =
-       Radial_Tools::RadialMesh(inp_model, q, max_radial_step, maxrad);
+   _radial_mesh = Radial_Tools::RadialMesh(inp_model, q, max_radial_step,
+                                           maxrad);
+   _num_layers = _radial_mesh.NumberOfElements();
 
    // finding _mat_gaussderiv
    _mat_gaussderiv =
@@ -168,7 +157,6 @@ spherical_1D::spherical_1D(const model &inp_model,
    _vec_issolid.resize(_num_layers);
    //   _vec_isisotropic.resize(_num_layers);
 
-   int laynum = 0;   // layer #
    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
 
       // temporary vectors
@@ -181,11 +169,12 @@ spherical_1D::spherical_1D(const model &inp_model,
           tmp_L(_poly_ord + 1, 0.0), tmp_F(_poly_ord + 1, 0.0),
           tmp_Kappa(_poly_ord + 1, 0.0), tmp_Mu(_poly_ord + 1, 0.0);
       std::vector<bool> tmp_issolid(_poly_ord + 1, 0.0);   // tmp vector
-      std::size_t idx_global = idxelem * _poly_ord;        // global idx
+      const int laynum = _radial_mesh.LayerNumber(idxelem);
 
       // loop through polynomial indices
       for (int idxpoly = 0; idxpoly < _poly_ord + 1; ++idxpoly) {
-         double rad_current = _vec_allnodes[idx_global];
+         const double rad_current =
+             _radial_mesh.NodeRadius(idxelem, idxpoly);
          if (laynum < inp_model.NumberOfLayers()) {
             tmp_density[idxpoly] = inp_model.Density(laynum)(rad_current);
             tmp_VP[idxpoly] = inp_model.VP(laynum)(rad_current);
@@ -204,13 +193,7 @@ spherical_1D::spherical_1D(const model &inp_model,
             tmp_Mu[idxpoly] = inp_model.Mu(laynum)(rad_current);
             tmp_issolid[idxpoly] = inp_model.IsSolid(laynum);
          }
-         ++idx_global;
       }
-
-      // increment layer
-      if (idxelem + 1 == node_data.IdxUpperRadius(laynum)) {
-         ++laynum;
-      };
 
       // push back
       _vec_density[idxelem] = tmp_density;
@@ -232,9 +215,7 @@ spherical_1D::spherical_1D(const model &inp_model,
    }
 
    // finding the spectral element grid
-   // _spectral_info =
-   //     SpectralElementTools::MatrixWeakForm(node_data.ElementNodes(), q);
-   _spectral_info = SpectralElementTools::MatrixWeakForm(_radial_mesh, q);
+   _spectral_info = SpectralElementTools::MatrixWeakForm(q);
 };
 
 // with path to file

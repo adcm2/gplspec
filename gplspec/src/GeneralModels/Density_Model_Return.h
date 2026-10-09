@@ -106,7 +106,7 @@ auto
 Density3D::Poly_Order() const {
    return _poly_ord;
 };
-auto
+const Radial_Tools::RadialMesh &
 Density3D::Node_Information() const {
    return node_data;
 };
