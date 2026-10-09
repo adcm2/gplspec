@@ -154,6 +154,30 @@ main() {
          }
       }
       file1.close();
+      auto surface_metadata = GPLSpec::FieldBundle::RunMetadata{};
+      surface_metadata.workflow = "output_ziheng";
+      surface_metadata.dataset = "phobos_tablea1_surface_0p5deg";
+      surface_metadata.inputs.push_back(
+          GPLSpec::FieldBundle::InputPath(pathtofile));
+      surface_metadata.parameters = {{"latitude_step_deg", "0.5"},
+          {"longitude_step_deg", "0.5"},
+          {"maximum_input_degree", std::to_string(model_lmax)}};
+      GPLSpec::FieldBundle::Writer(
+          "work/Ziheng/PhobosRadius.bundle", phobos,
+          std::move(surface_metadata)).Write([&](auto &&emit) {
+         for (std::size_t ilat = 0; ilat < vec_latitudes.size(); ++ilat) {
+            for (std::size_t ilon = 0; ilon < vec_longitudes.size(); ++ilon) {
+               GPLSpec::FieldEvaluation::Sample sample;
+               sample.quantity = GPLSpec::FieldEvaluation::Quantity::SurfaceRadius;
+               sample.representation = GPLSpec::FieldEvaluation::Representation::AngularGrid;
+               sample.theta_rad = (90.0 - vec_latitudes[ilat]) * pid180;
+               sample.phi_rad = vec_longitudes[ilon] * pid180;
+               sample.physical_radius_m = vec_radius[ilat][ilon].real();
+               sample.value = {sample.physical_radius_m, 0.0};
+               emit(sample);
+            }
+         }
+      });
       double minval =
           *std::min_element(vec_outerradius.begin(), vec_outerradius.end());
 
@@ -167,8 +191,8 @@ main() {
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
    timer1.start();
-   auto stdvec_potsol = ToHarmonicField(
-       phobos, SolvePotential(phobos, std::pow(10.0, -12.0)));
+   auto phobos_result = SolvePotential(phobos, std::pow(10.0, -12.0));
+   auto stdvec_potsol = ToHarmonicField(phobos, phobos_result);
    timer1.stop("Time for gravity");
    std::cout << "Size of stdvec_potsol: " << stdvec_potsol.size() << " "
              << stdvec_potsol[0].size() << " " << stdvec_potsol[0][0].size()
@@ -202,6 +226,30 @@ main() {
          }
       }
       file1.close();
+      auto outer_metadata = GPLSpec::FieldBundle::WithSolve(
+          phobos_result, "output_ziheng", "phobos_outer_potential_coefficients",
+          "CG", phobos_result.final_solve().requested_tolerance);
+      outer_metadata.inputs.push_back(
+          GPLSpec::FieldBundle::InputPath(pathtofile));
+      outer_metadata.parameters = {{"degree_max", std::to_string(lMax)},
+          {"polynomial_order", std::to_string(npoly)},
+          {"length_norm_m", std::to_string(lengthnorm)},
+          {"mass_norm_kg", std::to_string(massnorm)},
+          {"time_norm_s", std::to_string(timenorm)}};
+      GPLSpec::FieldBundle::Writer(
+          "work/Ziheng/PHOBOS_POTENTIAL_OUTER.bundle", phobos,
+          std::move(outer_metadata)).Write([&](auto &&emit) {
+         const auto last_element = static_cast<std::size_t>(
+             phobos.Node_Information().NumberOfElements() - 1);
+         GPLSpec::FieldEvaluation::ForEachRadialHarmonicSample(
+             phobos, phobos_result.solution,
+             GPLSpec::FieldEvaluation::Quantity::Potential,
+             [&](const GPLSpec::FieldEvaluation::Sample &sample) {
+                if (sample.element == last_element &&
+                    sample.radial_node == phobos.Node_Information().PolynomialOrder())
+                   emit(sample);
+             });
+      });
    }
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
@@ -231,6 +279,21 @@ main() {
                << vec_integral_potential[idx + 1][0].real() << "\n";
       }
       file1.close();
+      auto integral_metadata = GPLSpec::FieldBundle::RunMetadata{};
+      integral_metadata.workflow = "output_ziheng";
+      integral_metadata.dataset = "prem200_no_spherical_integral";
+      integral_metadata.inputs.push_back(
+          GPLSpec::FieldBundle::InputPath(pathtoprem));
+      integral_metadata.parameters = {{"polynomial_order", "5"},
+          {"degree_max", "2"}, {"max_step_norm", "0.001"},
+          {"exterior_radius_norm", "1.2"}};
+      GPLSpec::FieldBundle::Writer(
+          "work/Ziheng/PREM200.NO.INTEGRAL.bundle", testprem,
+          std::move(integral_metadata)).Write([&](auto &&emit) {
+         GPLSpec::FieldEvaluation::ForEachElementBoundaryHarmonics(
+             testprem, vec_integral_potential,
+             GPLSpec::FieldEvaluation::Quantity::Potential, emit);
+      });
    }
    // get gravitational field
 

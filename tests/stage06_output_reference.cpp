@@ -72,5 +72,25 @@ int main(int argc, char **argv) {
          }
       }
    }
+   const std::size_t stride = coefficients;
+   Eigen::VectorXcd continuous(static_cast<Eigen::Index>(
+       model.Node_Information().NumberOfGlobalRadialNodes() * stride));
+   for (int node = 0; node < model.Node_Information().NumberOfGlobalRadialNodes(); ++node) {
+      for (std::size_t lm = 0; lm < stride; ++lm) {
+         const auto global = static_cast<std::size_t>(node) * stride + lm;
+         continuous[static_cast<Eigen::Index>(global)] = {
+             0.001 * static_cast<double>(1 + node + lm),
+             -0.0003 * static_cast<double>(2 + node + lm)};
+      }
+   }
+   auto metadata = GPLSpec::FieldBundle::RunMetadata{};
+   metadata.workflow = "stage06_output_reference";
+   metadata.dataset = "continuous_shared_dof_potential";
+   metadata.parameters = {{"length_norm_m", std::to_string(model.LengthNorm())},
+       {"mass_norm_kg", std::to_string(model.MassNorm())},
+       {"time_norm_s", std::to_string(model.TimeNorm())}};
+   GPLSpec::FieldBundle::WriteAngular(
+       output_dir / "field_bundle", model, continuous,
+       GPLSpec::FieldEvaluation::Quantity::Potential, std::move(metadata));
    return 0;
 }

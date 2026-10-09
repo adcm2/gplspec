@@ -230,3 +230,11 @@ target_link_libraries(stage4b_field_evaluation PRIVATE gplspec)
 if(BUILD_TESTING)
   add_test(NAME stage4b_field_evaluation COMMAND stage4b_field_evaluation)
 endif()
+
+add_executable(stage4c_bundle_fixture stage4c_bundle_fixture.cpp)
+target_link_libraries(stage4c_bundle_fixture PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage4c_field_bundle
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_field_bundle.py
+      $<TARGET_FILE:stage4c_bundle_fixture>)
+endif()

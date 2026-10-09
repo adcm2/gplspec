@@ -112,22 +112,22 @@ main() {
 
    // do PSM solution
    timer1.start();
-   auto stdvec_potsol = ToHarmonicField(
-       testtomo, SolvePotential(testtomo, std::pow(10.0, -12.0)));
-   auto stdvec_potsol_exact = ToHarmonicField(
-       testtomo2, SolvePotential(testtomo2, std::pow(10.0, -12.0)));
+   auto potential_result = SolvePotential(testtomo, std::pow(10.0, -12.0));
+   auto exact_result = SolvePotential(testtomo2, std::pow(10.0, -12.0));
+   auto stdvec_potsol = ToHarmonicField(testtomo, potential_result);
+   auto stdvec_potsol_exact = ToHarmonicField(testtomo2, exact_result);
    timer1.stop("Time for 3D");
 
    // find solution with boundary perturbation theory
-   auto stdvec_potsol_perturb = ToHarmonicField(
-       testtomo, SolveClassicalMappedPerturbation(
-                     testtomo, map1, std::pow(10.0, -12.0)));
+   auto classical_result = SolveClassicalMappedPerturbation(
+       testtomo, map1, std::pow(10.0, -12.0));
+   auto stdvec_potsol_perturb = ToHarmonicField(testtomo, classical_result);
 
    // find perturbed solution
    MappingPerturbation testpertmap(testtomo, map1);
-   auto stdvec_potsol_perturb2 = ToHarmonicField(
-       testtomo, SolveMappingPerturbation(testtomo, testpertmap,
-                                          std::pow(10.0, -12.0)));
+   auto mapping_result = SolveMappingPerturbation(testtomo, testpertmap,
+                                                  std::pow(10.0, -12.0));
+   auto stdvec_potsol_perturb2 = ToHarmonicField(testtomo, mapping_result);
 
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
@@ -141,6 +141,49 @@ main() {
    testtomo.PhysicalOutputAtElement(pathtofolder2, stdvec_potsol_perturb);
    testtomo.PhysicalOutputAtElement(pathtofolder3, stdvec_potsol);
    testtomo.PhysicalOutputAtElement(pathtofolder4, stdvec_potsol_perturb2);
+   auto exact_bundle = GPLSpec::FieldBundle::WithSolve(
+       exact_result, "clean_bench_10", "exact_mapped_reference", "CG",
+       exact_result.final_solve().requested_tolerance);
+   exact_bundle.inputs.push_back(GPLSpec::FieldBundle::InputPath(pathtoprem));
+   exact_bundle.inputs.push_back(GPLSpec::FieldBundle::InputPath(pathtotomo));
+   exact_bundle.parameters = {{"polynomial_order", std::to_string(npoly)},
+       {"degree_max", std::to_string(lmax)}, {"max_step_norm", std::to_string(maxstep)},
+       {"exterior_radius_norm", std::to_string(ballrad)},
+       {"mapping_amplitude", std::to_string(h)},
+       {"length_norm_m", std::to_string(lengthnorm)},
+       {"mass_norm_kg", std::to_string(massnorm)},
+       {"time_norm_s", std::to_string(timenorm)}};
+   GPLSpec::FieldBundle::WriteAngular(
+       std::filesystem::path(pathtofolder1) / "field_bundle", testtomo2,
+       exact_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
+       exact_bundle);
+   auto classical_bundle = GPLSpec::FieldBundle::WithSolve(
+       classical_result, "clean_bench_10", "classical_perturbation", "BiCGSTAB",
+       classical_result.final_solve().requested_tolerance);
+   classical_bundle.inputs = exact_bundle.inputs;
+   classical_bundle.parameters = exact_bundle.parameters;
+   GPLSpec::FieldBundle::WriteAngular(
+       std::filesystem::path(pathtofolder2) / "field_bundle", testtomo,
+       classical_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
+       std::move(classical_bundle));
+   auto base_bundle = GPLSpec::FieldBundle::WithSolve(
+       potential_result, "clean_bench_10", "unperturbed", "CG",
+       potential_result.final_solve().requested_tolerance);
+   base_bundle.inputs = exact_bundle.inputs;
+   base_bundle.parameters = exact_bundle.parameters;
+   GPLSpec::FieldBundle::WriteAngular(
+       std::filesystem::path(pathtofolder3) / "field_bundle", testtomo,
+       potential_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
+       std::move(base_bundle));
+   auto mapping_bundle = GPLSpec::FieldBundle::WithSolve(
+       mapping_result, "clean_bench_10", "mapping_perturbation", "CG",
+       mapping_result.final_solve().requested_tolerance);
+   mapping_bundle.inputs = exact_bundle.inputs;
+   mapping_bundle.parameters = exact_bundle.parameters;
+   GPLSpec::FieldBundle::WriteAngular(
+       std::filesystem::path(pathtofolder4) / "field_bundle", testtomo,
+       mapping_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
+       std::move(mapping_bundle));
 
    return 0;
 }

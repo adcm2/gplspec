@@ -9,6 +9,7 @@
 #include <numbers>
 #include <span>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace GPLSpec::FieldEvaluation {
@@ -25,7 +26,8 @@ enum class Representation {
    AngularGrid,
    HarmonicCoefficients,
    RotatedSlice,
-   DegreePower
+   DegreePower,
+   RadialProfile
 };
 enum class TraceSide { None, Inner, Outer };
 enum class BoundaryKind { None, Numerical, Material, BodyVacuum, SurfaceWithoutExterior };
@@ -427,6 +429,17 @@ void ForEachAngularGridSample(
 }
 
 template <class Callback>
+void ForEachAngularGridSample(
+    const GeneralEarthModels::Density3D &model,
+    const Eigen::VectorXcd &flat_solution, Quantity quantity,
+    Callback &&callback, const Rotation *rotation = nullptr) {
+   ForEachAngularGridSample(
+       model, std::span<const std::complex<double>>(flat_solution.data(),
+                                                   static_cast<std::size_t>(flat_solution.size())),
+       quantity, std::forward<Callback>(callback), rotation);
+}
+
+template <class Callback>
 void ForEachRadialHarmonicSample(
     const GeneralEarthModels::Density3D &model,
     std::span<const std::complex<double>> flat_solution, Quantity quantity,
@@ -515,6 +528,156 @@ void ForEachRadialHarmonicSample(
       emit(e, 0, detail::AtLowerTrace(model, e, interfaces));
       emit(e, mesh.PolynomialOrder(), detail::AtUpperTrace(model, e, interfaces));
    }
+}
+
+template <class Callback>
+void ForEachElementBoundaryHarmonics(
+    const GeneralEarthModels::Density3D &model,
+    const std::vector<std::vector<std::complex<double>>> &boundary_values,
+    Quantity quantity, Callback &&callback) {
+   detail::ValidateQuantity(quantity);
+   if (quantity != Quantity::Potential && quantity != Quantity::SensitivityKernel)
+      throw std::invalid_argument("boundary harmonics require potential or sensitivity");
+   const auto &mesh = model.Node_Information();
+   const int lmax = model.GSH_Grid().MaxDegree();
+   const std::size_t stride = static_cast<std::size_t>((lmax + 1) * (lmax + 1));
+   const auto element_count = static_cast<std::size_t>(mesh.NumberOfElements());
+   if (boundary_values.size() != element_count + 1)
+      throw std::invalid_argument("boundary harmonics require one value per mesh boundary");
+   for (const auto &row : boundary_values)
+      if (row.size() != stride)
+         throw std::invalid_argument("boundary harmonics have the wrong degree count");
+   const auto interfaces = detail::Interfaces(model);
+   const double scale = quantity == Quantity::Potential
+                            ? model.PotentialNorm()
+                            : model.PotentialNorm() / model.MassNorm();
+   auto emit = [&](std::size_t boundary, Sample base) {
+      base.quantity = quantity;
+      base.representation = Representation::HarmonicCoefficients;
+      for (int l = 0; l <= lmax; ++l)
+         for (int m = -l; m <= l; ++m) {
+            Sample sample = base;
+            sample.degree = l;
+            sample.order = m;
+            sample.value =
+                scale * boundary_values[boundary][static_cast<std::size_t>(l*l+l+m)];
+            callback(sample);
+         }
+   };
+   for (std::size_t element = 0; element < element_count; ++element) {
+      emit(element,
+           detail::AtLowerTrace(model, element, interfaces));
+      emit(element + 1,
+           detail::AtUpperTrace(model, element, interfaces));
+   }
+}
+
+template <class Callback>
+void ForEachScalarRadialProfile(
+    const GeneralEarthModels::Density3D &model,
+    const std::vector<double> &global_values, Quantity quantity,
+    Callback &&callback) {
+   if (quantity != Quantity::Potential ||
+       global_values.size() != static_cast<std::size_t>(model.Node_Information().NumberOfGlobalRadialNodes()))
+      throw std::invalid_argument("scalar profile requires global potential node values");
+   const auto &mesh = model.Node_Information();
+   const auto interfaces = detail::Interfaces(model);
+   auto emit = [&](std::size_t element, int node, Sample sample) {
+      const auto global = static_cast<std::size_t>(mesh.GlobalNodeIndex(
+          static_cast<int>(element), node));
+      sample.quantity = quantity;
+      sample.representation = Representation::RadialProfile;
+      sample.degree = -1;
+      sample.order = 0;
+      sample.value = model.PotentialNorm() * global_values[global];
+      callback(sample);
+   };
+   for (std::size_t element = 0;
+        element < static_cast<std::size_t>(mesh.NumberOfElements()); ++element) {
+      emit(element, 0, detail::AtLowerTrace(model, element, interfaces));
+      emit(element, mesh.PolynomialOrder(),
+           detail::AtUpperTrace(model, element, interfaces));
+   }
+}
+
+template <class Callback>
+void ForEachElementBoundaryMonopole(
+    const GeneralEarthModels::Density3D &model,
+    const std::vector<double> &boundary_values, Quantity quantity,
+    Callback &&callback) {
+   const auto &mesh = model.Node_Information();
+   const auto element_count = static_cast<std::size_t>(mesh.NumberOfElements());
+   if (quantity != Quantity::Potential || boundary_values.size() != element_count + 1)
+      throw std::invalid_argument("boundary monopole requires one potential coefficient per boundary");
+   const auto interfaces = detail::Interfaces(model);
+   auto emit = [&](std::size_t boundary, Sample sample) {
+      sample.quantity = quantity;
+      sample.representation = Representation::HarmonicCoefficients;
+      sample.degree = 0;
+      sample.order = 0;
+      sample.value = model.PotentialNorm() * boundary_values[boundary];
+      callback(sample);
+   };
+   for (std::size_t element = 0; element < element_count; ++element) {
+      emit(element, detail::AtLowerTrace(model, element, interfaces));
+      emit(element + 1,
+           detail::AtUpperTrace(model, element, interfaces));
+   }
+}
+
+// Exports an analytic scalar profile sampled at one modeled angular ray. The
+// supplied radii are normalized physical radii, as returned by
+// Density3D::PhysicalRadius_Line; shared interfaces are emitted from both
+// adjacent element traces with their common analytic value.
+template <class Callback>
+void ForEachMappedRadialProfile(
+    const GeneralEarthModels::Density3D &model,
+    const std::vector<double> &physical_radii_normalized,
+    const std::vector<double> &normalized_potential,
+    std::size_t spatial_index, Callback &&callback) {
+   const auto &mesh = model.Node_Information();
+   const auto element_count = static_cast<std::size_t>(mesh.NumberOfElements());
+   if (physical_radii_normalized.size() != element_count + 1 ||
+       normalized_potential.size() != element_count + 1)
+      throw std::invalid_argument("mapped radial profile must contain all boundary nodes");
+   const auto longitude_count = model.GSH_Grid().Longitudes().size();
+   const auto colatitudes = model.GSH_Grid().CoLatitudes();
+   const auto longitudes = model.GSH_Grid().Longitudes();
+   if (spatial_index >= colatitudes.size() * longitude_count)
+      throw std::invalid_argument("mapped radial profile angular index is out of range");
+   const double theta = colatitudes[spatial_index / longitude_count];
+   const double phi = longitudes[spatial_index % longitude_count];
+   const auto interfaces = detail::Interfaces(model);
+   auto emit = [&](std::size_t element, int node, std::size_t global,
+                   Sample base) {
+      base.quantity = Quantity::Potential;
+      base.representation = Representation::RadialProfile;
+      base.radial_node = node;
+      base.theta_rad = theta;
+      base.phi_rad = phi;
+      detail::SetCoordinates(base,
+          physical_radii_normalized[global] * model.LengthNorm(), theta, phi);
+      base.reference_radius_m = mesh.NodeRadius(static_cast<int>(element), node) *
+                                model.LengthNorm();
+      base.value = model.PotentialNorm() * normalized_potential[global];
+      callback(base);
+   };
+   for (std::size_t element = 0; element < element_count; ++element) {
+      emit(element, 0, element, detail::AtLowerTrace(model, element, interfaces));
+      emit(element, mesh.PolynomialOrder(), element + 1,
+           detail::AtUpperTrace(model, element, interfaces));
+   }
+}
+
+template <class Callback>
+void ForEachRadialHarmonicSample(
+    const GeneralEarthModels::Density3D &model,
+    const Eigen::VectorXcd &flat_solution, Quantity quantity,
+    Callback &&callback) {
+   ForEachRadialHarmonicSample(
+       model, std::span<const std::complex<double>>(flat_solution.data(),
+                                                   static_cast<std::size_t>(flat_solution.size())),
+       quantity, std::forward<Callback>(callback));
 }
 
 // Arbitrary-angle route for bounded slices such as the equator. Unlike the
@@ -623,6 +786,18 @@ void ForEachRotatedSliceSample(
       emit(e, 0, detail::AtLowerTrace(model, e, interfaces));
       emit(e, mesh.PolynomialOrder(), detail::AtUpperTrace(model, e, interfaces));
    }
+}
+
+template <class Callback>
+void ForEachRotatedSliceSample(
+    const GeneralEarthModels::Density3D &model,
+    const Eigen::VectorXcd &flat_solution, Quantity quantity,
+    const Rotation &rotation, std::span<const double> azimuths,
+    Callback &&callback) {
+   ForEachRotatedSliceSample(
+       model, std::span<const std::complex<double>>(flat_solution.data(),
+           static_cast<std::size_t>(flat_solution.size())), quantity, rotation,
+       azimuths, std::forward<Callback>(callback));
 }
 
 }   // namespace GPLSpec::FieldEvaluation

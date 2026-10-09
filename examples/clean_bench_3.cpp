@@ -59,9 +59,10 @@ main() {
    Density3D homogeneous_sphere_with_map(inp_sphere,
                                          PlanetaryModel::TomographyZeroModel(),
                                          map1, npoly, lmax, maxstep, ballrad);
-   auto stdvec_potsol = ToHarmonicField(
-       homogeneous_sphere_with_map,
-       SolvePotential(homogeneous_sphere_with_map, std::pow(10.0, -12.0)));
+   auto potential_result = SolvePotential(homogeneous_sphere_with_map,
+                                          std::pow(10.0, -12.0));
+   auto stdvec_potsol = ToHarmonicField(homogeneous_sphere_with_map,
+                                       potential_result);
    timer1.stop("Time for 3D");
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
@@ -83,6 +84,31 @@ main() {
    homogeneous_sphere_with_map.PhysicalOutputAtElement(pathtofolder,
                                                        stdvec_potsol);
    equivalent_sphere.OutputAtElement(pathtofolder, inp_radii, vec_exactsol);
+   auto bundle = GPLSpec::FieldBundle::WithSolve(
+       potential_result, "clean_bench_3", "mapped_homogeneous_sphere", "CG",
+       potential_result.final_solve().requested_tolerance);
+   bundle.parameters = {{"polynomial_order", std::to_string(npoly)},
+       {"degree_max", std::to_string(lmax)}, {"max_step_norm", std::to_string(maxstep)},
+       {"exterior_radius_norm", std::to_string(ballrad)},
+       {"mapping_amplitude", std::to_string(h)},
+       {"length_norm_m", std::to_string(lengthnorm)},
+       {"mass_norm_kg", std::to_string(massnorm)},
+       {"time_norm_s", std::to_string(timenorm)}};
+   GPLSpec::FieldBundle::WriteAngular(
+       std::filesystem::path(pathtofolder) / "field_bundle",
+       homogeneous_sphere_with_map, potential_result.solution,
+       GPLSpec::FieldEvaluation::Quantity::Potential, bundle);
+   auto exact_bundle_metadata = GPLSpec::FieldBundle::RunMetadata{};
+   exact_bundle_metadata.workflow = "clean_bench_3";
+   exact_bundle_metadata.dataset = "analytic_sphere_same_mapped_ray";
+   exact_bundle_metadata.parameters = bundle.parameters;
+   GPLSpec::FieldBundle::Writer(
+       std::filesystem::path(pathtofolder) / "exact_bundle",
+       homogeneous_sphere_with_map, std::move(exact_bundle_metadata)).Write(
+       [&](auto &&emit) {
+          GPLSpec::FieldEvaluation::ForEachMappedRadialProfile(
+              homogeneous_sphere_with_map, inp_radii, vec_exactsol, 0, emit);
+       });
 
    //    testprem.OutputAtElement(pathtofolder, vec_exactsol);
 

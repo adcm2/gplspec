@@ -12,4 +12,5 @@
 #include "src/GeneralModels/Earth_General_Models_1D.h"
 #include "src/GeneralModels/Gravity_Tools.h"
 #include "src/GeneralModels/Field_Evaluation.h"
+#include "src/GeneralModels/Field_Bundle.h"
 #endif

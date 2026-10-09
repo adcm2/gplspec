@@ -35,7 +35,8 @@ main() {
    timer1.start();
    Density3D testsphere = Density3D::SphericalHomogeneousPlanet(
        nrad, nrho, lengthnorm, timenorm, massnorm, maxstep, ballrad);
-   auto stdvec_potsol = ToHarmonicField(testsphere, SolvePotential(testsphere));
+   auto potential_result = SolvePotential(testsphere);
+   auto stdvec_potsol = ToHarmonicField(testsphere, potential_result);
    timer1.stop("Time for 3D");
 
    // Compute potential using spherical integration method
@@ -51,6 +52,40 @@ main() {
    testsphere.ReferentialOutputAtElement(pathtofolder, stdvec_potsol);
    testsphere.OutputAtElement(pathtofolder, vec_integral_potential);
    testsphere.OutputAtElement(pathtofolder, vec_exactsol);
+   auto bundle = GPLSpec::FieldBundle::WithSolve(
+       potential_result, "clean_bench_1", "homogeneous_sphere", "CG",
+       potential_result.final_solve().requested_tolerance);
+   GPLSpec::FieldBundle::Writer(std::filesystem::path(pathtofolder) / "field_bundle",
+                                testsphere, bundle).Write([&](auto &&emit) {
+      GPLSpec::FieldEvaluation::ForEachAngularGridSample(
+          testsphere, potential_result.solution,
+          GPLSpec::FieldEvaluation::Quantity::Potential, emit);
+      GPLSpec::FieldEvaluation::ForEachAngularGridSample(
+          testsphere, std::span<const std::complex<double>>{},
+          GPLSpec::FieldEvaluation::Quantity::ReferentialDensity, emit);
+   });
+   auto integral_metadata = GPLSpec::FieldBundle::RunMetadata{};
+   integral_metadata.workflow = "clean_bench_1";
+   integral_metadata.dataset = "spherical_integral_potential";
+   integral_metadata.parameters = bundle.parameters;
+   GPLSpec::FieldBundle::Writer(
+       std::filesystem::path(pathtofolder) / "integral_bundle", testsphere,
+       std::move(integral_metadata)).Write([&](auto &&emit) {
+      GPLSpec::FieldEvaluation::ForEachElementBoundaryHarmonics(
+          testsphere, vec_integral_potential,
+          GPLSpec::FieldEvaluation::Quantity::Potential, emit);
+   });
+   auto exact_metadata = GPLSpec::FieldBundle::RunMetadata{};
+   exact_metadata.workflow = "clean_bench_1";
+   exact_metadata.dataset = "analytic_homogeneous_sphere";
+   exact_metadata.parameters = bundle.parameters;
+   GPLSpec::FieldBundle::Writer(
+       std::filesystem::path(pathtofolder) / "exact_bundle", testsphere,
+       std::move(exact_metadata)).Write([&](auto &&emit) {
+      GPLSpec::FieldEvaluation::ForEachElementBoundaryMonopole(
+          testsphere, vec_exactsol, GPLSpec::FieldEvaluation::Quantity::Potential,
+          emit);
+   });
 
    return 0;
 }
