@@ -170,7 +170,10 @@ def _row_key(row):
         return None if value == "" else int(value)
 
     def number(value):
-        return None if value == "" else float(value)
+        if value == "":
+            return None
+        result = float(value)
+        return 0.0 if result == 0.0 else result
 
     return (
         row["quantity"], row["representation"], row["boundary"], row["side"],
@@ -247,7 +250,10 @@ def open_bundle(directory):
                             raise ValueError(f"spatial sample is missing {coordinate}")
                 elif numeric_values["reference_radius_m"] is None:
                     raise ValueError("radial/harmonic sample is missing reference radius")
-                key = _row_key(row)
+                # Serialize the canonical typed identity compactly. Keeping a tuple
+                # of row strings for every Phobos sample costs several hundred MB.
+                key = json.dumps(_row_key(row), separators=(",", ":"),
+                                 ensure_ascii=True).encode("ascii")
                 if key in seen:
                     raise ValueError("duplicate sample key")
                 seen.add(key)

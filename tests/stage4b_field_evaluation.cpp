@@ -1,9 +1,11 @@
 #include "../gplspec/All"
+#include "../gplspec/src/GeneralModels/Field_Bundle.h"
 
 #include <algorithm>
 #include <cmath>
 #include <complex>
 #include <iostream>
+#include <map>
 #include <numbers>
 #include <stdexcept>
 #include <vector>
@@ -37,9 +39,17 @@ struct RadialExpansion {
       return [](double radius, double, double) { return 0.1 * radius; };
    }
 };
+
+struct AngularRadialExpansion {
+   auto RadialMapping(int) const {
+      return [](double radius, double theta, double phi) {
+         return 0.1 * radius * (1.0 + 0.2 * std::sin(theta) * std::cos(phi));
+      };
+   }
+};
 }   // namespace
 
-int main() {
+int main(int argc, char **argv) {
    const auto high_degree = GPLSpec::FieldEvaluation::detail::HarmonicsAt(
        std::numbers::pi / 2.0, 101);
    auto highest_order_value = [](int l) {
@@ -193,6 +203,211 @@ int main() {
            "rotated nonconstant harmonic field has the wrong orientation");
    }
 
+   // Exercise nonconstant real mapping and physical density through the
+   // complex-output inverse expected for full rotated coefficients.
+   const AngularRadialExpansion angular_mapping;
+   const Density3D angular_model(source, tomography, angular_mapping, 2, 3,
+                                 0.25, 1.2);
+   const auto &angular_grid = angular_model.GSH_Grid();
+   const int angular_lmax = angular_grid.MaxDegree();
+   const std::size_t angular_stride =
+       static_cast<std::size_t>((angular_lmax + 1) * (angular_lmax + 1));
+   const std::size_t spatial_count = angular_grid.Longitudes().size() *
+                                     angular_grid.CoLatitudes().size();
+   const auto mapping_rotation = GPLSpec::detail::RotationOutputMatrices(
+       angular_lmax, z_quarter_turn.alpha, z_quarter_turn.beta,
+       z_quarter_turn.gamma);
+   auto complex_rotated_real_coefficients = [&](const std::vector<double> &field) {
+      std::vector<std::complex<double>> nonnegative(
+          static_cast<std::size_t>((angular_lmax + 1) * (angular_lmax + 2) / 2));
+      std::vector<std::complex<double>> coefficients(angular_stride),
+          rotated_coefficients(angular_stride);
+      angular_grid.ForwardTransformation(angular_lmax, 0, field, nonnegative);
+      GPLSpec::detail::ExpandRealScalarCoefficients(
+          angular_lmax, nonnegative, coefficients);
+      GPLSpec::FieldEvaluation::detail::RotateCoefficients(
+          angular_lmax, coefficients, rotated_coefficients, mapping_rotation);
+      return rotated_coefficients;
+   };
+   auto complex_rotated_real_field = [&](const std::vector<double> &field) {
+      const auto coefficients = complex_rotated_real_coefficients(field);
+      std::vector<std::complex<double>> rotated_field(spatial_count);
+      angular_grid.InverseTransformation(angular_lmax, 0, coefficients,
+                                         rotated_field);
+      return rotated_field;
+   };
+   auto spatial_index = [&](double theta, double phi) {
+      const auto theta_it = std::find_if(
+          angular_grid.CoLatitudes().begin(), angular_grid.CoLatitudes().end(),
+          [&](double value) { return std::abs(value - theta) < 1.0e-13; });
+      const auto phi_it = std::find_if(
+          angular_grid.Longitudes().begin(), angular_grid.Longitudes().end(),
+          [&](double value) { return std::abs(value - phi) < 1.0e-13; });
+      require(theta_it != angular_grid.CoLatitudes().end() &&
+                  phi_it != angular_grid.Longitudes().end(),
+              "rotated sample is not located on its declared angular grid");
+      return static_cast<std::size_t>(theta_it - angular_grid.CoLatitudes().begin()) *
+                 angular_grid.Longitudes().size() +
+             static_cast<std::size_t>(phi_it - angular_grid.Longitudes().begin());
+   };
+
+   std::vector<Sample> surface_unrotated, surface_rotated;
+   ForEachAngularGridSample(
+       angular_model, std::span<const std::complex<double>>{},
+       Quantity::SurfaceRadius,
+       [&](const Sample &sample) { surface_unrotated.push_back(sample); });
+   ForEachAngularGridSample(
+       angular_model, std::span<const std::complex<double>>{},
+       Quantity::SurfaceRadius,
+       [&](const Sample &sample) { surface_rotated.push_back(sample); },
+       &z_quarter_turn);
+   require(surface_rotated.size() == surface_unrotated.size(),
+           "rotated and unrotated mapping samples differ in size");
+   const auto [surface_min, surface_max] = std::minmax_element(
+       surface_unrotated.begin(), surface_unrotated.end(),
+       [](const Sample &a, const Sample &b) {
+          return a.value.real() < b.value.real();
+       });
+   require(surface_max->value.real() - surface_min->value.real() > 1.0e-6,
+           "mapping regression must include angular variation");
+   std::map<std::pair<int, int>, std::vector<std::complex<double>>> rotated_mapping;
+   for (const auto &sample : surface_rotated) {
+      const auto key = std::pair{static_cast<int>(sample.element), sample.radial_node};
+      if (!rotated_mapping.contains(key)) {
+         const auto mapping = angular_model.MappingAtRadialNode(key.first, key.second);
+         rotated_mapping.emplace(key, complex_rotated_real_field(mapping));
+      }
+      const std::size_t k = spatial_index(sample.theta_rad, sample.phi_rad);
+      const double expected_radius =
+          (angular_model.Node_Information().NodeRadius(key.first, key.second) +
+           rotated_mapping.at(key)[k].real()) * angular_model.LengthNorm();
+      const double coordinate_tolerance =
+          1.0e-12 * std::abs(expected_radius) +
+          1.0e-14 * std::max(1.0, std::abs(sample.reference_radius_m));
+      require(std::abs(sample.value.real() - expected_radius) <=
+                  coordinate_tolerance,
+              "rotated mapping differs from complex-output inverse expectation");
+   }
+
+   std::vector<Sample> density_rotated;
+   ForEachAngularGridSample(
+       angular_model, std::span<const std::complex<double>>{},
+       Quantity::PhysicalDensity,
+       [&](const Sample &sample) { density_rotated.push_back(sample); },
+       &z_quarter_turn);
+   std::map<std::pair<int, int>, std::vector<std::complex<double>>> rotated_density;
+   for (const auto &sample : density_rotated) {
+      const auto key = std::pair{static_cast<int>(sample.element), sample.radial_node};
+      if (!rotated_density.contains(key)) {
+         std::vector<double> physical_density(spatial_count);
+         for (std::size_t k = 0; k < spatial_count; ++k) {
+            physical_density[k] =
+                angular_model.Density_Point(key.first, key.second,
+                                            static_cast<int>(k)) /
+                angular_model.Jacobian_Point(key.first, key.second,
+                                             static_cast<int>(k));
+         }
+         rotated_density.emplace(key,
+                                 complex_rotated_real_field(physical_density));
+      }
+      const std::size_t k = spatial_index(sample.theta_rad, sample.phi_rad);
+      const double expected_density =
+          angular_model.DensityNorm() * rotated_density.at(key)[k].real();
+      const double density_tolerance =
+          1.0e-12 * std::abs(expected_density) +
+          1.0e-14 * angular_model.DensityNorm();
+      require(std::abs(sample.value.real() - expected_density) <=
+                  density_tolerance,
+              "rotated physical density differs from complex-output inverse expectation");
+   }
+
+   std::vector<Sample> radial_density;
+   ForEachRadialHarmonicSample(
+       angular_model, std::span<const std::complex<double>>{},
+       Quantity::PhysicalDensity,
+       [&](const Sample &sample) { radial_density.push_back(sample); });
+   std::map<std::pair<int, int>, std::vector<std::complex<double>>>
+       radial_density_coefficients;
+   for (const auto &sample : radial_density) {
+      const auto key = std::pair{static_cast<int>(sample.element), sample.radial_node};
+      if (!radial_density_coefficients.contains(key)) {
+         std::vector<double> physical_density(spatial_count);
+         for (std::size_t k = 0; k < spatial_count; ++k)
+            physical_density[k] = angular_model.Density_Point(
+                key.first, key.second, static_cast<int>(k)) /
+                angular_model.Jacobian_Point(key.first, key.second,
+                                             static_cast<int>(k));
+         std::vector<std::complex<double>> nonnegative(
+             static_cast<std::size_t>((angular_lmax + 1) * (angular_lmax + 2) / 2));
+         std::vector<std::complex<double>> coefficients(angular_stride);
+         angular_grid.ForwardTransformation(angular_lmax, 0, physical_density,
+                                            nonnegative);
+         GPLSpec::detail::ExpandRealScalarCoefficients(
+             angular_lmax, nonnegative, coefficients);
+         radial_density_coefficients.emplace(key, std::move(coefficients));
+      }
+      const std::size_t coefficient = static_cast<std::size_t>(
+          sample.degree * sample.degree + sample.degree + sample.order);
+      const double expected_density = angular_model.DensityNorm() *
+          radial_density_coefficients.at(key)[coefficient].real();
+      const double tolerance = 1.0e-12 * std::abs(expected_density) +
+                               1.0e-14 * angular_model.DensityNorm();
+      require(std::abs(sample.value.real() - expected_density) <= tolerance,
+              "radial physical-density harmonics disagree with fresh transform");
+   }
+
+   const std::vector<double> slice_azimuths{-1.0, 0.0, 1.0};
+   std::vector<Sample> rotated_density_slice;
+   ForEachRotatedSliceSample(
+       angular_model, std::span<const std::complex<double>>{},
+       Quantity::PhysicalDensity, z_quarter_turn, slice_azimuths,
+       [&](const Sample &sample) { rotated_density_slice.push_back(sample); });
+   std::map<std::pair<int, int>, std::vector<std::complex<double>>>
+       slice_density_coefficients, slice_mapping_coefficients;
+   std::vector<std::complex<double>> slice_harmonics =
+       GPLSpec::FieldEvaluation::detail::HarmonicsAt(
+           std::numbers::pi / 2.0, angular_lmax);
+   for (const auto &sample : rotated_density_slice) {
+      const auto key = std::pair{static_cast<int>(sample.element), sample.radial_node};
+      if (!slice_density_coefficients.contains(key)) {
+         std::vector<double> physical_density(spatial_count), mapping(spatial_count);
+         const auto mapping_node = angular_model.MappingAtRadialNode(key.first, key.second);
+         std::copy(mapping_node.begin(), mapping_node.end(), mapping.begin());
+         for (std::size_t k = 0; k < spatial_count; ++k)
+            physical_density[k] = angular_model.Density_Point(
+                key.first, key.second, static_cast<int>(k)) /
+                angular_model.Jacobian_Point(key.first, key.second,
+                                             static_cast<int>(k));
+         slice_mapping_coefficients.emplace(
+             key, complex_rotated_real_coefficients(mapping));
+         slice_density_coefficients.emplace(
+             key, complex_rotated_real_coefficients(physical_density));
+      }
+      const double expected_map =
+          GPLSpec::FieldEvaluation::detail::EvaluateHarmonicSeries(
+              angular_lmax, slice_mapping_coefficients.at(key),
+              slice_harmonics, sample.phi_rad).real();
+      const double expected_radius =
+          (angular_model.Node_Information().NodeRadius(key.first, key.second) +
+           expected_map) * angular_model.LengthNorm();
+      const double coordinate_tolerance =
+          1.0e-12 * std::abs(expected_radius) +
+          1.0e-14 * std::max(1.0, std::abs(sample.reference_radius_m));
+      require(std::abs(sample.physical_radius_m - expected_radius) <=
+                  coordinate_tolerance,
+              "rotated-slice mapping differs from complex inverse expectation");
+      const double expected_density = angular_model.DensityNorm() *
+          GPLSpec::FieldEvaluation::detail::EvaluateHarmonicSeries(
+              angular_lmax, slice_density_coefficients.at(key),
+              slice_harmonics, sample.phi_rad).real();
+      const double density_tolerance =
+          1.0e-12 * std::abs(expected_density) +
+          1.0e-14 * angular_model.DensityNorm();
+      require(std::abs(sample.value.real() - expected_density) <=
+                  density_tolerance,
+              "rotated-slice density differs from complex inverse expectation");
+   }
+
    const auto colatitudes = model.GSH_Grid().CoLatitudes();
    require(std::none_of(colatitudes.begin(), colatitudes.end(), [](double theta) {
                            return std::abs(theta - std::numbers::pi / 2.0) < 1.0e-14;
@@ -296,5 +511,33 @@ int main() {
                surface_trace.outer_material == -1,
            "surface-only mesh must expose only its modeled inner trace");
 
+   if (argc == 2) {
+      const std::filesystem::path output = argv[1];
+      GPLSpec::FieldBundle::RunMetadata metadata;
+      metadata.workflow = "stage4b_two_layer_visual_fixture";
+      metadata.dataset = "two_layer_field";
+      std::vector<double> slice_azimuths;
+      for (double phi : angular_grid.Longitudes())
+         slice_azimuths.push_back(phi);
+      GPLSpec::FieldBundle::WriteAngular(
+          output / "potential", model, solution, Quantity::Potential, metadata);
+      GPLSpec::FieldBundle::WriteAngular(
+          output / "density_physical", model,
+          std::span<const std::complex<double>>{}, Quantity::PhysicalDensity,
+          metadata);
+      GPLSpec::FieldBundle::WriteAngular(
+          output / "density_referential", model,
+          std::span<const std::complex<double>>{}, Quantity::ReferentialDensity,
+          metadata);
+      GPLSpec::FieldBundle::WriteSlice(
+          output / "potential_slice", model, solution, Quantity::Potential,
+          z_quarter_turn, slice_azimuths, metadata);
+      GPLSpec::FieldBundle::WriteSlice(
+          output / "density_slice", model,
+          std::span<const std::complex<double>>{}, Quantity::PhysicalDensity,
+          z_quarter_turn, slice_azimuths, metadata);
+   } else if (argc != 1) {
+      throw std::runtime_error("usage: stage4b_field_evaluation [fixture-output-directory]");
+   }
    return 0;
 }

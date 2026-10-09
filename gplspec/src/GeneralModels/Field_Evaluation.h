@@ -362,11 +362,16 @@ void ForEachAngularGridSample(
           model.MappingAtRadialNode(static_cast<int>(element), node);
       std::copy(mapping_node.begin(), mapping_node.end(), mapping.begin());
       if (rotation != nullptr) {
+         std::fill(nonnegative.begin(), nonnegative.end(),
+                   std::complex<double>{});
          model.GSH_Grid().ForwardTransformation(lmax, 0, mapping, nonnegative);
          GPLSpec::detail::ExpandRealScalarCoefficients(lmax, nonnegative,
                                                        coefficients);
          detail::RotateCoefficients(lmax, coefficients, rotated, matrices);
-         model.GSH_Grid().InverseTransformation(lmax, 0, rotated, mapping);
+         model.GSH_Grid().InverseTransformation(lmax, 0, rotated,
+                                                complex_spatial);
+         for (std::size_t k = 0; k < spatial_size; ++k)
+            mapping[k] = complex_spatial[k].real();
       }
       if (detail::IsDensity(quantity)) {
          for (std::size_t k = 0; k < spatial_size; ++k) {
@@ -378,11 +383,16 @@ void ForEachAngularGridSample(
                              : rho;
          }
          if (rotation != nullptr) {
+            std::fill(nonnegative.begin(), nonnegative.end(),
+                      std::complex<double>{});
             model.GSH_Grid().ForwardTransformation(lmax, 0, spatial, nonnegative);
             GPLSpec::detail::ExpandRealScalarCoefficients(lmax, nonnegative,
                                                           coefficients);
             detail::RotateCoefficients(lmax, coefficients, rotated, matrices);
-            model.GSH_Grid().InverseTransformation(lmax, 0, rotated, spatial);
+            model.GSH_Grid().InverseTransformation(lmax, 0, rotated,
+                                                   complex_spatial);
+            for (std::size_t k = 0; k < spatial_size; ++k)
+               spatial[k] = complex_spatial[k].real();
          }
       } else if (detail::IsPotential(quantity)) {
          std::copy_n(flat_solution.begin() + static_cast<std::ptrdiff_t>(offset),
@@ -481,6 +491,8 @@ void ForEachRadialHarmonicSample(
             }
             spatial[k] = value;
          }
+         std::fill(nonnegative.begin(), nonnegative.end(),
+                   std::complex<double>{});
          model.GSH_Grid().ForwardTransformation(lmax, 0, spatial, nonnegative);
          GPLSpec::detail::ExpandRealScalarCoefficients(lmax, nonnegative,
                                                        coefficients);
@@ -729,6 +741,8 @@ void ForEachRotatedSliceSample(
       const auto mapping_node =
           model.MappingAtRadialNode(static_cast<int>(element), node);
       std::copy(mapping_node.begin(), mapping_node.end(), mapping.begin());
+      std::fill(nonnegative.begin(), nonnegative.end(),
+                std::complex<double>{});
       model.GSH_Grid().ForwardTransformation(lmax, 0, mapping, nonnegative);
       GPLSpec::detail::ExpandRealScalarCoefficients(lmax, nonnegative,
                                                     coefficients);
@@ -746,6 +760,8 @@ void ForEachRotatedSliceSample(
                                              static_cast<int>(k));
             spatial[k] = value;
          }
+         std::fill(nonnegative.begin(), nonnegative.end(),
+                   std::complex<double>{});
          model.GSH_Grid().ForwardTransformation(lmax, 0, spatial, nonnegative);
          GPLSpec::detail::ExpandRealScalarCoefficients(lmax, nonnegative,
                                                        coefficients);

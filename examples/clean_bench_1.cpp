@@ -60,6 +60,9 @@ main() {
       GPLSpec::FieldEvaluation::ForEachAngularGridSample(
           testsphere, potential_result.solution,
           GPLSpec::FieldEvaluation::Quantity::Potential, emit);
+      GPLSpec::FieldEvaluation::ForEachRadialHarmonicSample(
+          testsphere, potential_result.solution,
+          GPLSpec::FieldEvaluation::Quantity::Potential, emit);
       GPLSpec::FieldEvaluation::ForEachAngularGridSample(
           testsphere, std::span<const std::complex<double>>{},
           GPLSpec::FieldEvaluation::Quantity::ReferentialDensity, emit);

@@ -104,10 +104,16 @@ main() {
    bundle.parameters = {{"polynomial_order", std::to_string(npoly)},
        {"degree_max", std::to_string(lmax)}, {"max_step_norm", std::to_string(maxstep)},
        {"exterior_radius_norm", std::to_string(ballrad)}};
-   GPLSpec::FieldBundle::WriteAngular(
+   GPLSpec::FieldBundle::Writer(
        std::filesystem::path(pathtofolder) / "field_bundle", testprem,
-       potential_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
-       bundle);
+       bundle).Write([&](auto &&emit) {
+      GPLSpec::FieldEvaluation::ForEachAngularGridSample(
+          testprem, potential_result.solution,
+          GPLSpec::FieldEvaluation::Quantity::Potential, emit);
+      GPLSpec::FieldEvaluation::ForEachRadialHarmonicSample(
+          testprem, potential_result.solution,
+          GPLSpec::FieldEvaluation::Quantity::Potential, emit);
+   });
    auto integral_metadata = GPLSpec::FieldBundle::RunMetadata{};
    integral_metadata.workflow = "clean_bench_2";
    integral_metadata.dataset = "prem200_spherical_integral";
