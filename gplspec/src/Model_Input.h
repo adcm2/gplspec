@@ -7,6 +7,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace GPLSpec::ModelInput {
@@ -54,8 +55,32 @@ struct PhobosHarmonics {
       if (rows.empty()) {
          throw std::logic_error("cannot infer Phobos degree from no rows");
       }
-      return static_cast<std::size_t>(
+      const auto maximum_degree = static_cast<std::size_t>(
           (std::sqrt(1.0 + 8.0 * rows.size()) - 3.0) / 2.0);
+      if ((maximum_degree + 1) * (maximum_degree + 2) / 2 != rows.size()) {
+         throw std::invalid_argument(
+             "Phobos harmonic row count is not triangular");
+      }
+
+      std::size_t row_index = 0;
+      for (std::size_t degree = 0; degree <= maximum_degree; ++degree) {
+         for (std::size_t order = 0; order <= degree; ++order, ++row_index) {
+            const auto &row = rows[row_index];
+            if (row.degree != static_cast<int>(degree) ||
+                row.order != static_cast<int>(order)) {
+               throw std::invalid_argument(
+                   "Phobos harmonic rows must be in triangular degree/order order");
+            }
+            if (!std::isfinite(row.cosine) ||
+                !std::isfinite(row.cosine_sigma) ||
+                !std::isfinite(row.sine) ||
+                !std::isfinite(row.sine_sigma)) {
+               throw std::invalid_argument(
+                   "Phobos harmonic row contains a non-finite value");
+            }
+         }
+      }
+      return maximum_degree;
    }
 };
 
@@ -117,6 +142,32 @@ inline bool IsBlank(const std::string &line) {
    return line.find_first_not_of(" \t\r") == std::string::npos;
 }
 
+template <class Value>
+void ReadOptionalNumericFields(std::istream &input, std::vector<Value> &values,
+                               const std::string &path, std::size_t line) {
+   std::string token;
+   while (input >> token) {
+      std::istringstream field(token);
+      Value value{};
+      if (!(field >> value)) {
+         throw std::runtime_error(path + ": malformed optional numeric field at line " +
+                                  std::to_string(line));
+      }
+      char extra = '\0';
+      if (field >> extra) {
+         throw std::runtime_error(path + ": malformed optional numeric field at line " +
+                                  std::to_string(line));
+      }
+      if constexpr (std::is_floating_point_v<Value>) {
+         if (!std::isfinite(value)) {
+            throw std::runtime_error(path + ": non-finite optional numeric field at line " +
+                                     std::to_string(line));
+         }
+      }
+      values.push_back(value);
+   }
+}
+
 inline void RequireNoTrailingFields(std::istream &input,
                                     const std::string &path,
                                     std::size_t line) {
@@ -156,20 +207,16 @@ inline PremDeck ReadPremDeck(const std::string &path) {
    std::istringstream header(line);
    detail::ReadExactFields(header, path, line_number, deck.anisotropy_flag,
                            deck.reference_time, deck.deck_flag);
-   double extra_header_value = 0.0;
-   while (header >> extra_header_value) {
-      deck.additional_header_values.push_back(extra_header_value);
-   }
+   detail::ReadOptionalNumericFields(header, deck.additional_header_values, path,
+                                    line_number);
 
    line = detail::NextNonblankLine(file, path, line_number);
    std::istringstream counts(line);
    detail::ReadExactFields(counts, path, line_number, deck.node_count,
                            deck.inner_core_node_count,
                            deck.outer_core_node_count);
-   int extra_count = 0;
-   while (counts >> extra_count) {
-      deck.additional_count_values.push_back(extra_count);
-   }
+   detail::ReadOptionalNumericFields(counts, deck.additional_count_values, path,
+                                    line_number);
    if (deck.node_count < 0) {
       throw std::runtime_error(path + ": negative PREM node count");
    }
@@ -213,6 +260,11 @@ inline PhobosHarmonics ReadPhobosHarmonics(const std::string &path) {
    }
    if (harmonics.rows.empty()) {
       throw std::runtime_error(path + ": empty Phobos harmonic model");
+   }
+   try {
+      (void)harmonics.InferredMaximumDegree();
+   } catch (const std::invalid_argument &error) {
+      throw std::runtime_error(path + ": " + error.what());
    }
    return harmonics;
 }

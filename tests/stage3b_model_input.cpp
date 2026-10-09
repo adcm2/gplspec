@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -160,6 +163,68 @@ int main() {
    }
    require(rejected_empty_phobos,
            "Phobos maximum degree accepted an empty row list");
+
+   const auto malformed_path =
+       std::filesystem::temp_directory_path() / "gplspec-stage3b-input-contract.tmp";
+   const auto write_input_fixture = [&malformed_path](const std::string &contents) {
+      std::ofstream file(malformed_path);
+      file << contents;
+      file.close();
+      require(static_cast<bool>(file), "failed to create temporary parser fixture");
+   };
+   const std::string tiny_prem_rows =
+       "2 0 0\n0 1 2 3 4 5 6 7 8\n1 1 2 3 4 5 6 7 8\n";
+   const auto prem_error_contains = [&malformed_path](const std::string &expected) {
+      try {
+         (void)GPLSpec::ModelInput::ReadPremDeck(malformed_path.string());
+      } catch (const std::runtime_error &error) {
+         return std::string(error.what()).find(expected) != std::string::npos;
+      }
+      return false;
+   };
+   write_input_fixture(std::string("tiny PREM\n1 1.0 1 3.5\n2 0 0 4\n") +
+                       "0 1 2 3 4 5 6 7 8\n1 1 2 3 4 5 6 7 8\n");
+   const auto valid_tiny_prem =
+       GPLSpec::ModelInput::ReadPremDeck(malformed_path.string());
+   require(valid_tiny_prem.additional_header_values == std::vector<double>{3.5} &&
+               valid_tiny_prem.additional_count_values == std::vector<int>{4} &&
+               valid_tiny_prem.nodes.size() == 2,
+           "PREM reader rejected a complete valid tiny deck");
+
+   write_input_fixture("tiny PREM\n1 1.0 1 trailing\n" + tiny_prem_rows);
+   require(prem_error_contains("malformed optional numeric field at line 2"),
+           "PREM reader accepted a nonnumeric optional header field");
+   write_input_fixture("tiny PREM\n1 1.0 1 2e\n" + tiny_prem_rows);
+   require(prem_error_contains("malformed optional numeric field at line 2"),
+           "PREM reader accepted an incomplete optional numeric field");
+   write_input_fixture(std::string("tiny PREM\n1 1.0 1\n2 0 0 trailing\n") +
+                       "0 1 2 3 4 5 6 7 8\n1 1 2 3 4 5 6 7 8\n");
+   require(prem_error_contains("malformed optional numeric field at line 3"),
+           "PREM reader accepted a nonnumeric optional count field");
+   write_input_fixture("0 0 1 0 0 0\n1 1 1 0 0 0\n1 0 1 0 0 0\n");
+   bool rejected_phobos_order = false;
+   try {
+      (void)GPLSpec::ModelInput::ReadPhobosHarmonics(malformed_path.string());
+   } catch (const std::runtime_error &error) {
+      rejected_phobos_order =
+          std::string(error.what()).find("triangular degree/order order") !=
+          std::string::npos;
+   }
+   require(rejected_phobos_order,
+           "Phobos reader accepted rows outside triangular degree/order order");
+   std::filesystem::remove(malformed_path);
+
+   GPLSpec::ModelInput::PhobosHarmonics nonfinite_phobos;
+   nonfinite_phobos.rows.push_back(
+       {0, 0, std::numeric_limits<double>::infinity(), 0.0, 0.0, 0.0});
+   bool rejected_nonfinite_phobos = false;
+   try {
+      (void)nonfinite_phobos.InferredMaximumDegree();
+   } catch (const std::invalid_argument &) {
+      rejected_nonfinite_phobos = true;
+   }
+   require(rejected_nonfinite_phobos,
+           "Phobos triangular contract accepted a non-finite coefficient");
 
    const double length_norm = 10000.0;
    const double time_norm = 3600.0;

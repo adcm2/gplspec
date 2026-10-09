@@ -6,12 +6,12 @@ Build the simplest readable, maintainable implementation of GPLSpec’s scientif
 
 Treat the existing implementation as a scientific and regression starting point, not a permanent architecture. Replace APIs, types, files and implementations when this simplifies the code. Preserve useful mathematical explanations. Avoid unnecessary abstractions, compatibility layers and duplicate implementations.
 
-Follow the latest explicit user authorization and the active phase plan in `docs/core-cleanup/`. Historical instructions do not override newer authorization. Phase 2 is accepted, and Phase 3 is authorized under the user's pasted request. The coordinator records the exact Phase 3 baseline before implementation begins.
+Follow the latest explicit user authorization and the active phase plan in `docs/core-cleanup/`. Historical instructions do not override newer authorization. Phase 2 is accepted, and Phase 3 continuation is authorized from the reviewed partial checkpoint, including outstanding 3A/3B work and Stages 3C–3F. The exact Phase 3 baseline remains `15582edab8112dbb63e0101be5b26f5135298644`.
 
 ## Execution and review
 
 - Use one active writer: Luna implements; a separate independent Luna reviews each frozen stage.
-- Resolve blocking findings, commit accepted stages locally, and proceed automatically within the authorized phase. No separate permission is needed for those stage commits.
+- Resolve blocking findings, commit accepted stages locally, and proceed automatically within the authorized phase after each independent Luna stage review accepts the checkpoint. No separate permission is needed for those stage commits.
 - Keep every accepted stage working and independently reviewable.
 - At each phase boundary, obtain cumulative Sol-high review, resolve blockers, then stop for human review with the complete cumulative patch and validation evidence.
 - Use additional Sol reviews only for concrete mathematical or architectural uncertainties.
@@ -21,9 +21,9 @@ Follow the latest explicit user authorization and the active phase plan in `docs
 
 ## Scientific and simplification requirements
 
-- Preserve supported mathematics, numerical accuracy, performance and scientific workflows. Baseline agreement alone does not prove scientific correctness; document known discrepancies.
+- Treat existing GPLSpec as the accepted scientific and algorithmic reference, not an architecture to preserve. Reconstruct its supported capabilities and fundamental algorithms through the simplest clear, maintainable and efficient implementation. Baseline agreement alone does not prove scientific correctness; use independent analytical checks and reproducible workflows.
 - Preserve clean_bench and Phobos paper-verification inputs, parameters and meaningful comparisons. Their source code and APIs may be rewritten.
-- Before replacing a component, state its mathematical contract and establish relevant regression and independent checks.
+- Before replacing a component, state its mathematical contract and establish relevant regression and independent checks. Define physical comparisons with units, scale-aware absolute and relative tolerances, and a near-zero absolute floor before evaluating the replacement; do not tune criteria to obtain a pass. The clean_bench_3 and clean_bench_6 residual observations accepted by the user are workflow-specific and do not authorize solver-algorithm changes.
 - Validate replacements, migrate callers, then remove superseded implementations. Temporary adapters must have an explicit removal stage.
 - Unknown hypothetical consumers do not require indefinite compatibility. API changes within the approved migration scope may proceed.
 - Retain existing names when they suit the simplest design; renaming or deleting every old header is not a goal.
@@ -50,7 +50,7 @@ tests/run_stage00.sh /tmp/gplspec-phaseN-validation/bin/stage00_reference
 Replace `phaseN` with the active phase and use a new build directory.
 
 - Establish transform indexing, spin, normalization and grid checks before rewriting dependent numerical code.
-- Capture baseline scientific and performance results before replacement; preserve the baseline in an isolated checkout.
+- Capture baseline scientific and performance results before replacement; preserve the baseline source at its immutable Git commit and use an isolated source archive/build when a detached worktree is unavailable.
 - Check operator actions and independently recomputed solver residuals. Retain genuinely independent analytic, integral and perturbation checks.
 - At numerical-phase boundaries, run the identified paper-verification cases at their recorded settings and compare scientific outputs.
 - Compare performance using matched Release builds, fixed inputs and thread settings, repeated substantial workloads, memory measurements, iterations and residuals. Investigate material regressions; do not invent thresholds from noisy timings.
@@ -66,4 +66,4 @@ Historical evidence and dependency information are in:
 - `docs/cleanup/deferred-issues.md`
 - `docs/cleanup/baseline-manifest.md`
 
-The Stage 00 baseline source and frozen references remain retrievable unchanged at the Phase 3 baseline commit. The current tracked Stage 00 harness may receive only an API migration required by an explicitly authorized Phase 3 public-API retirement; preserve its fixtures, mathematics, requested tolerances, output records and reference comparator exactly, and compare it against the immutable baseline checkout. Do not use API migration to alter scientific behavior, regenerate references or loosen tolerances. Record newly discovered scientific issues separately and pause dependent changes for human review.
+The Stage 00 baseline source and frozen references remain retrievable unchanged at the Phase 3 baseline commit. The current tracked Stage 00 harness may receive only an API migration required by an explicitly authorized Phase 3 public-API retirement; preserve its fixtures, mathematics, requested tolerances, output records and reference comparator exactly, and compare it against the immutable baseline source archive. Do not use API migration to alter scientific behavior, regenerate references or loosen tolerances. Record discrepancies against the predeclared scientific criteria and pause only dependent changes when a discrepancy remains unresolved.
