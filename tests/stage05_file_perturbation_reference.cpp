@@ -56,10 +56,8 @@ int main() {
                                                         2);
 
   std::cout << std::setprecision(17);
-  emit(std::cout, "file_perturbation/dxi", perturbation.dxi());
-  emit(std::cout, "file_perturbation/dxilm", perturbation.dxilm());
-  emit(std::cout, "file_perturbation/df", perturbation.df());
-  emit(std::cout, "file_perturbation/da", perturbation.da());
+  emit(std::cout, "file_perturbation/da",
+       perturbation.delta_laplace_tensor());
   emit(std::cout, "file_perturbation/source", Gravity_Tools::FindForce(model));
 
   MatrixReplacement3D<Complex> op(model, perturbation);

@@ -43,7 +43,8 @@ class MatrixReplacement3D
        GeneralEarthModels::Density3D &model,
        const GeneralEarthModels::MappingPerturbation &perturbation,
        bool include_boundary = true)
-       : _model(&model), _tensor_field(&perturbation.ref_da()),
+       : _model(&model),
+         _tensor_field(&perturbation.delta_laplace_tensor()),
          _include_boundary(include_boundary) {}
 
    MatrixReplacement3D(GeneralEarthModels::Density3D &,

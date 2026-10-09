@@ -49,10 +49,7 @@ template<class Model, class Map>
 void capture_perturbation(std::ostream& out, const std::string& name,
                           Model& model, const Map& mapping) {
   GeneralEarthModels::MappingPerturbation perturbation(model, mapping);
-  emit(out, name + "/dxi", perturbation.dxi());
-  emit(out, name + "/dxilm", perturbation.dxilm());
-  emit(out, name + "/df", perturbation.df());
-  emit(out, name + "/da", perturbation.da());
+  emit(out, name + "/da", perturbation.delta_laplace_tensor());
   MatrixReplacement3D<std::complex<double>> op(model, perturbation);
   Eigen::VectorXcd x(op.cols());
   for (Eigen::Index i = 0; i < x.size(); ++i)

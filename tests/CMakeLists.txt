@@ -76,6 +76,17 @@ if(BUILD_TESTING)
   add_test(NAME stage3e_radial_integral COMMAND stage3e_radial_integral)
 endif()
 
+add_executable(stage3e_mapping_perturbation stage3e_mapping_perturbation.cpp)
+target_link_libraries(stage3e_mapping_perturbation PRIVATE gplspec)
+target_compile_definitions(stage3e_mapping_perturbation PRIVATE
+  GPLSPEC_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+if(BUILD_TESTING)
+  add_test(NAME stage3e_mapping_perturbation
+    COMMAND stage3e_mapping_perturbation)
+  set_tests_properties(stage3e_mapping_perturbation PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endif()
+
 add_executable(stage03_utilities stage03_utilities.cpp)
 target_link_libraries(stage03_utilities PRIVATE gplspec)
 if(BUILD_TESTING)

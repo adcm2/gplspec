@@ -325,7 +325,7 @@ int main() {
   MatrixReplacement3D<Complex> perturbation_operator(mapped, perturbation, false);
   const auto perturbation_tensor = [&perturbation](std::size_t e, std::size_t j,
                                                    std::size_t point) -> const Eigen::Matrix3cd & {
-    return perturbation.ref_da()[e][j][point];
+    return perturbation.delta_laplace_tensor()[e][j][point];
   };
   const auto perturbation_expected = direct_weak_action(
       mapped, grid, perturbation_tensor, mapped_x, true, false);

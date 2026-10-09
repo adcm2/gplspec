@@ -259,6 +259,80 @@ inline void ConstructPerturbedLaplaceTensor(
    }
 }
 
+// Build only the owned first-order Laplace tensor. Displacement harmonics and
+// their spatial gradients are construction work, not persistent model state.
+using SpatialDisplacement =
+    std::vector<std::vector<std::vector<Eigen::Vector3cd>>>;
+using HarmonicDisplacement =
+    std::vector<std::vector<std::vector<Eigen::Vector3cd>>>;
+using TensorField =
+    std::vector<std::vector<std::vector<Eigen::Matrix3cd>>>;
+
+inline TensorField BuildPerturbationTensor(const Density3D &model,
+                                            const SpatialDisplacement &dxi) {
+   const auto &mesh = model.Node_InformationP();
+   const auto &grid = model.GSH_Grid();
+   const std::size_t elements = mesh.NumberOfElements();
+   const std::size_t nodes = mesh.NumNodesWithinElement();
+   const std::size_t spatial = grid.NumberOfCoLatitudes() *
+                               grid.NumberOfLongitudes();
+   const int lmax = grid.MaxDegree();
+   const std::size_t harmonics =
+       static_cast<std::size_t>(lmax + 1) * (lmax + 1);
+   const auto scalar_count =
+       GSHTrans::GSHIndices<GSHTrans::All>(lmax, lmax, 0).Size();
+   const auto spin_count =
+       GSHTrans::GSHIndices<GSHTrans::All>(lmax, lmax, 1).Size();
+
+   HarmonicDisplacement displacement_harmonics(
+       elements, std::vector<std::vector<Eigen::Vector3cd>>(
+                     nodes, std::vector<Eigen::Vector3cd>(harmonics,
+                                                          Eigen::Vector3cd::Zero())));
+   for (std::size_t element = 0; element < elements; ++element) {
+      for (std::size_t node = 0; node < nodes; ++node) {
+         std::vector<std::complex<double>> minus(spatial), zero(spatial),
+             plus(spatial);
+         for (std::size_t point = 0; point < spatial; ++point) {
+            minus[point] = dxi[element][node][point](0);
+            zero[point] = dxi[element][node][point](1);
+            plus[point] = dxi[element][node][point](2);
+         }
+         std::vector<std::complex<double>> minus_coefficients(spin_count),
+             zero_coefficients(scalar_count), plus_coefficients(spin_count);
+         grid.ForwardTransformation(lmax, -1, minus, minus_coefficients);
+         grid.ForwardTransformation(lmax, 0, zero, zero_coefficients);
+         grid.ForwardTransformation(lmax, 1, plus, plus_coefficients);
+         displacement_harmonics[element][node][0](1) = zero_coefficients[0];
+         for (int degree = 1; degree <= lmax; ++degree) {
+            for (int order = -degree; order <= degree; ++order) {
+               const std::size_t harmonic =
+                   static_cast<std::size_t>(degree * degree + degree + order);
+               displacement_harmonics[element][node][harmonic](0) =
+                   minus_coefficients[harmonic - 1];
+               displacement_harmonics[element][node][harmonic](1) =
+                   zero_coefficients[harmonic];
+               displacement_harmonics[element][node][harmonic](2) =
+                   plus_coefficients[harmonic - 1];
+            }
+         }
+      }
+   }
+
+   TensorField gradient(
+       elements, std::vector<std::vector<Eigen::Matrix3cd>>(
+                     nodes, std::vector<Eigen::Matrix3cd>(
+                                spatial, Eigen::Matrix3cd::Zero())));
+   ConstructMappingVectorGradient(model, displacement_harmonics, gradient,
+                                  elements, spatial, nodes, lmax);
+   TensorField delta_tensor(
+       elements, std::vector<std::vector<Eigen::Matrix3cd>>(
+                     nodes, std::vector<Eigen::Matrix3cd>(
+                                spatial, Eigen::Matrix3cd::Zero())));
+   ConstructPerturbedLaplaceTensor(model, gradient, delta_tensor, elements,
+                                   nodes, spatial);
+   return delta_tensor;
+}
+
 }  // namespace GeneralEarthModels::MappingPerturbationDetail
 
 #endif
