@@ -48,11 +48,11 @@ main() {
                     massnorm, 0.1, 1.5);
 
    // get gravitational field
-   auto stdvec_potsol =
-       FindGravitationalPotential(phobos, std::pow(10.0, -12.0));
+   auto solve_result = SolvePotential(phobos, std::pow(10.0, -12.0));
+   auto stdvec_potsol = ToHarmonicField(phobos, solve_result);
 
-   auto stdvec_potsol2 =
-       FindGravitationalPotential(phobos, std::pow(10.0, -3.0));
+   auto solve_result2 = SolvePotential(phobos, std::pow(10.0, -3.0));
+   auto stdvec_potsol2 = ToHarmonicField(phobos, solve_result2);
        
  
    // coordinates for rotation
@@ -97,5 +97,4 @@ main() {
 
 
 ```
-
 

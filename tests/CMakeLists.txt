@@ -2,6 +2,13 @@ find_package(PythonInterp 3 REQUIRED)
 
 add_executable(stage00_reference stage00_reference.cpp)
 target_link_libraries(stage00_reference PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage00_scientific_reference
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_stage00.sh
+      $<TARGET_FILE:stage00_reference>)
+  set_tests_properties(stage00_scientific_reference PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endif()
 
 add_executable(stage1c_file_tomography_solver stage1c_file_tomography_solver.cpp)
 target_link_libraries(stage1c_file_tomography_solver PRIVATE gplspec)
@@ -38,6 +45,9 @@ target_link_libraries(stage02_header_link PRIVATE gplspec)
 if(BUILD_TESTING)
   add_test(NAME stage02_patch_application
     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_stage02_patch_application.py)
+  add_test(NAME scientific_reference_gate_contract
+    COMMAND ${PYTHON_EXECUTABLE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_scientific_reference_gate.py)
 endif()
 
 add_executable(stage3a_harmonic_contract stage3a_harmonic_contract.cpp)
@@ -154,10 +164,12 @@ if(BUILD_TESTING)
 endif()
 
 if(BUILD_TESTING)
-  add_test(NAME stage05_1d_original_reference
-    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_stage05_1d_reference.sh
-      $<TARGET_FILE:stage05_operator_reference>
+  add_test(NAME stage05_1d_scientific_reference
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_stage05_scientific_reference.sh
+      stage05_1d $<TARGET_FILE:stage05_operator_reference>
       ${CMAKE_CURRENT_SOURCE_DIR}/reference/stage05-1d-original.csv)
+  set_tests_properties(stage05_1d_scientific_reference PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endif()
 
 add_executable(stage05_file_perturbation_reference
@@ -167,10 +179,12 @@ target_link_libraries(stage05_file_perturbation_reference PRIVATE
 target_compile_definitions(stage05_file_perturbation_reference PRIVATE
   GPLSPEC_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 if(BUILD_TESTING)
-  add_test(NAME stage05_file_perturbation_original_reference
-    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_stage05_file_perturbation_reference.sh
-      $<TARGET_FILE:stage05_file_perturbation_reference>
+  add_test(NAME stage05_file_perturbation_scientific_reference
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_stage05_scientific_reference.sh
+      stage05_file $<TARGET_FILE:stage05_file_perturbation_reference>
       ${CMAKE_CURRENT_SOURCE_DIR}/reference/stage05-file-perturbation-original.csv)
+  set_tests_properties(stage05_file_perturbation_scientific_reference PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endif()
 
 add_executable(pr07_rotated_output pr07_rotated_output.cpp)

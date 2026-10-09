@@ -1,0 +1,278 @@
+{
+  "baseline": "15582edab8112dbb63e0101be5b26f5135298644",
+  "candidate_parent": "9a4f6a11449716560d52638442d0f0cd2acf766d",
+  "threads": 1,
+  "scope": "Eight fixed workflows at original source parameters plus original classical benchmarks 9/10 with explicit h=0.001. No specific paper figure identification asserted.",
+  "runs": [
+    {
+      "program": "clean_bench_1",
+      "stdin": "",
+      "exit_code": 0,
+      "elapsed_seconds": 0.00790902799963078,
+      "max_rss_kib": 7732,
+      "missing_expected_outputs": [],
+      "extra_outputs": [],
+      "outputs": {
+        "work/Bench1/MatrixSolution.out": {
+          "bytes": 1157,
+          "sha256": "7b879c8ec4d7b5a04cb08be0871b22abc4627ba6ed5564c52d148134c75d2152"
+        },
+        "work/Bench1/IntegralSolution.out": {
+          "bytes": 1190,
+          "sha256": "cdc794b0757526c54dc6555d0b923155e84579d2413214b15d6a3dfc4de53149"
+        },
+        "work/Bench1/ExactSolution.out": {
+          "bytes": 352,
+          "sha256": "36644119e572bfaaa4c29438a32184230380b62a17a808d7c61b1664af683155"
+        }
+      }
+    },
+    {
+      "program": "clean_bench_2",
+      "stdin": "",
+      "exit_code": 0,
+      "elapsed_seconds": 0.00788535799983947,
+      "max_rss_kib": 8232,
+      "missing_expected_outputs": [],
+      "extra_outputs": [],
+      "outputs": {
+        "work/Bench2/MatrixSolution.out": {
+          "bytes": 2538,
+          "sha256": "3b69aa447532713a7e2735854a97aeefbb8d95a486ea257e765e582d04030e4c"
+        },
+        "work/Bench2/IntegralSolution.out": {
+          "bytes": 2566,
+          "sha256": "192a4baf7509ae642719e926bd2bc2740021baf96254feb1281574d4e208c1f5"
+        }
+      }
+    },
+    {
+      "program": "clean_bench_3",
+      "stdin": "",
+      "exit_code": 0,
+      "elapsed_seconds": 0.032036501999755274,
+      "max_rss_kib": 7888,
+      "missing_expected_outputs": [],
+      "extra_outputs": [],
+      "outputs": {
+        "work/Bench3/MatrixSolution.out": {
+          "bytes": 11291,
+          "sha256": "9f65e150f743a7d53cb814d70c301c1ddacf85729cb74d9cbc66b59d78e9797d"
+        },
+        "work/Bench3/ExactSolution.out": {
+          "bytes": 439,
+          "sha256": "43a2181ef2040bd60af686d2652f6238107da1792b87c66d7131b2bd329f7dc3"
+        }
+      }
+    },
+    {
+      "program": "clean_bench_4",
+      "stdin": "",
+      "exit_code": 0,
+      "elapsed_seconds": 0.01593925199995283,
+      "max_rss_kib": 8148,
+      "missing_expected_outputs": [],
+      "extra_outputs": [],
+      "outputs": {
+        "work/Bench4/MatrixSolution.out": {
+          "bytes": 9873,
+          "sha256": "31654be1680fd2bbe60d5e90c08224c40b5fd3ac48707bced3e6572e918c0eb1"
+        },
+        "work/Bench4/ExactSolution.out": {
+          "bytes": 4620,
+          "sha256": "d476c273a97917c7ae31b5f0bc7035cc5397b4de038c00695c08fa67caa1af62"
+        }
+      }
+    },
+    {
+      "program": "clean_bench_6",
+      "stdin": "",
+      "exit_code": 0,
+      "elapsed_seconds": 1.0712675819995638,
+      "max_rss_kib": 456032,
+      "missing_expected_outputs": [],
+      "extra_outputs": [],
+      "outputs": {
+        "work/Bench6/MatrixSolution.out": {
+          "bytes": 2495606,
+          "sha256": "3732fb861213416b3dd7817a4c9bb654277c4f2f3601b58f6753e66033a9b9a2"
+        },
+        "work/Bench6/IntegralSolution.out": {
+          "bytes": 2444986,
+          "sha256": "aacaceda456dff9eeecbf37d1880482d19a5ef82c0b14bf579f6106c5833e47e"
+        },
+        "work/Bench6/lm/MatrixSolution.out": {
+          "bytes": 581025,
+          "sha256": "466a2f0a6a0f1309dff62c32bc5bbc0dced4cd90ad0aee39b601ebed3564eba9"
+        },
+        "work/Bench6/lm/IntegralSolution.out": {
+          "bytes": 549221,
+          "sha256": "32ba505977bbf1ed471f9a687d975b00fb19e925765101e467386bff1787f7ec"
+        },
+        "work/Bench6/lm/SensitivityKernel.out": {
+          "bytes": 78804,
+          "sha256": "a85ee569ec84d943b53464732ec090c09aaedc9d89ab06e5257731457c6e21a9"
+        }
+      }
+    },
+    {
+      "program": "phobos_gravity",
+      "stdin": "",
+      "exit_code": 0,
+      "elapsed_seconds": 48.41118369200012,
+      "max_rss_kib": 1179620,
+      "missing_expected_outputs": [],
+      "extra_outputs": [],
+      "outputs": {
+        "work/Phobos/Spherical/MatrixSolutionPhysical.out": {
+          "bytes": 30482259,
+          "sha256": "22ed3ac7c0676a2af25fd8f6da6a354e7a352a179d08a326c31de033093af1ee"
+        },
+        "work/Phobos/Spherical/MatrixSolution.out": {
+          "bytes": 30483200,
+          "sha256": "e82ec39d52b66091fd5f0993c2d8678ec088b9a6789797a0be66a0c0233dd664"
+        },
+        "work/Phobos/Spherical/MatrixSolutionSlice.out": {
+          "bytes": 243613,
+          "sha256": "addfbd57da02cb62e16ba546225b29f10942552947822999bf37813ae52815b3"
+        },
+        "work/Phobos/Spherical/MatrixSolutionReferentialRotated.out": {
+          "bytes": 30527559,
+          "sha256": "e443b04b482e338742ccf64c2b303db1ceff4c4243f46ffadd0085a47c846053"
+        },
+        "work/Phobos/Cartesian/MatrixSolution.out": {
+          "bytes": 30173202,
+          "sha256": "14e18140932fccf10b7d0e6b222757281e093336d833726ad9ce8bb71167a4fc"
+        },
+        "work/Phobos/Sensitivity/SensitivityKernelSlice.out": {
+          "bytes": 253436,
+          "sha256": "9df5162908f6caf84a9dbd981f5da84e06f1e9b4e02789472887b14b2cdd781b"
+        },
+        "work/Phobos/Sensitivity/SensitivityKernel.out": {
+          "bytes": 7309587,
+          "sha256": "380bb129fcd425a4b391d3c0097623e7965c0515037d063081b43730ac9f36c2"
+        }
+      }
+    },
+    {
+      "program": "phobos_heterogeneous",
+      "stdin": "",
+      "exit_code": 0,
+      "elapsed_seconds": 38.683847992000665,
+      "max_rss_kib": 1179524,
+      "missing_expected_outputs": [],
+      "extra_outputs": [],
+      "outputs": {
+        "work/Phobos/Spherical/MatrixSolution.out": {
+          "bytes": 30430820,
+          "sha256": "c339b9bd4969f00d51edbda7fc2cccbff25965fdcdb956830e8f384be3cfe67d"
+        },
+        "work/Phobos/Spherical/ReferentialDensitySolutionRotated.out": {
+          "bytes": 26568172,
+          "sha256": "23a8e2f7b77314c3940b154c5629ef4b685af4f8421caae7da32ad9b86ae0f7c"
+        },
+        "work/Phobos/Spherical/MatrixSolutionPhysicalRotated.out": {
+          "bytes": 30431565,
+          "sha256": "2ee89795c37c91d89469ba77fb51ed4d7d845ec9300a2bb996b7249fba69970f"
+        },
+        "work/Phobos/Spherical/PhysicalDensitySolutionRotated.out": {
+          "bytes": 26537697,
+          "sha256": "4e7c2d54b797f6667b48411a5af57a485f37184f00ce2da2ed641043d670921a"
+        },
+        "work/Phobos/Spherical/MatrixSolutionReferentialRotated.out": {
+          "bytes": 30462881,
+          "sha256": "a45f6d0e36a85ce2f6dee66c4dceeb43c0f95718c928c50e9749ac7dc70fbc8f"
+        },
+        "work/Phobos/Spherical/PowerSpectrum.out": {
+          "bytes": 197169,
+          "sha256": "6ddb3e04582ff22d5b46ddb4af162636a41a7b907ce1948dff5612e014203290"
+        },
+        "work/Phobos/Cartesian/MatrixSolution.out": {
+          "bytes": 30120822,
+          "sha256": "7ef9e478f0c67ef247ad795016b61b0d302e56b2a627dc60d05431eb907c070f"
+        },
+        "work/Phobos/Sensitivity/SensitivityKernelSlice.out": {
+          "bytes": 253436,
+          "sha256": "9df5162908f6caf84a9dbd981f5da84e06f1e9b4e02789472887b14b2cdd781b"
+        },
+        "work/Phobos/Sensitivity/SensitivityKernel.out": {
+          "bytes": 7309587,
+          "sha256": "380bb129fcd425a4b391d3c0097623e7965c0515037d063081b43730ac9f36c2"
+        }
+      }
+    },
+    {
+      "program": "OutputZiheng",
+      "stdin": "",
+      "exit_code": 0,
+      "elapsed_seconds": 34.03135522199955,
+      "max_rss_kib": 1167132,
+      "missing_expected_outputs": [],
+      "extra_outputs": [],
+      "outputs": {
+        "work/Ziheng/PHOBOS_POTENTIAL_OUTER.out": {
+          "bytes": 462369,
+          "sha256": "90d53ba9a21956e0e10bfb521993b4df0cc58b1d438eeb5dd99f6b7a13ccb852"
+        },
+        "work/Ziheng/PhobosRadius.out": {
+          "bytes": 16456030,
+          "sha256": "84c9575c5e39710fa9fbabb2b98b444bd7119bef2a1785c52548add419307633"
+        },
+        "work/Ziheng/PREM200.NO.INTEGRAL.out": {
+          "bytes": 48837,
+          "sha256": "5cf3fca9c0aa4aad3010fa965bdb169034c102066a27435b04c34a2582853f35"
+        }
+      }
+    },
+    {
+      "program": "clean_bench_9",
+      "stdin": "0.001\n",
+      "exit_code": 0,
+      "elapsed_seconds": 0.36641139299899805,
+      "max_rss_kib": 84008,
+      "missing_expected_outputs": [],
+      "extra_outputs": [],
+      "outputs": {
+        "work/Bench9/unperturbed/MatrixSolution.out": {
+          "bytes": 870960,
+          "sha256": "2ee7d98a34ff2ed41bbfa9cb80aa40baa598f240d156cb124af1482f9ff66a6d"
+        },
+        "work/Bench9/perturbed/MatrixSolution.out": {
+          "bytes": 872440,
+          "sha256": "7383dabc57ed71b113a21c0a9d9ca90692810388e4288b226e06afa652ff6553"
+        },
+        "work/Bench9/exact/MatrixSolution.out": {
+          "bytes": 872120,
+          "sha256": "3815485232acd8a79ca094494e7cd75f2908d572a0239e0d631d05618b56f5b0"
+        }
+      }
+    },
+    {
+      "program": "clean_bench_10",
+      "stdin": "0.001\n",
+      "exit_code": 0,
+      "elapsed_seconds": 0.8700721290006186,
+      "max_rss_kib": 203484,
+      "missing_expected_outputs": [],
+      "extra_outputs": [],
+      "outputs": {
+        "work/Bench10/perturbed2/MatrixSolution.out": {
+          "bytes": 1940404,
+          "sha256": "19b78d1fc8732f73a31443856a98b29d6d6d2507bad65c1c271a8fd6394ffc77"
+        },
+        "work/Bench10/unperturbed/MatrixSolution.out": {
+          "bytes": 1939684,
+          "sha256": "ab24b6df090001bcd066d5259ec07b28def3f2bc9d9d49059cde09e491fd14e1"
+        },
+        "work/Bench10/perturbed/MatrixSolution.out": {
+          "bytes": 1939984,
+          "sha256": "452a319608addbe85559138381d81083029d6edbde53afd31efa7a24323a377b"
+        },
+        "work/Bench10/exact/MatrixSolution.out": {
+          "bytes": 1940524,
+          "sha256": "c93399b1b381abf0f128730aee8ed8a37bedc6ebe8d816ee4e1cf25a716eae70"
+        }
+      }
+    }
+  ]
+}

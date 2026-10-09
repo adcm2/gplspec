@@ -61,7 +61,7 @@ Eigen::VectorXcd direct_weak_action(const Model &model, const Grid &grid,
                                     const TensorAt &tensor_at,
                                     const Eigen::VectorXcd &input,
                                     bool mapped_geometry, bool boundary) {
-  const auto &mesh = model.Node_InformationP();
+  const auto &mesh = model.Node_Information();
   const auto quadrature = model.q();
   const auto derivative = model.GaussDerivative();
   const int lmax = grid.MaxDegree();
@@ -258,12 +258,12 @@ int main() {
   Eigen::VectorXcd boundary_delta = expected - expected_without_boundary;
   Eigen::VectorXcd expected_boundary = Eigen::VectorXcd::Zero(x.size());
   const std::size_t nh = (lmax + 1) * (lmax + 1);
-  const std::size_t last = one_d.Node_InformationP().NumberOfGlobalRadialNodes() - 1;
+  const std::size_t last = one_d.Node_Information().NumberOfGlobalRadialNodes() - 1;
   for (int degree = 0; degree <= lmax; ++degree)
     for (int order = -degree; order <= degree; ++order) {
       const auto index = last * nh + scalar_index(degree, order);
       expected_boundary[index] = -(degree + 1.0) *
-          one_d.Node_InformationP().OuterRadius() * x[index];
+          one_d.Node_Information().OuterRadius() * x[index];
     }
   require_close(boundary_delta, expected_boundary, "spherical boundary delta");
 
@@ -309,7 +309,7 @@ int main() {
                 mapped_expected_without_boundary,
                 "mapped boundary-disabled action");
   Eigen::VectorXcd mapped_boundary = Eigen::VectorXcd::Zero(mapped_x.size());
-  const auto mapped_mesh = mapped.Node_InformationP();
+  const auto mapped_mesh = mapped.Node_Information();
   const std::size_t mapped_nh = (lmax + 1) * (lmax + 1);
   const std::size_t mapped_last = mapped_mesh.NumberOfGlobalRadialNodes() - 1;
   for (int degree = 0; degree <= lmax; ++degree)

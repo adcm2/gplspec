@@ -54,13 +54,13 @@ main() {
 
    // get gravitational field
    timer1.start();
-   auto stdvec_potsol =
-       FindGravitationalPotential(phobosfull, std::pow(10.0, -6.0));
+   auto stdvec_potsol = ToHarmonicField(
+       phobosfull, SolvePotential(phobosfull, std::pow(10.0, -6.0)));
    timer1.stop("Time for gravity with full model");
 
    timer1.start();
-   auto stdvec_potsol_small =
-       FindGravitationalPotential(phobos, std::pow(10.0, -6.0));
+   auto stdvec_potsol_small = ToHarmonicField(
+       phobos, SolvePotential(phobos, std::pow(10.0, -6.0)));
    timer1.stop("Time for gravity with small model");
    /////////////////////////////////////////////////////////////////////////////
 
@@ -73,10 +73,10 @@ main() {
 
    // get solution
    timer1.start();
-   auto stdvec_potsol_perturb = FindGravitationalPotentialPerturbation(
-       phobos, testpertmap, std::pow(10.0, -6.0), std::pow(10.0, -6.0));
-   // auto stdvec_potsol_perturb =
-   //     FindGravitationalPotential(phobosfull, std::pow(10.0, -3.0));
+   auto stdvec_potsol_perturb = ToHarmonicField(
+       phobos, SolveMappingPerturbation(phobos, testpertmap,
+                                        std::pow(10.0, -6.0),
+                                        std::pow(10.0, -6.0)));
    timer1.stop("Time for perturbation calculation");
 
    /////////////////////////////////////////////////////////////////////////////

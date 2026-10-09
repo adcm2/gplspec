@@ -83,7 +83,7 @@ class MatrixReplacement3D
          _include_boundary(include_boundary) {}
 
    Index Dimension() const {
-      const auto &mesh = _model->Node_InformationP();
+      const auto &mesh = _model->Node_Information();
       const auto harmonic_count = static_cast<Index>(
           _model->GSH_Grid().MaxDegree() + 1) *
           (_model->GSH_Grid().MaxDegree() + 1);

@@ -35,7 +35,8 @@ main() {
        nrad, nrho, lengthnorm, timenorm, massnorm, maxstep, ballrad);
 
    // Find potential via the pseudospectral method
-   auto stdvec_potsol = FindGravitationalPotential(testsphere);
+   auto solve_result = SolvePotential(testsphere);
+   auto stdvec_potsol = ToHarmonicField(testsphere, solve_result);
 
    // Compute potential using spherical integration method
    auto vec_integral_potential = GravitationalSphericalIntegral(testsphere);
@@ -61,7 +62,6 @@ The benchmark generates several output files in the `./work/Bench1/` directory:
 - **3D Solution**: Spectral element method results
 - **Integral Solution**: Spherical integration method results  
 - **Exact Solution**: Analytical homogeneous sphere solution
-
 
 
 

@@ -64,7 +64,7 @@ class MatrixReplacement : public Eigen::EigenBase<MatrixReplacement<MRScalar>> {
 
  private:
    Index Dimension() const {
-      const auto &mesh = _model->Node_InformationP();
+      const auto &mesh = _model->Node_Information();
       const auto harmonic_count = static_cast<Index>(_grid->MaxDegree() + 1) *
                                   (_grid->MaxDegree() + 1);
       return mesh.NumberOfGlobalRadialNodes() * harmonic_count;

@@ -128,13 +128,11 @@ class Density3D {
    inline auto Num_Elements() const;
    inline auto Poly_Order() const;
    inline const Radial_Tools::RadialMesh &Node_Information() const;
-   inline const Radial_Tools::RadialMesh &Node_InformationP() const;
 
    // interpolation polynomial derivative
    inline auto GaussDerivative() const;
    inline auto GaussDerivative(int, int) const;
-   inline auto q() const;
-   const GaussQuad::Quadrature1D<double> &qP() const { return _q; };
+   const GaussQuad::Quadrature1D<double> &q() const { return _q; }
 
    inline auto SpectralElementInformation();
    inline const Grid &GSH_Grid() const;

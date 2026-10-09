@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
     const auto start = Clock::now();
     preconditioner_matrix =
         -model->SpectralElementInformation().fullmatrix<Complex>(
-            model->Node_InformationP(), 0, lmax);
+            model->Node_Information(), 0, lmax);
     preconditioner_matrix.makeCompressed();
     const double elapsed = elapsed_seconds(start, Clock::now());
     preconditioner_samples.push_back(elapsed);
@@ -271,7 +271,7 @@ int main(int argc, char **argv) {
     const Eigen::VectorXcd sample_force = Gravity_Tools::FindForce(*sample_model);
     Eigen::SparseMatrix<Complex> sample_preconditioner_matrix =
         -sample_model->SpectralElementInformation().fullmatrix<Complex>(
-            sample_model->Node_InformationP(), 0, lmax);
+            sample_model->Node_Information(), 0, lmax);
     sample_preconditioner_matrix.makeCompressed();
     Solver sample_solver;
     sample_solver.compute(sample_operator);

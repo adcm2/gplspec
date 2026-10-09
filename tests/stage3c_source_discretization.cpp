@@ -61,7 +61,7 @@ int main() {
    GeneralEarthModels::spherical_1D radial_model(
        std::string(GPLSPEC_SOURCE_DIR) + "/modeldata/PREM500", quadrature,
        0.5, 1.2);
-   const auto &radial_mesh = radial_model.Node_InformationP();
+   const auto &radial_mesh = radial_model.Node_Information();
    check_radial_layout(radial_mesh);
 
    const Eigen::VectorXcd monopole = Gravity_Tools::FindForce(radial_model, lmax);
@@ -93,7 +93,7 @@ int main() {
 
    auto layered = GeneralEarthModels::Density3D::SphericalLayeredPlanet(
        {0.5, 1.0}, {2.0, 1.0}, 1.0, 1.0, 1.0, 0.25, 1.2);
-   const auto &layered_mesh = layered.Node_InformationP();
+   const auto &layered_mesh = layered.Node_Information();
    check_radial_layout(layered_mesh);
    const Eigen::VectorXcd layered_source = Gravity_Tools::FindForce(layered);
    require(layered_source.size() ==
@@ -123,7 +123,7 @@ int main() {
    require(std::abs(left_density - right_density) > 1e-12,
            "layered source fixture lost its one-sided density values");
 
-   const auto layered_q = layered.qP();
+   const auto layered_q = layered.q();
    const double interface_expected =
        4.0 * std::numbers::pi_v<double> * layered.GravitationalConstant() *
        std::sqrt(4.0 * std::numbers::pi_v<double>) *

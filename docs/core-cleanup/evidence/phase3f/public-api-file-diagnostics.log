@@ -1,0 +1,3 @@
+status=0 iterations=0 tolerance=1e-14 recursive_error=4.8839884916536624e-21 absolute_residual=3.256660952361779e-09 relative_residual=6.3941350069102694e-10
+scenario,trial,seconds,coefficient_norm,absolute_residual,relative_residual
+file_backed,0,0.35927602800000003,1909.8114827271816,3.256660952361779e-09,6.3941350069102694e-10

@@ -107,7 +107,7 @@ double volume_weighted_potential_rms(const GeneralEarthModels::Density3D &model,
                                      const Eigen::VectorXcd &solution,
                                      double body_radius) {
    const auto &mesh = model.Node_Information();
-   const auto &q = model.qP();
+   const auto &q = model.q();
    const std::size_t stride =
        static_cast<std::size_t>(model.GSH_Grid().MaxDegree() + 1) *
        (model.GSH_Grid().MaxDegree() + 1);
@@ -146,7 +146,7 @@ int main() {
    using GeneralEarthModels::SimpleModels::spherical_model;
    using Gravity_Tools::GravitationalSphericalIntegral;
    using Gravity_Tools::HomogeneousSphereIntegral;
-   using Gravity_Tools::SolveGravitationalPotential;
+   using Gravity_Tools::SolvePotential;
 
    constexpr double body_radius = 0.63;
    constexpr double outer_radius = 1.2;
@@ -337,8 +337,8 @@ int main() {
    for (double max_step : {0.24, 0.12, 0.06}) {
       Density3D refined = Density3D::OneDimensionalPlanetFromModel(
           base, 2, lmax, max_step, outer_radius);
-      const auto solved = SolveGravitationalPotential(refined, 1e-12);
-      require(solved.status == Eigen::Success,
+      const auto solved = SolvePotential(refined, 1e-12);
+      require(solved.final_solve().status == Eigen::Success,
               "homogeneous sphere solver did not converge");
       errors.push_back(volume_weighted_potential_rms(
           refined, solved.solution, body_radius));

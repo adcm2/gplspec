@@ -76,8 +76,8 @@ main() {
    Density3D testconstruct(radius, density, radius, map1, npoly, lmax2,
                            lengthnorm, timenorm, massnorm, maxstep, ballrad);
    std::cout << testconstruct.Node_Information().NumberOfLayers() << "\n";
-   auto stdvec_potsol =
-       FindGravitationalPotential(testconstruct, std::pow(10.0, -12.0));
+   auto stdvec_potsol = ToHarmonicField(
+       testconstruct, SolvePotential(testconstruct, std::pow(10.0, -12.0)));
    timer1.stop("Time for 3D");
 
    //////////////////////////////////////////////////////////////////

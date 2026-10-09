@@ -167,8 +167,8 @@ main() {
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
    timer1.start();
-   auto stdvec_potsol =
-       FindGravitationalPotential(phobos, std::pow(10.0, -12.0));
+   auto stdvec_potsol = ToHarmonicField(
+       phobos, SolvePotential(phobos, std::pow(10.0, -12.0)));
    timer1.stop("Time for gravity");
    std::cout << "Size of stdvec_potsol: " << stdvec_potsol.size() << " "
              << stdvec_potsol[0].size() << " " << stdvec_potsol[0][0].size()
@@ -227,16 +227,12 @@ main() {
       file1 << std::setprecision(16);
       file1 << 0.0 << ";" << vec_integral_potential[0][0].real() << "\n";
       for (int idx = 0; idx < vec_integral_potential.size() - 1; ++idx) {
-         file1 << testprem.Node_InformationP().ElementUpperRadius(idx) << ";"
+         file1 << testprem.Node_Information().ElementUpperRadius(idx) << ";"
                << vec_integral_potential[idx + 1][0].real() << "\n";
       }
       file1.close();
    }
    // get gravitational field
-   //    timer1.start();
-   //    auto stdvec_potsol =
-   //        FindGravitationalPotential(phobos, std::pow(10.0, -12.0));
-   //    timer1.stop("Time for gravity");
 
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////

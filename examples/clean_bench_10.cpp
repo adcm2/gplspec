@@ -112,20 +112,22 @@ main() {
 
    // do PSM solution
    timer1.start();
-   auto stdvec_potsol =
-       FindGravitationalPotential(testtomo, std::pow(10.0, -12.0));
-   auto stdvec_potsol_exact =
-       FindGravitationalPotential(testtomo2, std::pow(10.0, -12.0));
+   auto stdvec_potsol = ToHarmonicField(
+       testtomo, SolvePotential(testtomo, std::pow(10.0, -12.0)));
+   auto stdvec_potsol_exact = ToHarmonicField(
+       testtomo2, SolvePotential(testtomo2, std::pow(10.0, -12.0)));
    timer1.stop("Time for 3D");
 
    // find solution with boundary perturbation theory
-   auto stdvec_potsol_perturb = FindGravitationalPotentialClassicalPerturbation(
-       testtomo, map1, std::pow(10.0, -12.0));
+   auto stdvec_potsol_perturb = ToHarmonicField(
+       testtomo, SolveClassicalMappedPerturbation(
+                     testtomo, map1, std::pow(10.0, -12.0)));
 
    // find perturbed solution
    MappingPerturbation testpertmap(testtomo, map1);
-   auto stdvec_potsol_perturb2 = FindGravitationalPotentialPerturbation(
-       testtomo, testpertmap, std::pow(10.0, -12.0));
+   auto stdvec_potsol_perturb2 = ToHarmonicField(
+       testtomo, SolveMappingPerturbation(testtomo, testpertmap,
+                                          std::pow(10.0, -12.0)));
 
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////

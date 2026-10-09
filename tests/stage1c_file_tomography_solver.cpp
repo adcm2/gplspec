@@ -131,30 +131,39 @@ int main() {
           model, model.GSH_Grid().MaxDegree());
   Gravity_Tools::detail::PreparedSolver<Solver, Operator> solver(
       op, preconditioner_matrix);
+  bool invalid_tolerance_rejected = false;
+  try {
+    (void)solver.Solve(force, 0.0, true);
+  } catch (const std::invalid_argument &) {
+    invalid_tolerance_rejected = true;
+  }
+  if (!invalid_tolerance_rejected)
+    throw std::runtime_error("solver accepted a non-positive tolerance");
   Preconditioner guess_preconditioner;
   guess_preconditioner.compute(op);
   guess_preconditioner.addmatrix(preconditioner_matrix);
   const Eigen::VectorXcd guess = guess_preconditioner.solve(force);
   const double guess_relative_residual = (force - op * guess).norm() / force.norm();
   const auto solve_result = solver.Solve(force, tolerance, true);
+  const auto &solve_diagnostics = solve_result.final_solve();
   const Eigen::VectorXcd &solution = solve_result.solution;
   const double update_relative_norm = (solution - guess).norm() / guess.norm();
   const double independently_measured_residual = (force - op * solution).norm();
-  const double absolute_residual = solve_result.residual_norm;
-  const double relative_residual = solve_result.relative_residual;
-  if (solve_result.status != Eigen::Success || !solution.allFinite() ||
-      !std::isfinite(solve_result.recursive_error) ||
+  const double absolute_residual = solve_diagnostics.residual_norm;
+  const double relative_residual = solve_diagnostics.relative_residual;
+  if (solve_diagnostics.status != Eigen::Success || !solution.allFinite() ||
+      !std::isfinite(solve_diagnostics.recursive_error) ||
       !std::isfinite(absolute_residual) || !std::isfinite(relative_residual) ||
       !std::isfinite(guess_relative_residual) ||
       std::abs(independently_measured_residual - absolute_residual) >
           1e-13 * std::max(1.0, independently_measured_residual) ||
       relative_residual > tolerance) {
-    std::cerr << "file-backed solver info=" << solve_result.status
-              << " iterations=" << solve_result.iterations
-              << " requested_tolerance=" << solve_result.requested_tolerance
+    std::cerr << "file-backed solver info=" << solve_diagnostics.status
+              << " iterations=" << solve_diagnostics.iterations
+              << " requested_tolerance=" << solve_diagnostics.requested_tolerance
               << " initial_guess_relative_residual=" << guess_relative_residual
               << " update_relative_norm=" << update_relative_norm
-              << " recursive_error=" << solve_result.recursive_error
+              << " recursive_error=" << solve_diagnostics.recursive_error
               << " absolute_residual=" << absolute_residual
               << " independent_relative_residual=" << relative_residual << '\n';
     throw std::runtime_error("file-backed gravity solve failed its diagnostics");
@@ -164,20 +173,24 @@ int main() {
       std::min(tolerance, 0.1 * guess_relative_residual);
   const auto updated_result =
       solver.Solve(force, stricter_tolerance, true);
+  const auto &updated_diagnostics = updated_result.final_solve();
   const double strict_update_norm =
       (updated_result.solution - guess).norm() / guess.norm();
-  if (updated_result.status != Eigen::Success || !(strict_update_norm > 0.0) ||
-      !(updated_result.residual_norm < absolute_residual))
+  if (updated_diagnostics.status != Eigen::Success || !(strict_update_norm > 0.0) ||
+      !(updated_diagnostics.residual_norm < absolute_residual))
     throw std::runtime_error("tight solve did not improve the preconditioned guess");
 
   const Eigen::VectorXcd zero_rhs = Eigen::VectorXcd::Zero(force.size());
   const auto zero_result = solver.Solve(zero_rhs, tolerance, true);
-  if (zero_result.status != Eigen::Success ||
-      zero_result.residual_norm != 0.0 || zero_result.relative_residual != 0.0 ||
+  const auto &zero_diagnostics = zero_result.final_solve();
+  if (zero_diagnostics.status != Eigen::Success ||
+      zero_diagnostics.residual_norm != 0.0 || zero_diagnostics.relative_residual != 0.0 ||
       zero_result.solution.norm() != 0.0)
     throw std::runtime_error("zero-RHS solve diagnostics are not well-defined");
 
-  const auto public_solution = Gravity_Tools::FindGravitationalPotential(model, tolerance);
+  const auto public_result = Gravity_Tools::SolvePotential(model, tolerance);
+  const auto public_solution =
+      Gravity_Tools::ToHarmonicField(model, public_result);
   const auto expected_public_solution = model.SingleEigenVectorToGeneralFormat(solution);
   if (public_solution.size() != expected_public_solution.size())
     throw std::runtime_error("public file-backed gravity workflow returned an unexpected element count");
@@ -207,13 +220,35 @@ int main() {
     throw std::runtime_error("public file-backed solution differs from diagnosed iterative solution");
 
   const auto public_diagnostic =
-      Gravity_Tools::SolveGravitationalPotential(model, tolerance);
-  if (public_diagnostic.status != Eigen::Success ||
-      !std::isfinite(public_diagnostic.recursive_error) ||
-      public_diagnostic.relative_residual > tolerance ||
+      Gravity_Tools::SolvePotential(model, tolerance);
+  const auto &public_solve = public_diagnostic.final_solve();
+  if (public_solve.status != Eigen::Success ||
+      !std::isfinite(public_solve.recursive_error) ||
+      public_solve.relative_residual > tolerance ||
+      public_diagnostic.solves.size() != 1 ||
       (public_diagnostic.solution - solution).norm() >
           1e-12 * std::max(1.0, solution.norm()))
     throw std::runtime_error("public solve diagnostics differ from prepared solve");
+
+  auto failed_public_result = public_diagnostic;
+  failed_public_result.solves.front().status = Eigen::NumericalIssue;
+  bool failed_result_rejected = false;
+  try {
+    (void)Gravity_Tools::ToHarmonicField(model, failed_public_result);
+  } catch (const std::runtime_error &) {
+    failed_result_rejected = true;
+  }
+  auto malformed_public_result = public_diagnostic;
+  malformed_public_result.solution.conservativeResize(
+      malformed_public_result.solution.size() - 1);
+  bool malformed_result_rejected = false;
+  try {
+    (void)Gravity_Tools::ToHarmonicField(model, malformed_public_result);
+  } catch (const std::invalid_argument &) {
+    malformed_result_rejected = true;
+  }
+  if (!failed_result_rejected || !malformed_result_rejected)
+    throw std::runtime_error("harmonic output conversion accepted an invalid solve result");
 
   Eigen::SphericalGeometryPreconditioner<Complex> identity_preconditioner;
   identity_preconditioner.compute(op);
@@ -243,19 +278,20 @@ int main() {
       spherical_guess_preconditioner.solve(spherical_force);
   const auto spherical_result =
       spherical_solver.Solve(spherical_force, tolerance, false);
+  const auto &spherical_diagnostics = spherical_result.final_solve();
   const double spherical_update_norm =
       (spherical_result.solution - spherical_guess).norm();
   const double spherical_true_residual =
       (spherical_force - spherical_operator * spherical_result.solution).norm();
-  const auto public_spherical = Gravity_Tools::SolveGravitationalPotential(
+  const auto public_spherical = Gravity_Tools::SolvePotential(
       radial_model, spherical_grid, tolerance);
-  if (spherical_result.status != Eigen::Success ||
-      !std::isfinite(spherical_result.recursive_error) ||
-      !std::isfinite(spherical_result.relative_residual) ||
+  if (spherical_diagnostics.status != Eigen::Success ||
+      !std::isfinite(spherical_diagnostics.recursive_error) ||
+      !std::isfinite(spherical_diagnostics.relative_residual) ||
       !(spherical_update_norm > 0.0) ||
-      std::abs(spherical_true_residual - spherical_result.residual_norm) >
+      std::abs(spherical_true_residual - spherical_diagnostics.residual_norm) >
           1e-13 * std::max(1.0, spherical_true_residual) ||
-      spherical_result.relative_residual > tolerance ||
+      spherical_diagnostics.relative_residual > tolerance ||
       (public_spherical.solution - spherical_result.solution).norm() >
           1e-12 * std::max(1.0, spherical_result.solution.norm()))
     throw std::runtime_error("spherical BiCGSTAB solve contract failed");
@@ -286,15 +322,16 @@ int main() {
   const double mapped_guess_relative_residual =
       (mapped_force - mapped_op * mapped_guess).norm() / mapped_force.norm();
   const auto mapped_result = mapped_solver.Solve(mapped_force, tolerance, true);
+  const auto &mapped_diagnostics = mapped_result.final_solve();
   const Eigen::VectorXcd &mapped_solution = mapped_result.solution;
   const double mapped_update_relative_norm =
       (mapped_solution - mapped_guess).norm() / mapped_guess.norm();
   const double mapped_independently_measured_residual =
       (mapped_force - mapped_op * mapped_solution).norm();
-  const double mapped_absolute_residual = mapped_result.residual_norm;
-  const double mapped_relative_residual = mapped_result.relative_residual;
-  if (mapped_result.status != Eigen::Success || !mapped_solution.allFinite() ||
-      mapped_result.iterations < 2 || !std::isfinite(mapped_result.recursive_error) ||
+  const double mapped_absolute_residual = mapped_diagnostics.residual_norm;
+  const double mapped_relative_residual = mapped_diagnostics.relative_residual;
+  if (mapped_diagnostics.status != Eigen::Success || !mapped_solution.allFinite() ||
+      mapped_diagnostics.iterations < 2 || !std::isfinite(mapped_diagnostics.recursive_error) ||
       !std::isfinite(mapped_absolute_residual) ||
       !std::isfinite(mapped_relative_residual) ||
       !std::isfinite(mapped_guess_relative_residual) ||
@@ -303,24 +340,27 @@ int main() {
           1e-13 * std::max(1.0, mapped_independently_measured_residual) ||
       mapped_force.norm() == 0.0 ||
       mapped_relative_residual > tolerance) {
-    std::cerr << "mapped solver info=" << mapped_result.status
-              << " iterations=" << mapped_result.iterations
-              << " requested_tolerance=" << mapped_result.requested_tolerance
+    std::cerr << "mapped solver info=" << mapped_diagnostics.status
+              << " iterations=" << mapped_diagnostics.iterations
+              << " requested_tolerance=" << mapped_diagnostics.requested_tolerance
               << " initial_guess_relative_residual="
               << mapped_guess_relative_residual
               << " update_relative_norm=" << mapped_update_relative_norm
-              << " recursive_error=" << mapped_result.recursive_error
+              << " recursive_error=" << mapped_diagnostics.recursive_error
               << " absolute_residual=" << mapped_absolute_residual
               << " independent_relative_residual=" << mapped_relative_residual << '\n';
     throw std::runtime_error("mapped gravity solve failed its diagnostics");
   }
   const auto mapped_public_solution =
-      Gravity_Tools::FindGravitationalPotential(mapped_model, tolerance);
+      Gravity_Tools::ToHarmonicField(
+          mapped_model,
+          Gravity_Tools::SolvePotential(mapped_model, tolerance));
   const auto mapped_public_diagnostic =
-      Gravity_Tools::SolveGravitationalPotential(mapped_model, tolerance);
-  if (mapped_public_diagnostic.status != Eigen::Success ||
-      !std::isfinite(mapped_public_diagnostic.recursive_error) ||
-      mapped_public_diagnostic.relative_residual > tolerance ||
+      Gravity_Tools::SolvePotential(mapped_model, tolerance);
+  const auto &mapped_public_solve = mapped_public_diagnostic.final_solve();
+  if (mapped_public_solve.status != Eigen::Success ||
+      !std::isfinite(mapped_public_solve.recursive_error) ||
+      mapped_public_solve.relative_residual > tolerance ||
       (mapped_public_diagnostic.solution - mapped_solution).norm() >
           1e-12 * std::max(1.0, mapped_solution.norm()))
     throw std::runtime_error(
@@ -358,8 +398,8 @@ int main() {
 
   std::cout << "rows=" << op.rows() << " force_norm=" << force.norm()
             << " quadrature_max_abs_error=" << max_source_error
-            << " iterations=" << solve_result.iterations
-            << " recursive_error=" << solve_result.recursive_error
+            << " iterations=" << solve_diagnostics.iterations
+            << " recursive_error=" << solve_diagnostics.recursive_error
             << " initial_guess_relative_residual=" << guess_relative_residual
             << " update_relative_norm=" << update_relative_norm
             << " tight_update_relative_norm=" << strict_update_norm
@@ -368,8 +408,8 @@ int main() {
             << " public_difference=" << public_difference
             << " public_finite_values=" << finite_values
             << " mapped_rows=" << mapped_op.rows()
-            << " mapped_iterations=" << mapped_result.iterations
-            << " mapped_recursive_error=" << mapped_result.recursive_error
+            << " mapped_iterations=" << mapped_diagnostics.iterations
+            << " mapped_recursive_error=" << mapped_diagnostics.recursive_error
             << " mapped_initial_guess_relative_residual="
             << mapped_guess_relative_residual
             << " mapped_update_relative_norm=" << mapped_update_relative_norm

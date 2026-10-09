@@ -53,7 +53,7 @@ main() {
    // testing preconditioner
    Eigen::SparseMatrix<std::complex<double>> testmat =
        -testtomo.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           testtomo.Node_InformationP(), 0,
+           testtomo.Node_Information(), 0,
            testtomo.GSH_Grid().MaxDegree());
    testmat.makeCompressed();
    //    std::cout << "\n\n" << testmat.block(0, 26, 200, 1) << "\n\n";
@@ -64,8 +64,8 @@ main() {
 
    // do PSM solution
    timer1.start();
-   auto stdvec_potsol =
-       FindGravitationalPotential(testtomo, std::pow(10.0, -14.0));
+   auto stdvec_potsol = ToHarmonicField(
+       testtomo, SolvePotential(testtomo, std::pow(10.0, -14.0)));
    timer1.stop("Time for 3D");
 
    // solution using spherical integration method:
@@ -77,10 +77,9 @@ main() {
    timer1.start();
    std::vector<int> vec_l{0, 1, 2, 3, 4}, vec_m{0, 0, 2, 3, 0};
    std::vector<double> multval{1.0, 3.0, 5.0, 7.0, 9.0};
-   //    auto stdvec_senskernel = SphericalHarmonicSensitivityKernel(testtomo,
-   //    2, 2);
    auto stdvec_senskernel =
-       SphericalHarmonicSensitivityKernel(testtomo, vec_l, vec_m, multval);
+       ToHarmonicField(testtomo,
+                       SolveSensitivityKernel(testtomo, vec_l, vec_m, multval));
    timer1.stop("Time for sensitivity kernel");
 
    //////////////////////////////////////////////////////////////////

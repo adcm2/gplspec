@@ -1,0 +1,13 @@
+{
+  "file": "phobos_gravity/work/Phobos/Spherical/MatrixSolutionPhysical.out",
+  "reason": "The initial sufficient check required identical computed coordinates. The already-declared geometry criterion, rather than exact parsed-input equality, applies to these calculated physical radii. No scientific tolerance changed. Original exact-check failure retained in final-workflow-comparison.json.",
+  "physical_radius_scale_m": 15000,
+  "relative_geometry_tolerance": 1e-12,
+  "absolute_geometry_tolerance_m": 1.5e-10,
+  "max_radius_difference_m": 1.0913936421275139e-11,
+  "changed_radius_samples": 36369,
+  "geometry_gate_pass": true,
+  "angles_exact": true,
+  "potential_max_difference_m2_s2": 1.278976944459509e-13,
+  "scientific_verdict": "PASS: predeclared geometry criterion and conservative potential bound"
+}

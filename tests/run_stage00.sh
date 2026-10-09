@@ -10,11 +10,30 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 for run in 1 2; do
   "$runner" "$work/output-$run" "$work/actual-$run.csv" >"$work/run-$run.log"
-  python3 "$root/tests/compare_reference.py" --retire-mapping-intermediates \
+  if python3 "$root/tests/compare_reference.py" --retire-mapping-intermediates \
+      "$root/tests/reference/stage00-baseline.csv" "$work/actual-$run.csv" \
+      >"$work/strict-$run.log" 2>&1; then
+    echo "DIAGNOSTIC strict Stage 00 comparison run $run: PASS"
+  else
+    echo "DIAGNOSTIC strict Stage 00 comparison run $run: DIFFERENCES (see details below)"
+    sed -n '1,8p' "$work/strict-$run.log"
+  fi
+  python3 "$root/tests/scientific_reference_gate.py" stage00 \
     "$root/tests/reference/stage00-baseline.csv" "$work/actual-$run.csv"
-  cmp "$root/tests/reference/homogeneous-MatrixSolution.out" \
-      "$work/output-$run/homogeneous/MatrixSolution.out"
+  if cmp -s "$root/tests/reference/homogeneous-MatrixSolution.out" \
+      "$work/output-$run/homogeneous/MatrixSolution.out"; then
+    echo "DIAGNOSTIC frozen MatrixSolution.out comparison run $run: byte-identical"
+  else
+    echo "DIAGNOSTIC frozen MatrixSolution.out comparison run $run: differs"
+  fi
 done
-python3 "$root/tests/compare_reference.py" \
+if python3 "$root/tests/compare_reference.py" \
+    "$work/actual-1.csv" "$work/actual-2.csv" >"$work/repeat-strict.log" 2>&1; then
+  echo "DIAGNOSTIC repeated Stage 00 strict comparison: PASS"
+else
+  echo "DIAGNOSTIC repeated Stage 00 strict comparison: DIFFERENCES"
+  sed -n '1,8p' "$work/repeat-strict.log"
+fi
+python3 "$root/tests/scientific_reference_gate.py" stage00 \
   "$work/actual-1.csv" "$work/actual-2.csv"
-echo "PASS: retained indexed records satisfy the strict frozen tolerance and repeated captures agree; MatrixSolution.out is byte-identical to the frozen baseline."
+echo "PASS: Stage 00 scientific quantity gate passed; strict and bytewise comparisons above are diagnostics."

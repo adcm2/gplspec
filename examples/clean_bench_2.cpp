@@ -69,7 +69,7 @@ main() {
 
    /// @brief Gravitational potential calculated using the 3D spectral-element
    /// method.
-   auto stdvec_potsol = FindGravitationalPotential(testprem);
+   auto stdvec_potsol = ToHarmonicField(testprem, SolvePotential(testprem));
    timer1.stop("Time for 3D");
    /** @} */
 

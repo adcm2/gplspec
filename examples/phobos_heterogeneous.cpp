@@ -63,18 +63,19 @@ main() {
 
    // Compute gravitational potential solutions
    timer1.start();
-   auto stdvec_potsol =
-       FindGravitationalPotential(phobos, std::pow(10.0, -5.0));
+   auto stdvec_potsol = ToHarmonicField(
+       phobos, SolvePotential(phobos, std::pow(10.0, -5.0)));
    timer1.stop("Time for gravity");
 
    timer1.start();
-   auto stdvec_potsol2 =
-       FindGravitationalPotential(phobos, std::pow(10.0, -3.0));
+   auto stdvec_potsol2 = ToHarmonicField(
+       phobos, SolvePotential(phobos, std::pow(10.0, -3.0)));
    timer1.stop("Time for gravity 2");
 
    // Compute spherical harmonic sensitivity kernel
    timer1.start();
-   auto stdvec_senskernel = SphericalHarmonicSensitivityKernel(phobos, 2, 0);
+   auto stdvec_senskernel = ToHarmonicField(
+       phobos, SolveSensitivityKernel(phobos, 2, 0));
    timer1.stop("Time for sensitivity kernel");
 
    // Compute power spectrum

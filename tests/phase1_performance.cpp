@@ -38,20 +38,11 @@ class CoutCapture {
  public:
   CoutCapture() : previous_(std::cout.rdbuf(sink_.rdbuf())) {}
   ~CoutCapture() { std::cout.rdbuf(previous_); }
-  std::string text() const { return sink_.str(); }
 
  private:
   std::ostringstream sink_;
   std::streambuf *previous_;
 };
-
-int iteration_count(const std::string &diagnostics) {
-  const std::string label = "Number of iterations:";
-  const auto pos = diagnostics.find(label);
-  if (pos == std::string::npos)
-    throw std::runtime_error("public solver did not report its iteration count");
-  return std::stoi(diagnostics.substr(pos + label.size()));
-}
 
 double maximum_norm(const auto &values) {
   double result = 0.0;
@@ -117,27 +108,22 @@ void benchmark_mapped(const std::string &process) {
   }
 
   for (int repeat = 0; repeat <= warm_repeats; ++repeat) {
-    std::string diagnostics;
     start = Clock::now();
-    decltype(Gravity_Tools::FindGravitationalPotential(model, tolerance)) solution;
-    {
-      CoutCapture capture;
-      solution = Gravity_Tools::FindGravitationalPotential(model, tolerance);
-      diagnostics = capture.text();
-    }
+    const auto result = Gravity_Tools::SolvePotential(model, tolerance);
+    const auto field = Gravity_Tools::ToHarmonicField(model, result);
     const double seconds = elapsed(start);
     emit(process, "mapped",
          repeat == 0 ? "public_full_solve_first" : "public_full_solve_repeat",
          repeat, seconds, "s");
     emit(process, "mapped", "public_solver_iterations", repeat,
-         iteration_count(diagnostics), "count");
+         result.final_solve().iterations, "count");
     emit(process, "mapped", "public_solution_max_norm", repeat,
-         maximum_norm(solution), "absolute");
+         maximum_norm(field), "absolute");
   }
 
   Eigen::SparseMatrix<Complex> preconditioner_matrix =
       -model.SpectralElementInformation().fullmatrix<Complex>(
-          model.Node_InformationP(), 0, model.GSH_Grid().MaxDegree());
+          model.Node_Information(), 0, model.GSH_Grid().MaxDegree());
   preconditioner_matrix.makeCompressed();
   const Eigen::VectorXcd force = Gravity_Tools::FindForce(model);
   Solver solver;

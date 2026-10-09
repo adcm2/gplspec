@@ -48,7 +48,7 @@ template <class Model>
 Complex outer_flat_coefficient(const Model &model,
                                const Eigen::VectorXcd &solution,
                                int degree, int order) {
-   const auto &mesh = model.Node_InformationP();
+   const auto &mesh = model.Node_Information();
    const std::size_t stride = static_cast<std::size_t>(
        model.GSH_Grid().MaxDegree() + 1) *
                               (model.GSH_Grid().MaxDegree() + 1);
@@ -86,13 +86,13 @@ void check_selector_rhs(GeneralEarthModels::Density3D &model) {
    const int lmax = model.GSH_Grid().MaxDegree();
    const std::size_t stride = static_cast<std::size_t>(lmax + 1) * (lmax + 1);
    const std::size_t outer =
-       (model.Node_InformationP().NumberOfGlobalRadialNodes() - 1) * stride;
+       (model.Node_Information().NumberOfGlobalRadialNodes() - 1) * stride;
    const double base = 4.0 * legacy_pi * model.GravitationalConstant();
 
    const Eigen::VectorXcd rhs = Gravity_Tools::detail::SensitivitySelectorRhs(
        model, {2, 2, 2}, {1, -1, 0}, {3.0, 4.0, 2.0});
    require(rhs.size() == static_cast<Eigen::Index>(
-                             model.Node_InformationP().NumberOfGlobalRadialNodes() *
+                             model.Node_Information().NumberOfGlobalRadialNodes() *
                              stride),
            "selector RHS has the wrong dimension");
    require(rhs[static_cast<Eigen::Index>(outer + harmonic_index(2, -1))] ==
@@ -138,7 +138,7 @@ void check_selector_rhs(GeneralEarthModels::Density3D &model) {
                "non-finite selector weight was accepted");
    bool rejected_tolerance = false;
    try {
-      (void)Gravity_Tools::SphericalHarmonicSensitivityKernel(
+      (void)Gravity_Tools::SolveSensitivityKernel(
           model, 2, 0, 0.0);
    } catch (const std::invalid_argument &) {
       rejected_tolerance = true;
@@ -146,7 +146,7 @@ void check_selector_rhs(GeneralEarthModels::Density3D &model) {
    require(rejected_tolerance, "non-positive sensitivity tolerance was accepted");
    rejected_tolerance = false;
    try {
-      (void)Gravity_Tools::SphericalHarmonicSensitivityKernel(
+      (void)Gravity_Tools::SolveSensitivityKernel(
           model, std::vector<int>{2}, std::vector<int>{0},
           std::vector<double>{1.0}, std::numeric_limits<double>::quiet_NaN());
    } catch (const std::invalid_argument &) {
@@ -212,19 +212,19 @@ int main() {
            order, lmax, max_element_step, outer_radius);
 
    const auto base_result =
-       Gravity_Tools::SolveGravitationalPotential(base, solve_tolerance);
+       Gravity_Tools::SolvePotential(base, solve_tolerance);
    const auto plus_coarse_result =
-       Gravity_Tools::SolveGravitationalPotential(plus_coarse, solve_tolerance);
+       Gravity_Tools::SolvePotential(plus_coarse, solve_tolerance);
    const auto minus_coarse_result =
-       Gravity_Tools::SolveGravitationalPotential(minus_coarse, solve_tolerance);
+       Gravity_Tools::SolvePotential(minus_coarse, solve_tolerance);
    const auto plus_fine_result =
-       Gravity_Tools::SolveGravitationalPotential(plus_fine, solve_tolerance);
+       Gravity_Tools::SolvePotential(plus_fine, solve_tolerance);
    const auto minus_fine_result =
-       Gravity_Tools::SolveGravitationalPotential(minus_fine, solve_tolerance);
+       Gravity_Tools::SolvePotential(minus_fine, solve_tolerance);
    for (const auto *result : {&base_result, &plus_coarse_result,
                               &minus_coarse_result, &plus_fine_result,
                               &minus_fine_result}) {
-      require(result->status == Eigen::Success,
+      require(result->final_solve().status == Eigen::Success,
               "full density solve did not converge");
       require(result->solution.allFinite(), "full density solve is non-finite");
    }
@@ -278,12 +278,12 @@ int main() {
    require(coarse_mean_error <= symmetry_limit && fine_mean_error <= symmetry_limit,
            "plus/minus density solutions violate central symmetry");
 
-   const auto single_kernel = Gravity_Tools::SphericalHarmonicSensitivityKernel(
-       base, 2, 0, solve_tolerance);
+   const auto single_kernel = Gravity_Tools::ToHarmonicField(
+       base, Gravity_Tools::SolveSensitivityKernel(base, 2, 0, solve_tolerance));
    const auto weighted_kernel =
-       Gravity_Tools::SphericalHarmonicSensitivityKernel(
-           base, {2, 2}, {0, 0},
-           {1.0, 2.0}, solve_tolerance);
+       Gravity_Tools::ToHarmonicField(
+           base, Gravity_Tools::SolveSensitivityKernel(
+                     base, {2, 2}, {0, 0}, {1.0, 2.0}, solve_tolerance));
    const double single_norm = field_norm(single_kernel);
    double weighted_difference2 = 0.0;
    for (std::size_t e = 0; e < single_kernel.size(); ++e)
@@ -295,8 +295,8 @@ int main() {
                vector_route_relative_tolerance * 2.0 * single_norm,
            "weighted vector sensitivity differs from its duplicate last value");
 
-   const auto &mesh = base.Node_InformationP();
-   const auto &quadrature = base.qP();
+   const auto &mesh = base.Node_Information();
+   const auto &quadrature = base.q();
    const auto &kernel = single_kernel;
    Complex kernel_contraction{};
    for (std::size_t element = 0; element < mesh.NumberOfElements(); ++element) {

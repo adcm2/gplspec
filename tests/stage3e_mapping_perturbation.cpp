@@ -67,7 +67,7 @@ void require_vector_close(const Eigen::VectorXcd &actual,
 
 Eigen::VectorXcd surface_field(const GeneralEarthModels::Density3D &model,
                                const Eigen::VectorXcd &solution) {
-   const auto &mesh = model.Node_InformationP();
+   const auto &mesh = model.Node_Information();
    const auto &grid = model.GSH_Grid();
    const std::size_t stride =
        static_cast<std::size_t>(grid.MaxDegree() + 1) *
@@ -138,7 +138,7 @@ int main() {
    GeneralEarthModels::Density3D base =
        GeneralEarthModels::Density3D::OneDimensionalPlanetFromModel(
            material, 2, lmax, max_step, outer_radius);
-   const double body_radius = base.Node_InformationP().PlanetRadius();
+   const double body_radius = base.Node_Information().PlanetRadius();
    const SmoothRadialMap unit_map{1.0, body_radius};
    const double pi = std::numbers::pi_v<double>;
 
@@ -210,18 +210,18 @@ int main() {
        base_solve_operator, preconditioner);
    const auto base_result =
        base_solver.Solve(source, solver_tolerance, true, true);
-   require(base_result.status == Eigen::Success,
+   require(base_result.final_solve().status == Eigen::Success,
            "base mapped solve did not converge: status=" +
-               std::to_string(base_result.status) + " iterations=" +
-               std::to_string(base_result.iterations) + " recursive_error=" +
-               std::to_string(base_result.recursive_error) +
+               std::to_string(base_result.final_solve().status) + " iterations=" +
+               std::to_string(base_result.final_solve().iterations) + " recursive_error=" +
+               std::to_string(base_result.final_solve().recursive_error) +
                " relative_residual=" +
-               std::to_string(base_result.relative_residual));
+               std::to_string(base_result.final_solve().relative_residual));
 
    Eigen::VectorXcd delta_rhs = -delta_operator.Apply(base_result.solution);
    const auto tangent_result =
        base_solver.Solve(delta_rhs, solver_tolerance, true, true);
-   require(tangent_result.status == Eigen::Success,
+   require(tangent_result.final_solve().status == Eigen::Success,
            "mapping tangent solve did not converge");
    const Eigen::VectorXcd base_surface = surface_field(base, base_result.solution);
    const Eigen::VectorXcd tangent_surface =
@@ -232,14 +232,14 @@ int main() {
            "mapping perturbation field signal is too small");
 
    const Eigen::Index surface_stride = (lmax + 1) * (lmax + 1);
-   std::size_t surface_radial = base.Node_InformationP().NumberOfGlobalRadialNodes();
+   std::size_t surface_radial = base.Node_Information().NumberOfGlobalRadialNodes();
    for (std::size_t element = 0;
-        element < base.Node_InformationP().NumberOfElements(); ++element) {
+        element < base.Node_Information().NumberOfElements(); ++element) {
       for (std::size_t node = 0;
-           node < base.Node_InformationP().NumNodesWithinElement(); ++node) {
-         if (std::abs(base.Node_InformationP().NodeRadius(element, node) -
+           node < base.Node_Information().NumNodesWithinElement(); ++node) {
+         if (std::abs(base.Node_Information().NodeRadius(element, node) -
                       body_radius) <= 1e-13 * std::max(1.0, body_radius)) {
-            surface_radial = base.Node_InformationP().GlobalNodeIndex(element, node);
+            surface_radial = base.Node_Information().GlobalNodeIndex(element, node);
          }
       }
    }
@@ -279,8 +279,8 @@ int main() {
           plus_solver.Solve(source, solver_tolerance, true, true);
       const auto minus_result =
           minus_solver.Solve(source, solver_tolerance, true, true);
-      require(plus_result.status == Eigen::Success &&
-                  minus_result.status == Eigen::Success,
+      require(plus_result.final_solve().status == Eigen::Success &&
+                  minus_result.final_solve().status == Eigen::Success,
               "finite-difference mapped solve did not converge");
       const auto field_fd = central_difference(
           surface_field(plus_model, plus_result.solution),

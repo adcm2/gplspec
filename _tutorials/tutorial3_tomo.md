@@ -49,8 +49,9 @@ main() {
        pathtoprem, pathtotomo, npoly, lmax, maxstep, ballrad);
    
    // pseudospectral solution
-   auto stdvec_potsol =
-       FindGravitationalPotential(testtomo, std::pow(10.0, -14.0));
+   auto solve_result =
+       SolvePotential(testtomo, std::pow(10.0, -14.0));
+   auto stdvec_potsol = ToHarmonicField(testtomo, solve_result);
 
    // spherical integration
    auto vec_integral_potential = GravitationalSphericalIntegral(testtomo);
@@ -59,8 +60,9 @@ main() {
    // sensitivity kernel
    std::vector<int> vec_l{0, 1, 2, 3, 4}, vec_m{0, 0, 2, 3, 0};
    std::vector<double> multval{1.0, 3.0, 5.0, 7.0, 9.0};
-   auto stdvec_senskernel =
-       SphericalHarmonicSensitivityKernel(testtomo, vec_l, vec_m, multval);
+   auto sensitivity_result =
+       SolveSensitivityKernel(testtomo, vec_l, vec_m, multval);
+   auto stdvec_senskernel = ToHarmonicField(testtomo, sensitivity_result);
 
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
@@ -86,7 +88,6 @@ The benchmark generates several output files in the `./work/Bench6/` directory:
 
 - **3D Solution**: Spectral element method results
 - **Integral Solution**: Spherical integration method results
-
 
 
 

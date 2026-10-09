@@ -41,7 +41,8 @@ main() {
        pathtoprem, npoly, lmax, maxstep, ballrad);
 
    // Pseudospectral method
-   auto stdvec_potsol = FindGravitationalPotential(testprem);
+   auto solve_result = SolvePotential(testprem);
+   auto stdvec_potsol = ToHarmonicField(testprem, solve_result);
 
    // Integral method
    auto vec_integral_potential = GravitationalSphericalIntegral(testprem);
@@ -65,7 +66,6 @@ The benchmark generates several output files in the `./work/Bench2/` directory:
 
 - **3D Solution**: Spectral element method results
 - **Integral Solution**: Spherical integration method results  
-
 
 
 

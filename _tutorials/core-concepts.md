@@ -59,7 +59,8 @@ This is the primary method, optimized for high accuracy and performance:
 using namespace Gravity_Tools;
 
 // Compute potential using spectral-element method
-auto potential_spectral = FindGravitationalPotential(earth_model);
+auto potential_result = SolvePotential(earth_model);
+auto potential_spectral = ToHarmonicField(earth_model, potential_result);
 
 ```
 
@@ -144,7 +145,8 @@ int main() {
     
     // Compute potential with both methods
     timer.start();
-    auto potential_spectral = FindGravitationalPotential(model);
+    auto potential_result = SolvePotential(model);
+    auto potential_spectral = ToHarmonicField(model, potential_result);
     timer.stop("Spectral-element method");
     
     timer.start();

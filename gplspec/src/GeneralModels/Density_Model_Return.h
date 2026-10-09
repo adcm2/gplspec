@@ -112,11 +112,6 @@ Density3D::Node_Information() const {
    return node_data;
 };
 
-const Radial_Tools::RadialMesh &
-Density3D::Node_InformationP() const {
-   return node_data;
-};
-
 // interpolation polynomial derivative
 auto
 Density3D::GaussDerivative() const {
@@ -125,10 +120,6 @@ Density3D::GaussDerivative() const {
 auto
 Density3D::GaussDerivative(int idxi, int idxj) const {
    return _mat_gaussderiv(idxi, idxj);
-};
-auto
-Density3D::q() const {
-   return _q;
 };
 auto
 Density3D::SpectralElementInformation() {
@@ -538,10 +529,10 @@ Density3D::ReferentialOutputAtElement(
    for (int i = 0; i < nelem; ++i) {
       double currentrad;
       if (i == nelem) {
-         currentrad = this->Node_InformationP().ElementUpperRadius(i) *
+         currentrad = this->Node_Information().ElementUpperRadius(i) *
                       this->LengthNorm();
       } else {
-         currentrad = this->Node_InformationP().ElementLowerRadius(i) *
+         currentrad = this->Node_Information().ElementLowerRadius(i) *
                       this->LengthNorm();
       }
 
@@ -567,7 +558,7 @@ Density3D::ReferentialOutputAtElement(
 
    {
       double currentrad =
-          this->Node_InformationP().ElementUpperRadius(nelem - 1) *
+          this->Node_Information().ElementUpperRadius(nelem - 1) *
           this->LengthNorm();
       file2 << std::setprecision(16) << currentrad;
       int idxlm = 0;

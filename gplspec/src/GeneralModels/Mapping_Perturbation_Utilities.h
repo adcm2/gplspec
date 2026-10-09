@@ -42,9 +42,9 @@ inline void ConstructMappingVectorGradient(
          veccomp vec_ddxipp(_sizepp, 0.0);
          veccomp vec_ddximm(_sizepp, 0.0);
          double radr =
-             inp_model.Node_InformationP().NodeRadius(idxelem, idxpoly);
+             inp_model.Node_Information().NodeRadius(idxelem, idxpoly);
          double inv2 =
-             2.0 / inp_model.Node_InformationP().ElementWidth(idxelem);
+             2.0 / inp_model.Node_Information().ElementWidth(idxelem);
          auto idxoverall = idxelem * _num_layers + idxpoly;
          // idxoverall = 1;
          // finding \partial^0 u^{\alpha}:
@@ -270,7 +270,7 @@ using TensorField =
 
 inline TensorField BuildPerturbationTensor(const Density3D &model,
                                             const SpatialDisplacement &dxi) {
-   const auto &mesh = model.Node_InformationP();
+   const auto &mesh = model.Node_Information();
    const auto &grid = model.GSH_Grid();
    const std::size_t elements = mesh.NumberOfElements();
    const std::size_t nodes = mesh.NumNodesWithinElement();

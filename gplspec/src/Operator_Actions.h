@@ -35,7 +35,7 @@ template <class Model, class Grid, class Derived>
 Eigen::VectorXcd ApplySpherical1D(const Model &model, const Grid &grid,
                                   const Eigen::MatrixBase<Derived> &input,
                                   bool include_boundary) {
-   const auto &mesh = model.Node_InformationP();
+   const auto &mesh = model.Node_Information();
    const auto quadrature = model.q();
    const auto derivative = model.GaussDerivative();
    const int degree_max = grid.MaxDegree();
@@ -165,9 +165,9 @@ Eigen::VectorXcd ApplyMapped3D(const Model &model,
                                const TensorField3D &tensor_field,
                                const Eigen::MatrixBase<Derived> &input,
                                bool include_boundary) {
-   const auto &mesh = model.Node_InformationP();
+   const auto &mesh = model.Node_Information();
    const auto &grid = model.GSH_Grid();
-   const auto &quadrature = model.qP();
+   const auto &quadrature = model.q();
    const auto derivative = model.GaussDerivative();
    const int degree_max = grid.MaxDegree();
    const std::size_t harmonic_count =

@@ -34,7 +34,7 @@ int main() {
   const Scalar xay = x.dot(ay);
   const Scalar ax_y = ax.dot(y);
   const auto force = Gravity_Tools::FindForce(model, lmax);
-  const auto &mesh = model.Node_InformationP();
+  const auto &mesh = model.Node_Information();
   std::vector<std::size_t> interface_indices{0};
   for (std::size_t element = 1; element < mesh.NumberOfElements(); ++element) {
     if (mesh.LayerNumber(element) != mesh.LayerNumber(element - 1))

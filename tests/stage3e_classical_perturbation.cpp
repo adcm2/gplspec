@@ -67,7 +67,7 @@ Eigen::VectorXcd as_eigen(const std::vector<Complex> &values) {
 double physical_rms(const GeneralEarthModels::Density3D &model,
                     const Eigen::VectorXcd &field) {
    const auto &mesh = model.Node_Information();
-   const auto &q = model.qP();
+   const auto &q = model.q();
    const std::size_t stride = static_cast<std::size_t>(
        (model.GSH_Grid().MaxDegree() + 1) * (model.GSH_Grid().MaxDegree() + 1));
    double norm2 = 0.0, volume = 0.0;
@@ -91,10 +91,16 @@ Eigen::VectorXcd central(const Eigen::VectorXcd &plus,
 
 Eigen::VectorXcd classical(const GeneralEarthModels::Density3D &model,
                            const RadialAngularMap &mapping, double tolerance) {
-   return as_eigen(flatten(
-       model, Gravity_Tools::FindGravitationalPotentialClassicalPerturbation(
-                  const_cast<GeneralEarthModels::Density3D &>(model), mapping,
-                  tolerance)));
+   const auto result = Gravity_Tools::SolveClassicalMappedPerturbation(
+       const_cast<GeneralEarthModels::Density3D &>(model), mapping, tolerance);
+   if (result.solves.size() != 2 ||
+       result.solves[0].status != Eigen::Success ||
+       result.solves[1].status != Eigen::Success ||
+       !result.solution.allFinite())
+      throw std::runtime_error(
+          "classical perturbation did not retain both successful solve diagnostics");
+   return as_eigen(flatten(model,
+                           Gravity_Tools::ToHarmonicField(model, result)));
 }
 
 void check_source_and_advection() {
@@ -220,8 +226,9 @@ FullMappedTangent mapped_tangent(double max_step, double step) {
        max_step, outer);
    const auto base_source = Gravity_Tools::FindForce(base);
    const auto base_result =
-       Gravity_Tools::SolveGravitationalPotential(base, solver_tolerance);
-   require(base_result.status == Eigen::Success, "base solve failed");
+       Gravity_Tools::SolvePotential(base, solver_tolerance);
+   require(base_result.final_solve().status == Eigen::Success,
+           "base solve failed");
    const double base_rms = physical_rms(base, base_result.solution);
    Eigen::VectorXcd full_estimates[2], classical_estimates[2];
    double error_rms[2] = {};
@@ -244,10 +251,11 @@ FullMappedTangent mapped_tangent(double max_step, double step) {
                   1e-11 * base_source.norm() + 1e-13 * std::max(1.0, base_source.norm()),
               "mapped referential source is not invariant");
       const auto plus_result =
-          Gravity_Tools::SolveGravitationalPotential(plus, solver_tolerance);
+          Gravity_Tools::SolvePotential(plus, solver_tolerance);
       const auto minus_result =
-          Gravity_Tools::SolveGravitationalPotential(minus, solver_tolerance);
-      require(plus_result.status == Eigen::Success && minus_result.status == Eigen::Success,
+          Gravity_Tools::SolvePotential(minus, solver_tolerance);
+      require(plus_result.final_solve().status == Eigen::Success &&
+                  minus_result.final_solve().status == Eigen::Success,
               "full mapped solve failed");
       full_estimates[k] = central(plus_result.solution, minus_result.solution, epsilon);
       const auto boundary_source =

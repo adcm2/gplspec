@@ -59,8 +59,9 @@ main() {
    Density3D homogeneous_sphere_with_map(inp_sphere,
                                          PlanetaryModel::TomographyZeroModel(),
                                          map1, npoly, lmax, maxstep, ballrad);
-   auto stdvec_potsol = FindGravitationalPotential(homogeneous_sphere_with_map,
-                                                   std::pow(10.0, -12.0));
+   auto stdvec_potsol = ToHarmonicField(
+       homogeneous_sphere_with_map,
+       SolvePotential(homogeneous_sphere_with_map, std::pow(10.0, -12.0)));
    timer1.stop("Time for 3D");
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////

@@ -35,7 +35,7 @@ class MappingPerturbation {
 
  private:
    static TensorField ZeroTensor(const Density3D &model) {
-      const auto &mesh = model.Node_InformationP();
+      const auto &mesh = model.Node_Information();
       const auto &grid = model.GSH_Grid();
       const auto spatial = grid.NumberOfCoLatitudes() *
                            grid.NumberOfLongitudes();
@@ -51,7 +51,7 @@ class MappingPerturbation {
       requires PlanetaryModel::RadialMappingClass<Map>
    static TensorField BuildRadialMapping(const Density3D &model,
                                          const Map &mapping) {
-      const auto &mesh = model.Node_InformationP();
+      const auto &mesh = model.Node_Information();
       const auto &grid = model.GSH_Grid();
       const std::size_t elements = mesh.NumberOfElements();
       const std::size_t nodes = mesh.NumNodesWithinElement();
@@ -94,7 +94,7 @@ class MappingPerturbation {
        const Density3D &model,
        const GPLSpec::ModelInput::PhobosHarmonics &harmonics, int lmin,
        int requested_lmax) {
-      const auto &mesh = model.Node_InformationP();
+      const auto &mesh = model.Node_Information();
       const auto &grid = model.GSH_Grid();
       const std::size_t elements = mesh.NumberOfElements();
       const std::size_t nodes = mesh.NumNodesWithinElement();

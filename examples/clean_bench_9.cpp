@@ -93,15 +93,16 @@ main() {
 
    // do PSM solution
    timer1.start();
-   auto stdvec_potsol =
-       FindGravitationalPotential(testtomo, std::pow(10.0, -12.0));
-   auto stdvec_potsol_exact =
-       FindGravitationalPotential(testtomo2, std::pow(10.0, -12.0));
+   auto stdvec_potsol = ToHarmonicField(
+       testtomo, SolvePotential(testtomo, std::pow(10.0, -12.0)));
+   auto stdvec_potsol_exact = ToHarmonicField(
+       testtomo2, SolvePotential(testtomo2, std::pow(10.0, -12.0)));
    timer1.stop("Time for 3D");
 
    // find solution with boundary perturbation theory
-   auto stdvec_potsol_perturb = FindGravitationalPotentialClassicalPerturbation(
-       testtomo, map1, std::pow(10.0, -12.0));
+   auto stdvec_potsol_perturb = ToHarmonicField(
+       testtomo, SolveClassicalMappedPerturbation(
+                     testtomo, map1, std::pow(10.0, -12.0)));
 
    std::cout << stdvec_potsol_perturb[0][0][0] << "\n";
    // variation with h:
@@ -114,20 +115,6 @@ main() {
    //    }
    //    {
    //       double pi_db = 3.1415926535897932;
-   //       double nopertphi = -2.0 * testtomo.GravitationalConstant() * pi_db *
-   //                          normrho * std::pow(normrad, 2.0);
-   //       for (int idx = 0; idx < lenh; ++idx) {
-   //          inp_map mapidx(vec_h[idx], normrad);
-   //          MappingPerturbation pertmapidx(testtomo, mapidx);
-   //          auto stdvec_potsol_idx = FindGravitationalPotentialPerturbation(
-   //              testtomo, pertmapidx, std::pow(10.0, -12.0));
-   //          vec_zerosol[idx] = stdvec_potsol_idx[0][0][0].real() /
-   //                             sqrt(4.0 * pi_db) * testtomo.PotentialNorm();
-   //          vec_exactsol[idx] =
-   //              nopertphi / (1.0 + vec_h[idx]) * testtomo.PotentialNorm();
-   //       }
-   //    }
-   //    timer1.stop("Time for multiple solutions");
 
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////

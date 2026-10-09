@@ -40,9 +40,10 @@ auto capture(std::ostream& out, const std::string& name, Model& model) {
     x(i) = {0.125 * (i + 1), -0.0625 * (i + 2)};
   emit(out, name + "/operator_x", x);
   emit(out, name + "/operator_y", op * x);
-  auto solution = Gravity_Tools::FindGravitationalPotential(model, 1e-6);
-  emit(out, name + "/solution", solution);
-  return solution;
+  auto result = Gravity_Tools::SolvePotential(model, 1e-6);
+  auto field = Gravity_Tools::ToHarmonicField(model, result);
+  emit(out, name + "/solution", field);
+  return field;
 }
 
 template<class Model, class Map>
@@ -56,8 +57,10 @@ void capture_perturbation(std::ostream& out, const std::string& name,
     x(i) = {0.125 * (i + 1), -0.0625 * (i + 2)};
   emit(out, name + "/operator_x", x);
   emit(out, name + "/operator_y", op * x);
+  const auto result = Gravity_Tools::SolveMappingPerturbation(
+      model, perturbation, 1e-6);
   emit(out, name + "/solution",
-       Gravity_Tools::FindGravitationalPotentialPerturbation(model, perturbation, 1e-6));
+       Gravity_Tools::ToHarmonicField(model, result));
 }
 
 struct SmoothMapping {

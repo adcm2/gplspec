@@ -1,0 +1,104 @@
+[
+  {
+    "name": "capture-stage00-1",
+    "command": [
+      "/tmp/gplspec-phase3-resume/final-build/bin/stage00_reference",
+      "/tmp/gplspec-phase3-resume/final-strict-diagnostics/output-1",
+      "/tmp/gplspec-phase3-resume/final-strict-diagnostics/actual-1.csv"
+    ],
+    "exit_code": 0
+  },
+  {
+    "name": "strict-stage00-1",
+    "command": [
+      "python3",
+      "/home/adcm2/Documents/Research/Projects/gplspec/tests/compare_reference.py",
+      "--retire-mapping-intermediates",
+      "/home/adcm2/Documents/Research/Projects/gplspec/tests/reference/stage00-baseline.csv",
+      "/tmp/gplspec-phase3-resume/final-strict-diagnostics/actual-1.csv"
+    ],
+    "exit_code": 1
+  },
+  {
+    "name": "output-bytes-1",
+    "command": [
+      "cmp",
+      "/home/adcm2/Documents/Research/Projects/gplspec/tests/reference/homogeneous-MatrixSolution.out",
+      "/tmp/gplspec-phase3-resume/final-strict-diagnostics/output-1/homogeneous/MatrixSolution.out"
+    ],
+    "exit_code": 1
+  },
+  {
+    "name": "capture-stage00-2",
+    "command": [
+      "/tmp/gplspec-phase3-resume/final-build/bin/stage00_reference",
+      "/tmp/gplspec-phase3-resume/final-strict-diagnostics/output-2",
+      "/tmp/gplspec-phase3-resume/final-strict-diagnostics/actual-2.csv"
+    ],
+    "exit_code": 0
+  },
+  {
+    "name": "strict-stage00-2",
+    "command": [
+      "python3",
+      "/home/adcm2/Documents/Research/Projects/gplspec/tests/compare_reference.py",
+      "--retire-mapping-intermediates",
+      "/home/adcm2/Documents/Research/Projects/gplspec/tests/reference/stage00-baseline.csv",
+      "/tmp/gplspec-phase3-resume/final-strict-diagnostics/actual-2.csv"
+    ],
+    "exit_code": 1
+  },
+  {
+    "name": "output-bytes-2",
+    "command": [
+      "cmp",
+      "/home/adcm2/Documents/Research/Projects/gplspec/tests/reference/homogeneous-MatrixSolution.out",
+      "/tmp/gplspec-phase3-resume/final-strict-diagnostics/output-2/homogeneous/MatrixSolution.out"
+    ],
+    "exit_code": 1
+  },
+  {
+    "name": "repeat-stage00",
+    "command": [
+      "python3",
+      "/home/adcm2/Documents/Research/Projects/gplspec/tests/compare_reference.py",
+      "/tmp/gplspec-phase3-resume/final-strict-diagnostics/actual-1.csv",
+      "/tmp/gplspec-phase3-resume/final-strict-diagnostics/actual-2.csv"
+    ],
+    "exit_code": 0
+  },
+  {
+    "name": "capture-stage05",
+    "command": [
+      "/tmp/gplspec-phase3-resume/final-build/bin/stage05_file_perturbation_reference"
+    ],
+    "exit_code": 0
+  },
+  {
+    "name": "strict-stage05",
+    "command": [
+      "python3",
+      "/home/adcm2/Documents/Research/Projects/gplspec/tests/compare_stage05_file_perturbation.py",
+      "/home/adcm2/Documents/Research/Projects/gplspec/tests/reference/stage05-file-perturbation-original.csv",
+      "/tmp/gplspec-phase3-resume/final-strict-diagnostics/stage05-actual.csv"
+    ],
+    "exit_code": 1
+  },
+  {
+    "name": "capture-stage05-1d",
+    "command": [
+      "/tmp/gplspec-phase3-resume/final-build/bin/stage05_operator_reference"
+    ],
+    "exit_code": 0
+  },
+  {
+    "name": "strict-stage05-1d",
+    "command": [
+      "diff",
+      "-u",
+      "/home/adcm2/Documents/Research/Projects/gplspec/tests/reference/stage05-1d-original.csv",
+      "/tmp/gplspec-phase3-resume/final-strict-diagnostics/stage05-1d-actual.csv"
+    ],
+    "exit_code": 1
+  }
+]

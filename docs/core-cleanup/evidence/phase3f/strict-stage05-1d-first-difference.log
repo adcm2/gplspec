@@ -1,0 +1,8 @@
+--- /home/adcm2/Documents/Research/Projects/gplspec/tests/reference/stage05-1d-original.csv	2026-10-01 15:45:41.061969657 +0100
++++ /tmp/gplspec-phase3-resume/final-strict-diagnostics/stage05-1d-actual.csv	2026-10-09 13:42:55.309102914 +0100
+@@ -1,779 +1,779 @@
+ rows,387
+-Ax,0,0.041193919171618229,-0.020596959585809115
++Ax,0,0.041193919171618257,-0.020596959585809135
+ boundary_delta,0,0,0
+-Ax,1,0.033205246540424803,-0.014605455112414061

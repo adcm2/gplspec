@@ -35,7 +35,7 @@ main() {
    timer1.start();
    Density3D testsphere = Density3D::SphericalHomogeneousPlanet(
        nrad, nrho, lengthnorm, timenorm, massnorm, maxstep, ballrad);
-   auto stdvec_potsol = FindGravitationalPotential(testsphere);
+   auto stdvec_potsol = ToHarmonicField(testsphere, SolvePotential(testsphere));
    timer1.stop("Time for 3D");
 
    // Compute potential using spherical integration method

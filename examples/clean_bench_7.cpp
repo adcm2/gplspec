@@ -97,10 +97,10 @@ main() {
 
    // do PSM solution
    timer1.start();
-   auto stdvec_potsol =
-       FindGravitationalPotential(testtomo, std::pow(10.0, -12.0));
-   auto stdvec_potsol_exact =
-       FindGravitationalPotential(testtomo2, std::pow(10.0, -12.0));
+   auto stdvec_potsol = ToHarmonicField(
+       testtomo, SolvePotential(testtomo, std::pow(10.0, -12.0)));
+   auto stdvec_potsol_exact = ToHarmonicField(
+       testtomo2, SolvePotential(testtomo2, std::pow(10.0, -12.0)));
    timer1.stop("Time for 3D");
 
    // solution using spherical integration method:
@@ -121,8 +121,9 @@ main() {
 
    // find perturbed solution
    MappingPerturbation testpertmap(testtomo, map1);
-   auto stdvec_potsol1 = FindGravitationalPotentialPerturbation(
-       testtomo, testpertmap, std::pow(10.0, -12.0));
+   auto stdvec_potsol1 = ToHarmonicField(
+       testtomo, SolveMappingPerturbation(testtomo, testpertmap,
+                                          std::pow(10.0, -12.0)));
 
    // variation with h:
    timer1.start();
@@ -139,8 +140,9 @@ main() {
       for (int idx = 0; idx < lenh; ++idx) {
          inp_map mapidx(vec_h[idx], normrad);
          MappingPerturbation pertmapidx(testtomo, mapidx);
-         auto stdvec_potsol_idx = FindGravitationalPotentialPerturbation(
-             testtomo, pertmapidx, std::pow(10.0, -12.0));
+         auto stdvec_potsol_idx = ToHarmonicField(
+             testtomo, SolveMappingPerturbation(testtomo, pertmapidx,
+                                                std::pow(10.0, -12.0)));
          vec_zerosol[idx] = stdvec_potsol_idx[0][0][0].real() /
                             sqrt(4.0 * pi_db) * testtomo.PotentialNorm();
          vec_exactsol[idx] =

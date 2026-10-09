@@ -77,8 +77,15 @@ int main() {
   emit(std::cout, "file_perturbation/Ax_y", ax_y);
   std::ostringstream solver_diagnostics;
   auto *original_stdout = std::cout.rdbuf(solver_diagnostics.rdbuf());
-  auto solution = Gravity_Tools::FindGravitationalPotentialPerturbation(
+  const auto result = Gravity_Tools::SolveMappingPerturbation(
       model, perturbation, 1e-6);
   std::cout.rdbuf(original_stdout);
-  emit(std::cout, "file_perturbation/solution", solution);
+  if (result.solves.size() != 2 ||
+      result.solves[0].status != Eigen::Success ||
+      result.solves[1].status != Eigen::Success ||
+      !result.solution.allFinite())
+    throw std::runtime_error(
+        "mapping perturbation did not retain both successful solve diagnostics");
+  emit(std::cout, "file_perturbation/solution",
+       Gravity_Tools::ToHarmonicField(model, result));
 }

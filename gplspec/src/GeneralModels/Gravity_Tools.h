@@ -16,14 +16,11 @@
 #include <cmath>
 #include <limits>
 #include <stdexcept>
-#include "../Timer_Class.h"
+#include <vector>
 
 namespace Gravity_Tools {
 
-namespace detail {
-
-struct SolveResult {
-   Eigen::VectorXcd solution;
+struct SolveDiagnostics {
    Eigen::ComputationInfo status = Eigen::InvalidInput;
    Eigen::Index iterations = 0;
    double requested_tolerance = 0.0;
@@ -32,10 +29,25 @@ struct SolveResult {
    double relative_residual = std::numeric_limits<double>::quiet_NaN();
 };
 
-inline void ValidateSensitivityTolerance(double tolerance) {
+struct SolveResult {
+   Eigen::VectorXcd solution;
+   // Composite operations preserve each base/correction solve in order.
+   std::vector<SolveDiagnostics> solves;
+
+   const SolveDiagnostics &final_solve() const {
+      if (solves.empty()) {
+         throw std::logic_error("solve result has no solve diagnostics");
+      }
+      return solves.back();
+   }
+};
+
+namespace detail {
+
+inline void ValidateSolverTolerance(double tolerance) {
    if (!std::isfinite(tolerance) || tolerance <= 0.0) {
       throw std::invalid_argument(
-          "sensitivity solver tolerance must be finite and positive");
+          "solver tolerance must be finite and positive");
    }
 }
 
@@ -52,7 +64,7 @@ SensitivitySelectorRhs(const GeneralEarthModels::Density3D &model,
    const int lmax = model.GSH_Grid().MaxDegree();
    const std::size_t stride =
        static_cast<std::size_t>(lmax + 1) * (lmax + 1);
-   const auto &mesh = model.Node_InformationP();
+   const auto &mesh = model.Node_Information();
    const std::size_t radial_count = mesh.NumberOfGlobalRadialNodes();
    if (radial_count == 0 ||
        radial_count > static_cast<std::size_t>(
@@ -90,7 +102,7 @@ Eigen::SparseMatrix<std::complex<double>>
 SphericalPreconditionerMatrix(Model &model, int lmax) {
    Eigen::SparseMatrix<std::complex<double>> matrix =
        -model.SpectralElementInformation().template fullmatrix<std::complex<double>>(
-           model.Node_InformationP(), 0, lmax);
+           model.Node_Information(), 0, lmax);
    matrix.makeCompressed();
    return matrix;
 }
@@ -110,32 +122,36 @@ class PreparedSolver {
    PreparedSolver(const Operator &&,
                   const Eigen::SparseMatrix<std::complex<double>> &) = delete;
 
-   SolveResult Solve(const Eigen::VectorXcd &rhs, double tolerance,
-                     bool use_preconditioned_guess,
-                     bool calculate_residual = true) {
+   Gravity_Tools::SolveResult Solve(const Eigen::VectorXcd &rhs,
+                                    double tolerance,
+                                    bool use_preconditioned_guess,
+                                    bool calculate_residual = true) {
+      ValidateSolverTolerance(tolerance);
       _solver.setTolerance(tolerance);
-      SolveResult result;
-      result.requested_tolerance = tolerance;
+      Gravity_Tools::SolveResult result;
+      SolveDiagnostics diagnostics;
+      diagnostics.requested_tolerance = tolerance;
       if (use_preconditioned_guess) {
          const Eigen::VectorXcd guess = _solver.preconditioner().solve(rhs);
          result.solution = _solver.solveWithGuess(rhs, guess);
       } else {
          result.solution = _solver.solve(rhs);
       }
-      result.status = _solver.info();
-      result.iterations = _solver.iterations();
-      result.recursive_error = _solver.error();
+      diagnostics.status = _solver.info();
+      diagnostics.iterations = _solver.iterations();
+      diagnostics.recursive_error = _solver.error();
       if (calculate_residual) {
          const Eigen::VectorXcd residual = rhs - (*_operator * result.solution);
-         result.residual_norm = residual.norm();
+         diagnostics.residual_norm = residual.norm();
          const double rhs_norm = rhs.norm();
-         result.relative_residual =
+         diagnostics.relative_residual =
              rhs_norm == 0.0
-                 ? (result.residual_norm == 0.0
+                 ? (diagnostics.residual_norm == 0.0
                         ? 0.0
                         : std::numeric_limits<double>::infinity())
-                 : result.residual_norm / rhs_norm;
+                 : diagnostics.residual_norm / rhs_norm;
       }
+      result.solves.push_back(diagnostics);
       return result;
    }
 
@@ -156,7 +172,7 @@ inline double RadialSourceWeight(const Radial_Tools::RadialMesh &mesh,
 // The spherical model has only the monopole density coefficient.
 inline Eigen::VectorXcd
 FindForce(GeneralEarthModels::spherical_1D &model, const int &lMax) {
-   const auto &mesh = model.Node_InformationP();
+   const auto &mesh = model.Node_Information();
    const auto q = model.q();
    const std::size_t stride = static_cast<std::size_t>(lMax + 1) * (lMax + 1);
    Eigen::VectorXcd source = Eigen::VectorXcd::Zero(
@@ -180,9 +196,9 @@ FindForce(GeneralEarthModels::spherical_1D &model, const int &lMax) {
 inline Eigen::VectorXcd
 FindForce(GeneralEarthModels::Density3D &model) {
    using Complex = std::complex<double>;
-   const auto &mesh = model.Node_InformationP();
+   const auto &mesh = model.Node_Information();
    const auto &grid = model.GSH_Grid();
-   const auto &q = model.qP();
+   const auto &q = model.q();
    const int lMax = grid.MaxDegree();
    const std::size_t stride = static_cast<std::size_t>(lMax + 1) * (lMax + 1);
    const std::size_t radial_nodes = mesh.NumberOfGlobalRadialNodes();
@@ -374,9 +390,9 @@ AdvectiveBoundaryPerturbation(GeneralEarthModels::Density3D &model,
 }
 
 template <class Grid>
-inline detail::SolveResult
-SolveGravitationalPotential(GeneralEarthModels::spherical_1D &inp_model,
-                            Grid &grid, double relerr = std::pow(10.0, -6.0)) {
+inline SolveResult
+SolvePotential(GeneralEarthModels::spherical_1D &inp_model, Grid &grid,
+               double relerr = std::pow(10.0, -6.0)) {
    using Complex = std::complex<double>;
    using BICGSTAB =
        Eigen::BiCGSTAB<MatrixReplacement<std::complex<double>>,
@@ -391,17 +407,10 @@ SolveGravitationalPotential(GeneralEarthModels::spherical_1D &inp_model,
    return solver.Solve(vec_fullforce, relerr, false);
 }
 
-template <class Grid>
-inline Eigen::VectorXcd
-FindGravitationalPotential(GeneralEarthModels::spherical_1D &inp_model,
-                           Grid &grid, double relerr = std::pow(10.0, -6.0)) {
-   return SolveGravitationalPotential(inp_model, grid, relerr).solution;
-};
-
 // 3D solver
-inline detail::SolveResult
-SolveGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
-                            double relerr = std::pow(10.0, -6.0)) {
+inline SolveResult
+SolvePotential(GeneralEarthModels::Density3D &inp_model,
+               double relerr = std::pow(10.0, -6.0)) {
    using Complex = std::complex<double>;
    using CONJG = Eigen::ConjugateGradient<
        MatrixReplacement3D<Complex>, Eigen::Lower | Eigen::Upper,
@@ -415,18 +424,38 @@ SolveGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
    return solver.Solve(vec_fullforce, relerr, true);
 }
 
-inline auto FindGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
-                                      double relerr = std::pow(10.0, -6.0)) {
-   const auto result = SolveGravitationalPotential(inp_model, relerr);
-   return inp_model.SingleEigenVectorToGeneralFormat(result.solution);
-};
+inline auto ToHarmonicField(const GeneralEarthModels::Density3D &model,
+                            const SolveResult &result) {
+   if (result.solves.empty()) {
+      throw std::invalid_argument("cannot convert a result without solve diagnostics");
+   }
+   for (const auto &solve : result.solves) {
+      if (solve.status != Eigen::Success) {
+         throw std::runtime_error("cannot convert a failed gravitational solve");
+      }
+   }
+   const auto &mesh = model.Node_Information();
+   const auto &grid = model.GSH_Grid();
+   const std::size_t stride = static_cast<std::size_t>(grid.MaxDegree() + 1) *
+                              static_cast<std::size_t>(grid.MaxDegree() + 1);
+   const std::size_t radial_count = mesh.NumberOfGlobalRadialNodes();
+   if (radial_count == 0 || stride == 0 ||
+       radial_count > static_cast<std::size_t>(
+                          std::numeric_limits<Eigen::Index>::max()) /
+                          stride ||
+       result.solution.size() !=
+           static_cast<Eigen::Index>(radial_count * stride) ||
+       !result.solution.allFinite()) {
+      throw std::invalid_argument("harmonic solve result has invalid dimensions or values");
+   }
+   return model.SingleEigenVectorToGeneralFormat(result.solution);
+}
 
 // 3D solver
-inline auto
-SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
-                                   int l, int m,
-                                   double relerr = std::pow(10.0, -6.0)) {
-   detail::ValidateSensitivityTolerance(relerr);
+inline SolveResult
+SolveSensitivityKernel(GeneralEarthModels::Density3D &inp_model, int l, int m,
+                       double relerr = std::pow(10.0, -6.0)) {
+   detail::ValidateSolverTolerance(relerr);
    using Complex = std::complex<double>;
    using CONJG = Eigen::ConjugateGradient<
        MatrixReplacement3D<Complex>, Eigen::Lower | Eigen::Upper,
@@ -442,17 +471,17 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
        inp_model, inp_model.GSH_Grid().MaxDegree());
    detail::PreparedSolver<CONJG, decltype(mymatrix)> solver(mymatrix,
                                                             preconditioner);
-   const auto result = solver.Solve(vec_fullforce, relerr, true, false);
-   return inp_model.SingleEigenVectorToGeneralFormat(result.solution);
+   const auto result = solver.Solve(vec_fullforce, relerr, true);
+   return result;
 };
 
 // 3D solver
-inline auto
-SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
-                                   std::vector<int> l, std::vector<int> m,
-                                   std::vector<double> multval,
-                                   double relerr = std::pow(10.0, -6.0)) {
-   detail::ValidateSensitivityTolerance(relerr);
+inline SolveResult
+SolveSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
+                       std::vector<int> l, std::vector<int> m,
+                       std::vector<double> multval,
+                       double relerr = std::pow(10.0, -6.0)) {
+   detail::ValidateSolverTolerance(relerr);
    using Complex = std::complex<double>;
    using BICGSTAB =
        Eigen::BiCGSTAB<MatrixReplacement3D<std::complex<double>>,
@@ -466,25 +495,21 @@ SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
        inp_model, inp_model.GSH_Grid().MaxDegree());
    detail::PreparedSolver<BICGSTAB, decltype(mymatrix)> solver(mymatrix,
                                                                preconditioner);
-   const auto result = solver.Solve(vec_fullforce, relerr, true, false);
-   return inp_model.SingleEigenVectorToGeneralFormat(result.solution);
+   const auto result = solver.Solve(vec_fullforce, relerr, true);
+   return result;
 };
 
 // 3D solver
-inline auto
-FindGravitationalPotentialPerturbation(
+inline SolveResult
+SolveMappingPerturbation(
     GeneralEarthModels::Density3D &inp_model,
     GeneralEarthModels::MappingPerturbation &inp_map,
     double relerr1 = std::pow(10.0, -6.0),
-    double relerr2 = std::pow(10.0, -2.0)) {
+   double relerr2 = std::pow(10.0, -2.0)) {
    using Complex = std::complex<double>;
-   using BICGSTAB =
-       Eigen::BiCGSTAB<MatrixReplacement3D<std::complex<double>>,
-                       Eigen::SphericalGeometryPreconditioner<Complex>>;
    using CONJG = Eigen::ConjugateGradient<
        MatrixReplacement3D<Complex>, Eigen::Lower | Eigen::Upper,
        Eigen::SphericalGeometryPreconditioner<Complex>>;
-   Timer _timer;
    // pseudospectral matrix replacement
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
    MatrixReplacement3D<std::complex<double>> matrixpert(
@@ -492,35 +517,29 @@ FindGravitationalPotentialPerturbation(
 
    // get force vector
    Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);
-   // Eigen::VectorXcd vec_ff2 = vec_fullforce * 0.0;
-   // std::cout << vec_ff2.size() << "\n";
-   // Eigen::VectorXcd vec_ff2 =
-   //     Eigen::VectorXcd::Constant(vec_fullforce.size(), 1.0);
 
    const auto preconditioner = detail::SphericalPreconditionerMatrix(
        inp_model, inp_model.GSH_Grid().MaxDegree());
    detail::PreparedSolver<CONJG, decltype(mymatrix)> solver(mymatrix,
                                                             preconditioner);
-   _timer.start();
-   const auto base_result = solver.Solve(vec_fullforce, relerr1, true, false);
-   _timer.stop("Time for base solution");
+   const auto base_result = solver.Solve(vec_fullforce, relerr1, true);
    Eigen::VectorXcd vec_pertforce = -(matrixpert * base_result.solution);
 
-   _timer.start();
    const auto perturbation_result =
-       solver.Solve(vec_pertforce, relerr2, true, false);
-   _timer.stop("Time for perturbation solution");
-   Eigen::VectorXcd fullsol =
-       base_result.solution + perturbation_result.solution;
-   auto retsol = inp_model.SingleEigenVectorToGeneralFormat(fullsol);
-   return retsol;
+       solver.Solve(vec_pertforce, relerr2, true);
+   SolveResult result;
+   result.solution = base_result.solution + perturbation_result.solution;
+   result.solves = base_result.solves;
+   result.solves.insert(result.solves.end(), perturbation_result.solves.begin(),
+                        perturbation_result.solves.end());
+   return result;
 };
 
 // 3D solver
 template <class mapclass>
    requires PlanetaryModel::RadialMappingClass<mapclass>
-inline auto
-FindGravitationalPotentialClassicalPerturbation(
+inline SolveResult
+SolveClassicalMappedPerturbation(
     GeneralEarthModels::Density3D &inp_model, mapclass &inp_map,
     double relerr = std::pow(10.0, -6.0)) {
    using Complex = std::complex<double>;
@@ -532,27 +551,26 @@ FindGravitationalPotentialClassicalPerturbation(
 
    // get force vector
    Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);
-   // Eigen::VectorXcd vec_ff2 = vec_fullforce * 0.0;
-   // std::cout << vec_ff2.size() << "\n";
-   // Eigen::VectorXcd vec_ff2 =
-   //     Eigen::VectorXcd::Constant(vec_fullforce.size(), 1.0);
 
    const auto preconditioner = detail::SphericalPreconditionerMatrix(
        inp_model, inp_model.GSH_Grid().MaxDegree());
    detail::PreparedSolver<BICGSTAB, decltype(mymatrix)> solver(mymatrix,
                                                                preconditioner);
-   const auto base_result = solver.Solve(vec_fullforce, relerr, true, false);
+   const auto base_result = solver.Solve(vec_fullforce, relerr, true);
 
    Eigen::VectorXcd testforce =
        FindBoundaryPerturbationForce(inp_model, inp_map);
-   const auto perturbation_result = solver.Solve(testforce, relerr, true, false);
+   const auto perturbation_result = solver.Solve(testforce, relerr, true);
    Eigen::VectorXcd advectpert =
        AdvectiveBoundaryPerturbation(inp_model, inp_map, base_result.solution);
 
-   Eigen::VectorXcd fullsol = base_result.solution + advectpert -
-                              perturbation_result.solution;
-   auto retsol = inp_model.SingleEigenVectorToGeneralFormat(fullsol);
-   return retsol;
+   SolveResult result;
+   result.solution = base_result.solution + advectpert -
+                     perturbation_result.solution;
+   result.solves = base_result.solves;
+   result.solves.insert(result.solves.end(), perturbation_result.solves.begin(),
+                        perturbation_result.solves.end());
+   return result;
 };
 
 // The normalized radial Green function is evaluated as two cumulative moments.
@@ -563,7 +581,7 @@ GravitationalSphericalIntegral(const GeneralEarthModels::Density3D &model) {
    constexpr double pi = 3.141592653589793238462643383279502884;
 
    const auto &mesh = model.Node_Information();
-   const auto &quadrature = model.qP();
+   const auto &quadrature = model.q();
    const auto &grid = model.GSH_Grid();
    const std::size_t elements = mesh.NumberOfElements();
    const std::size_t nodes_per_element = mesh.NumNodesWithinElement();

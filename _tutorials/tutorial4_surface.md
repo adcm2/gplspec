@@ -86,8 +86,10 @@ main() {
                                          map1, npoly, lmax, maxstep, ballrad);
 
    // find potential
-   auto stdvec_potsol = FindGravitationalPotential(homogeneous_sphere_with_map,
-                                                   std::pow(10.0, -12.0));
+   auto solve_result = SolvePotential(homogeneous_sphere_with_map,
+                                      std::pow(10.0, -12.0));
+   auto stdvec_potsol =
+       ToHarmonicField(homogeneous_sphere_with_map, solve_result);
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
 
@@ -117,7 +119,6 @@ main() {
 
 
 ```
-
 
 
 

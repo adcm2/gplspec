@@ -1,0 +1,48 @@
+{
+  "baseline": "15582edab8112dbb63e0101be5b26f5135298644",
+  "threads": 1,
+  "runs": [
+    {
+      "scenario": "mapped",
+      "process": 1,
+      "exit_code": 0,
+      "elapsed": 0.5647144710001157,
+      "max_rss_kib": 16784
+    },
+    {
+      "scenario": "mapped",
+      "process": 2,
+      "exit_code": 0,
+      "elapsed": 0.5647082650011725,
+      "max_rss_kib": 16988
+    },
+    {
+      "scenario": "mapped",
+      "process": 3,
+      "exit_code": 0,
+      "elapsed": 0.5648453470003005,
+      "max_rss_kib": 16628
+    },
+    {
+      "scenario": "file_backed",
+      "process": 1,
+      "exit_code": 0,
+      "elapsed": 1.6668130670004757,
+      "max_rss_kib": 416472
+    },
+    {
+      "scenario": "file_backed",
+      "process": 2,
+      "exit_code": 0,
+      "elapsed": 1.6668447550000565,
+      "max_rss_kib": 416500
+    },
+    {
+      "scenario": "file_backed",
+      "process": 3,
+      "exit_code": 0,
+      "elapsed": 1.616847642000721,
+      "max_rss_kib": 416476
+    }
+  ]
+}

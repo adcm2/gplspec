@@ -41,9 +41,6 @@ class spherical_1D {
    const Radial_Tools::RadialMesh &Node_Information() const {
       return _radial_mesh;
    }
-   const Radial_Tools::RadialMesh &Node_InformationP() const {
-      return _radial_mesh;
-   }
 
    // interpolation polynomial derivative
    auto GaussDerivative() const { return _mat_gaussderiv; };

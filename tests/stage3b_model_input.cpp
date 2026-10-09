@@ -238,11 +238,11 @@ int main() {
    const double owned_phobos_density = owned_phobos.Density_Point(0, 0, 0);
    require(std::isfinite(owned_phobos_density) && owned_phobos_density > 0.0,
            "Phobos model construction returned invalid owned density");
-   require(close(owned_phobos.Node_InformationP().PlanetRadius(),
+   require(close(owned_phobos.Node_Information().PlanetRadius(),
                  expected_phobos_radius / length_norm),
            "Phobos model geometry changed its A00 radius convention");
    phobos.rows.clear();
-   require(close(owned_phobos.Node_InformationP().PlanetRadius(),
+   require(close(owned_phobos.Node_Information().PlanetRadius(),
                  expected_phobos_radius / length_norm) &&
                close(owned_phobos.Density_Point(0, 0, 0),
                      owned_phobos_density),

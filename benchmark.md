@@ -58,7 +58,60 @@ The tracked Phobos plot/analysis scripts read these relative paths from their wo
 
 These consumers cover more than one producer/output variant; inspect a script and select a producer that actually writes every file it reads. For example, the rotated `Phobos/Rotated/MatrixSolution.out` is written by the perturbation program, while `phobos_gravity` writes its rotated coordinate products into `Phobos/Spherical/`. Preserve each producer-consumer pair, model input, relative path, and saved product.
 
+## Reproducing the reconstructed workflows
+
+Build the maintained API and registered quantity gates with the normal Release configuration:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+cmake --build build -j2
+ctest --test-dir build --output-on-failure
+```
+
+CTest runs the Stage 00 two-capture scientific comparison and the Stage 05 1-D/file-backed scientific comparisons. To see those comparisons directly, run `bash tests/run_stage00.sh build/bin/stage00_reference`; run a single Stage 05 gate with `bash tests/run_stage05_scientific_reference.sh stage05_1d build/bin/stage05_operator_reference tests/reference/stage05-1d-original.csv` or the corresponding `stage05_file` executable and frozen CSV. Each runner also prints the unchanged strict comparison as a diagnostic. The Python contract checks for missing/extra keys, non-finite values, and out-of-bound field/action changes run with `python3 tests/test_scientific_reference_gate.py`.
+
+The benchmark executables use paths relative to their current working directory and expect output directories to exist. Run them in a disposable tree, linking the tracked inputs for the readers and preparing every output folder first. The symlink is a path convenience, not a filesystem write-protection mechanism; the programs read model inputs and write only below `work/`. For example:
+
+```sh
+repo=$PWD
+run=$(mktemp -d)
+ln -s "$repo/modeldata" "$run/modeldata"
+for n in 1 2 3 4 5 6; do mkdir -p "$run/work/Bench$n"; done
+for path in Bench6/lm Bench7/exact Bench7/perturbed Bench7/unperturbed \
+            Bench7/zeroradius Bench8/exact Bench8/perturbed \
+            Bench8/unperturbed Bench9/exact Bench9/perturbed \
+            Bench9/unperturbed Bench10/exact Bench10/perturbed \
+            Bench10/unperturbed Bench10/perturbed2; do
+  mkdir -p "$run/work/$path"
+done
+for path in Cartesian Spherical Rotated Perturbed Sensitivity; do
+  mkdir -p "$run/work/Phobos/$path"
+done
+mkdir -p "$run/work/Ziheng"
+(cd "$run" && "$repo/build/bin/clean_bench_3")
+(cd "$run" && printf '0.001\n' | "$repo/build/bin/clean_bench_9")
+(cd "$run" && printf '0.001\n' | "$repo/build/bin/clean_bench_10")
+```
+
+The table above gives each program's source parameters and numerical settings; preserve those settings when selecting a different benchmark. `clean_bench_5` reads `lmax` and `maxstep`; `clean_bench_7` through `_10` read the mapping amplitude `h`. `phobos_gravity_perturbation` reads `lsmall`. Supply the intended values on stdin explicitly and record them with the run. The other listed programs use their tracked inputs and source settings without prompts. `OutputZiheng` consumes both `modeldata/TABLEA1.DAT` and `modeldata/prem.200.no`. Existing plot scripts can consume the current output layout from `work/`; their plotting code and input names are retained.
+
+These commands reproduce supported source workflows. The mapping from those runs to particular paper figures or ambiguous Phobos `lsmall` selections remains unverified unless separately documented; a successful run is not itself a paper-level claim.
+
 ## What validation establishes
+
+### Current Phase 3 validation
+
+The fresh disconnected Release configure and full build completed successfully; all 25 registered CTests passed, and the standalone multi-header/two-translation-unit link check exited 0. The Stage 00 and Stage 05 scientific gates passed their retained-key and quantity criteria. Unchanged strict comparators are still run and their nonzero diagnostic results are preserved separately.
+
+Ten supported original-settings workflows (`clean_bench_1..4`, `_6`, `_9`, `_10`, `phobos_gravity`, `phobos_heterogeneous`, and `OutputZiheng`) exited 0 and produced all 40 expected files. Thirty-eight files met the initially sufficient conservative physical bound. The Phobos physical-radius output also passes its already-declared geometry tolerance, yielding 39 of 40 passing scientific comparisons. The remaining file is the clean_bench_10 classical `perturbed/MatrixSolution.out`; its `461813.485791 m^2/s^2` maximum difference is retained as a baseline Grid-view lifetime defect attribution, not described as parity or accepted by a relaxed tolerance. The other Phobos radius exact-check difference and all strict exact/bytewise diagnostic results remain visible in the evidence record.
+
+Matched public API timings, including the candidate's independent residual calculation, were 14.026254 ms mapped and 342.357401 ms file-backed versus 13.893254 ms and 333.042666 ms for the old API lifecycle. Candidate medians changed by +0.96% and +2.80%; median RSS was 16,792 KiB versus 16,784 KiB mapped and 393,060 KiB versus 416,476 KiB file-backed. Candidate independent residuals were `2.69037115e-12` and `6.39413501e-10`; the solver algorithm and requested settings remain unchanged.
+
+The exact commands, limits, output hashes, comparison scripts, and build/performance manifests are in [Phase 3F validation evidence](docs/core-cleanup/evidence/phase3f/README.md). These runs reproduce the listed source workflows and do not resolve ambiguous paper labels or interactive Phobos `lsmall` figure mapping.
+
+### Historical Phase 2 validation
+
+The following records the earlier Phase 2 evidence and remains historical.
 
 The Stage 2B Release build compiled all configured targets. Its 14 CTests passed, the Stage 00 runner matched three frozen 20,700-record references with zero changed components and byte-identical representative output, and the standalone header-link smoke check exited successfully. The embedded CMake consumer also configured, built, and ran.
 

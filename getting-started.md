@@ -31,14 +31,14 @@ cmake --build build-tests -j2
 ctest --test-dir build-tests --output-on-failure
 ```
 
-The fixed Stage 00 runner and header-link smoke check are separate commands:
+The Stage 00 scientific runner and standalone header-link smoke check can also be run directly:
 
 ```sh
 tests/run_stage00.sh /absolute/path/to/gplspec/build-tests/bin/stage00_reference
 /absolute/path/to/gplspec/build-tests/bin/stage02_header_link
 ```
 
-The Stage 00 runner compares three 20,700-record outputs with frozen references, using `rtol=1e-13` and `atol=1e-15`, and checks representative output bytes. Do not regenerate those references during ordinary validation. The regression suite is bounded evidence for its listed fixtures; it does not validate every example, model, or platform. See [workflow and output contracts](benchmark.md).
+The Stage 00 runner takes two fresh captures and gates all 18,648 retained scientific records against the unchanged 20,700-record frozen reference. It explicitly retires only the 2,052 intermediate `dxi`, `dxilm`, and `df` records. The runner also prints the original strict exact comparison and representative byte comparison as diagnostics; those diagnostics can report floating-point or serialized-output differences while the separately defined scientific criteria pass. Stage 05 source/action and file-backed field gates run under CTest. Do not regenerate frozen references during ordinary validation. These checks are bounded evidence for their listed fixtures; they do not validate every example, model, or platform. See [workflow and output contracts](benchmark.md).
 
 ## Consume the current checkout from another CMake project
 
