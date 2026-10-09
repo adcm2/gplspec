@@ -1,0 +1,4 @@
+Finding a
+base status=0 it=1 error=1.31222e-38 absres=3.07703e-11 rhs=60.2221
+boundary status=0 it=0 error=4.46049e-14 absres=2.31582e-14 rhs=0.519184 guessnorm=0.403189 solnorm=0.403189
+l=1 b=0.519184 x=0.403189 residual=7.58444e-15

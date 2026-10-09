@@ -1,0 +1,15 @@
+c++ -O3 -DNDEBUG -std=gnu++23 -fopenmp -DBASELINE_PROBE \
+-I/tmp/gplspec-phase3-resume/baseline-gridref \
+-I/tmp/gplspec-phase3-resume/baseline-build/_deps/gaussquad-src \
+-I/tmp/gplspec-phase3-resume/baseline-build/_deps/numericconcepts-src/include \
+-I/tmp/gplspec-phase3-resume/baseline-build/_deps/gshtrans-src \
+-I/tmp/gplspec-phase3-resume/baseline-build/_deps/fftwpp-src \
+-I/tmp/gplspec-phase3-resume/baseline-build/_deps/planetarymodel-src \
+-I/tmp/gplspec-phase3-resume/baseline-build/_deps/interpolation-src \
+-I/tmp/gplspec-phase3-resume/baseline-build/_deps/tomographymodels-src \
+-isystem /tmp/gplspec-phase3-resume/baseline-build/_deps/eigen3-src \
+/tmp/gplspec-phase3-resume/classical-solver-probe-gridref.cpp \
+-o /tmp/gplspec-phase3-resume/classical-solver-probe-gridref \
+/usr/lib/x86_64-linux-gnu/libfftw3.so \
+/usr/lib/x86_64-linux-gnu/libfftw3f.so \
+/usr/lib/x86_64-linux-gnu/libfftw3l.so -lnetcdf

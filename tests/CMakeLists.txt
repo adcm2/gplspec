@@ -87,6 +87,15 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endif()
 
+add_executable(stage3e_classical_perturbation stage3e_classical_perturbation.cpp)
+target_link_libraries(stage3e_classical_perturbation PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage3e_classical_perturbation
+    COMMAND stage3e_classical_perturbation)
+  set_tests_properties(stage3e_classical_perturbation PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endif()
+
 add_executable(stage03_utilities stage03_utilities.cpp)
 target_link_libraries(stage03_utilities PRIVATE gplspec)
 if(BUILD_TESTING)
