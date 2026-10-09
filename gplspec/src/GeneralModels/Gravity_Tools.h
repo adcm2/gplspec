@@ -733,8 +733,8 @@ FindGravitationalPotentialPerturbation(
 
    // pseudospectral matrix replacement
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
-   MatrixReplacement3D<std::complex<double>> matrixpert(inp_model, inp_map);
-   matrixpert.NoBoundary();
+   MatrixReplacement3D<std::complex<double>> matrixpert(
+       inp_model, inp_map, false);
 
    // get force vector
    Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);
@@ -799,7 +799,6 @@ FindGravitationalPotentialClassicalPerturbation(
    // pseudospectral matrix replacement
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
    // MatrixReplacement3D<std::complex<double>> matrixpert(inp_model, inp_map);
-   // matrixpert.NoBoundary();
 
    // get force vector
    Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);

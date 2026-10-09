@@ -161,3 +161,12 @@ target_link_libraries(tutorial5_phobos_compile PRIVATE gplspec)
 # Opt-in Stage 3A performance harness; invoked by the controlled Python runner.
 add_executable(phase3a_performance EXCLUDE_FROM_ALL phase3a_performance.cpp)
 target_link_libraries(phase3a_performance PRIVATE gplspec)
+
+
+add_executable(stage3c_operator_action stage3c_operator_action.cpp)
+target_link_libraries(stage3c_operator_action PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage3c_operator_action COMMAND stage3c_operator_action)
+  set_tests_properties(stage3c_operator_action PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endif()

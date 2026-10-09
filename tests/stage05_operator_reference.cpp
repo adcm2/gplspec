@@ -28,14 +28,13 @@ int main() {
   }
 
   const Eigen::VectorXcd ax = op * x;
-  op.NoBoundary();
-  const Eigen::VectorXcd ax_without_boundary = op * x;
-  op.IncludeBoundary();
+  const auto op_without_boundary = op.WithBoundary(false);
+  const Eigen::VectorXcd ax_without_boundary = op_without_boundary * x;
   const Eigen::VectorXcd ay = op * y;
   const Scalar xay = x.dot(ay);
   const Scalar ax_y = ax.dot(y);
   const auto force = Gravity_Tools::FindForce(model, lmax);
-  const auto element_radii = op.noderadii();
+  const auto element_radii = model.Node_Information().ElementNodes();
   const auto interface_indices = model.Node_Information().idx_discont();
 
   std::cout << std::setprecision(17);
@@ -55,7 +54,9 @@ int main() {
             << ax(0).real() << ',' << ax(0).imag() << '\n';
   for (std::size_t layer = 1; layer < interface_indices.size(); ++layer) {
     const auto radial_node = interface_indices[layer];
-    const auto spectral_index = radial_node * op.npoly() * op.size0();
+    const auto spectral_index = radial_node * (model.Poly_Order()) *
+                                GSHTrans::GSHIndices<GSHTrans::All>(
+                                    lmax, lmax, 0).Size();
     std::cout << "interface," << layer << ',' << element_radii[radial_node]
               << ',' << ax(spectral_index).real() << ','
               << ax(spectral_index).imag() << '\n';
