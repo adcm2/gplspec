@@ -720,3 +720,7 @@ The user accepted Phase 4, including the reviewed seven-file correction at `7cda
 ## Phase 5A — targeted retirement inventory (2026-10-12)
 
 The Phase 4 acceptance record is committed; exact Phase 5 baseline: `c94951a342d17485aee766ec8037bd37ac61153c` on `refactor/core-cleanup`. Added the bounded keep/remove/replace inventory, inherited scientific criteria, Stage06 seven-product table plan, and stage gates in [`phase-5-handoff.md`](docs/core-cleanup/phase-5-handoff.md). Independent Luna review passed (`/tmp/gplspec-phase5/5a-luna-review.md`). Its factual correction is incorporated: 5C must consolidate the mapping table’s still-supported commands/selectors before removing redundant mappings. No production, test, reference, protected-data, or workflow-output files changed; 5B source cleanup awaits the local 5A checkpoint.
+
+## Phase 5B — approved migration-scaffolding cleanup (2026-10-12)
+
+Removed the unregistered `tests/run_stage06_output_reference.py` and only the commented stale sweep fragments from `examples/clean_bench_8.cpp` and `examples/clean_bench_9.cpp`. Preserved the frozen seven-product hash manifest, registered Stage06 helper test, active producers/sweep, and experimental forwarders. In the existing Release correction build with examples enabled, `clean_bench_8`, `clean_bench_9`, and `stage06_output_helpers` built; focused CTest passed 1/1. No full build/campaign. Independent Luna review passed (`/tmp/gplspec-phase5/5b-luna-review.md`); the seven-product manifest is unchanged.

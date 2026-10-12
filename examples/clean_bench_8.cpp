@@ -111,22 +111,6 @@ main() {
    MappingPerturbation testpertmap(testtomo, map0);
    auto mapping_result = SolveMappingPerturbation(testtomo, testpertmap,
                                                   std::pow(10.0, -12.0));
-
-   // variation with h:
-   //    timer1.start();
-   //    int lenh = 100;
-   //    std::vector<double> vec_h(lenh);
-   //    std::vector<double> vec_zerosol(lenh), vec_exactsol(lenh);
-   //    for (int idx = 0; idx < lenh; ++idx) {
-   //       vec_h[idx] = 0.2 / lenh * idx;
-   //    }
-   //    {
-   //       double pi_db = 3.1415926535897932;
-
-   //////////////////////////////////////////////////////////////////
-   //////////////////////////////////////////////////////////////////
-
-   // output test
    std::string pathtofolder1 = "./work/Bench8/exact";
    std::string pathtofolder2 = "./work/Bench8/perturbed";
    std::string pathtofolder3 = "./work/Bench8/unperturbed";
@@ -166,17 +150,5 @@ main() {
        std::filesystem::path(pathtofolder3) / "field_bundle", testtomo,
        potential_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
        std::move(base_bundle));
-
-   //    std::string pathtofile = "./work/Bench8/zeroradius/MatrixSolution.out";
-   //    auto file2 = std::ofstream(pathtofile);
-   //    for (int idx = 0; idx < lenh; ++idx) {
-   //       file2 << vec_h[idx] << ";" << vec_zerosol[idx] << ";" <<
-   //       vec_exactsol[idx]
-   //             << std::endl;
-   //    }
-   //    file2.close();
-   //  vec_exactsol2);
-
-
    return 0;
 }

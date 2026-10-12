@@ -26,14 +26,20 @@ No source or test files have been changed for Phase 5A. The Phase 4 status says 
 
 ## Stage gates and planned work
 
-5A inventory review: independent Luna PASS, recorded in `/tmp/gplspec-phase5/5a-luna-review.md`. The reviewer confirmed the bounded removals and requested the factual 5C correction above. No source or test files changed. 5B may begin after the coordinator records the local 5A checkpoint.
+5A inventory review: independent Luna PASS, recorded in `/tmp/gplspec-phase5/5a-luna-review.md`; checkpoint committed locally. The reviewer confirmed the bounded removals and requested the factual 5C correction above. No source or test files changed in 5A.
 
 | Stage | Scope | Gate |
 |---|---|---|
-| 5A | Approve this concrete keep/remove/replace inventory. | Independent Luna PASS; local checkpoint pending. No source changes. |
-| 5B | Remove only the approved dead runner, comment-only duplicate sweep blocks, and other specifically approved migration scaffolding; preserve protected material and scientific checks. | Focused build/tests and separate independent Luna review. |
+| 5A | Approve this concrete keep/remove/replace inventory. | Independent Luna PASS; local checkpoint recorded. No source changes. |
+| 5B | Remove only the approved dead runner and comment-only duplicate sweep blocks; preserve protected material and scientific checks. | Focused build/CTest passed; independent Luna PASS recorded at `/tmp/gplspec-phase5/5b-luna-review.md`. |
 | 5C | Consolidate the supported clean-checkout-to-CleanBench/Phobos build, run, output and plotting route; include the seven-product replacement/check table. | Documentation review and independent Luna stage review. |
 | 5D | Freeze the implementation candidate and perform one fresh Release build, full supported test suite, public-header/link and external-consumer checks, frozen scientific gates, representative unchanged-settings workflows/plots, and matched performance measurements. | Report source/input identities, results, limitations, and additional-trace cost separately. |
 | 5E | Obtain one cumulative Sol-high review; resolve any blockers with affected-only checks/review. | Update final handoff and stop for the user's human review. |
 
 For 5D, reuse the extracted Phase 4 workflow, comparison, plot and performance scripts in `/tmp/gplspec-phase5-inherited` where applicable and the pinned dependency sources already staged for focused C++ checks under `/tmp/gplspec-phase4-correction/build/_deps`. These are working artifacts, not repository inputs. Phase 4's export cost (+58.8% for matched evaluation/export) remains disclosed; Phase 5 will compare matched solve, export, and complete paths with one-thread settings and separate mandatory additional two-sided traces. Do not estimate unavailable runtime or claim historical `/tmp` logs remain present. Final validation is one fresh candidate build and one bounded campaign, not an open-ended optimization effort.
+
+## 5B — approved migration-scaffolding cleanup
+
+Removed only `tests/run_stage06_output_reference.py` and the commented legacy `variation with h` / `MatrixSolution.out` sweep fragments in `examples/clean_bench_8.cpp` and `examples/clean_bench_9.cpp`. Kept the frozen `tests/reference/stage06-output-baseline.sha256`, registered `stage06_output_helpers` regression, live Bench 8/9 bundle producers, Bench 7 sweep, and experimental forwarding utilities unchanged. The retired runner was not registered and its former producer is absent.
+
+Focused validation reused `/tmp/gplspec-phase4-correction/build` (Release, examples enabled): `clean_bench_8`, `clean_bench_9`, and `stage06_output_helpers` built successfully; `ctest -R '^stage06_output_helpers$'` passed 1/1. No full build or campaign was run. `git diff --check` passed. Independent Luna review passed (`/tmp/gplspec-phase5/5b-luna-review.md`); the 5B diff was limited to the approved scope, and no additional cleanup is included.
