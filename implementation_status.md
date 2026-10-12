@@ -724,3 +724,10 @@ The Phase 4 acceptance record is committed; exact Phase 5 baseline: `c94951a342d
 ## Phase 5B — approved migration-scaffolding cleanup (2026-10-12)
 
 Removed the unregistered `tests/run_stage06_output_reference.py` and only the commented stale sweep fragments from `examples/clean_bench_8.cpp` and `examples/clean_bench_9.cpp`. Preserved the frozen seven-product hash manifest, registered Stage06 helper test, active producers/sweep, and experimental forwarders. In the existing Release correction build with examples enabled, `clean_bench_8`, `clean_bench_9`, and `stage06_output_helpers` built; focused CTest passed 1/1. No full build/campaign. Independent Luna review passed (`/tmp/gplspec-phase5/5b-luna-review.md`); the seven-product manifest is unchanged.
+
+## Phase 5C — current workflow documentation (2026-10-12)
+
+Updated the current getting-started/build path and consolidated benchmark settings with isolated producer/plot commands. Preserved useful workflow selectors, corrected angle-free radial-profile wording, and added a seven-product Stage06 replacement-capability/check table that explicitly does not claim direct product equivalence. Documentation-only; no numerical rerun. Affected-only independent Luna follow-up passed (`/tmp/gplspec-phase5/5c-luna-review.md`).
+
+
+5C review response: corrected the historical referential radial-harmonic product row and the two rotated-density rows to distinguish `phobos_heterogeneous` angular-grid and slice bundles. No code or numerical settings changed; affected-only independent review passed (`/tmp/gplspec-phase5/5c-luna-review.md`).

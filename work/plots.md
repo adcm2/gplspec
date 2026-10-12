@@ -112,14 +112,10 @@ element/material, so they do not draw ramps across a discontinuity. Physical
 radius is used when present; harmonic and reference-sphere profiles use
 reference radius. Harmonic plots label the selected real or imaginary `(l,m)`
 coefficient and reference-radius axis; use `--component real` or
-`--component imag` (the default is `real`). Angular/radial profiles label the
-sampled ray in radians and physical radius where present. `--difference` adds an absolute-difference panel only after
+`--component imag` (the default is `real`). Profiles with recorded angles label their sampled ray in radians. Angle-free radial profiles use their declared radial coordinates and do not claim a ray. Physical radius is labeled where present. `--difference` adds an absolute-difference panel only after
 element/material, side, reference-radius, and physical-coordinate agreement is
 checked (coordinate tolerance `rtol=1e-12`, `atol=1e-14`); omit it for
-perturbation geometries that intentionally differ. `auto` can compare sampled
-angular grids with exact radial profiles on a shared ray, or harmonic
-coefficients with harmonic coefficients. Different scientific representations
-should be plotted in separate invocations.
+perturbation geometries that intentionally differ. `auto` can compare sampled angular grids with finite-angle radial profiles on a shared ray, or harmonic coefficients with harmonic coefficients. Angle-free radial profiles remain valid for standalone radial plots at their declared coordinates; `--difference` requires matching ray and coordinate values. Different scientific representations should be plotted in separate invocations.
 
 Maps require an explicit element and trace side. They show coordinates in the
 bundle's recorded frame: a rotated output frame when rotation angles are
@@ -163,33 +159,20 @@ requires a finite, three-column table, strictly increasing nonnegative `h`, a
 nonzero approximate-potential scale, and a nonzero error at its positive guide
 anchor.
 
-## Retired plot scripts and replacement
+## Current plot selection reference
 
-The old scripts read positional columns from legacy `.out` files. Their plot
-roles now use field-bundle quantities and explicit element/ray selectors:
+Use these selectors with the isolated bundle paths and producer commands above. The supported build settings and output products are recorded in [scientific workflows](../benchmark.md).
 
-| Retired script | Replacement |
-| --- | --- |
-| `CleanBench1Plot.py` | `radial RUN/work/Bench1/field_bundle RUN/work/Bench1/integral_bundle RUN/work/Bench1/exact_bundle --quantity potential --representation harmonic_coefficients --degree 0 --order 0`. |
-| `CleanBench2Plot.py` | `radial RUN/work/Bench2/field_bundle RUN/work/Bench2/integral_bundle --quantity potential --representation harmonic_coefficients --degree 0 --order 0`. |
-| `CleanBench3Plot.py`, `CleanBench4Plot.py`, `CleanBench5Plot.py` | `radial` potential on a shared ray; `auto` supports exact `radial_profile` against a field `angular_grid`. Use `--difference` only for matching geometry. |
-| `CleanBench6Plot.py` | `radial RUN/work/Bench6/lm/harmonic_bundle RUN/work/Bench6/lm/integral_bundle --quantity potential --representation harmonic_coefficients --degree L --order M`. |
-| `CleanBench6Plot1.py` | The potential comparison uses the `CleanBench6Plot.py` command. For each sensitivity `(L,M)`, run `radial RUN/work/Bench6/lm/sensitivity_bundle --quantity sensitivity_kernel --representation harmonic_coefficients --degree L --order M --component real` and repeat with `--component imag`. |
-| `CleanBench6Plot_SK.py` | For each sensitivity `(L,M)`, run `radial RUN/work/Bench6/lm/sensitivity_bundle --quantity sensitivity_kernel --representation harmonic_coefficients --degree L --order M --component real` and repeat with `--component imag`. |
-| `CleanBench7Plot.py`, `CleanBench8Plot.py`, `CleanBench9Plot.py`, `CleanBench10Plot.py` | `radial` potential overlays for exact, perturbed, and unperturbed bundles. Omit `--difference` when mappings differ. |
-| `CleanBench7Plot1.py` | `sweep RUN/work/Bench7/zeroradius/MatrixSolution.out`; preserves the centre-potential curves and normalized relative-error/quadratic-guide panels from the three-column diagnostic table. |
-| `PhobosFullSlice.py`, `PhobosSlicePlot.py`, `PhobosSlicePlot2.py` | `slice --quantity potential`, `density_physical`, `density_referential`, or `sensitivity_kernel`; each bundle retains its distinct quantity/units. |
-| `PhobosSliceDensity.py` | `slice --quantity density_physical` or `density_referential`. |
-| `PhobosPerturbation.py` | `map` for sampled angular-grid comparisons, or `slice` for equatorial comparison; each perturbation geometry remains a separate field bundle. |
-| `PhobosSensitivityKernel.py` | `radial` or `map --quantity sensitivity_kernel`; radial plots select `--degree/--order`. |
-| `PhobosSensitivityKernel2.py` | `slice --quantity sensitivity_kernel`. |
-| `PhobosSurfacePotential.py`, `PhobosSurfacePotentialRotated.py` | `map --quantity potential --element N --side inner|outer`; run once per requested frame/trace. |
-| `PhobosSurfaceTopography.py` | `topography RUN/work/Ziheng/PhobosRadius.bundle`, which carries the explicit `surface_radius` quantity. |
-| `PowerSpectrum.py` | `power --element N --radial-node J` selects one element-local radial node from the degree-power representation; all local nodes are emitted, including both interface traces. |
+| Workflow products | Plot command and selectors |
+|---|---|
+| CleanBench 1 and 2 field/integral bundles | `radial` with `--quantity potential --representation harmonic_coefficients --degree 0 --order 0`; include the Bench 1 exact bundle for the analytic overlay. |
+| CleanBench 3–5 mapped field and exact bundles | `radial --quantity potential`; `auto` can pair finite-angle `radial_profile` and `angular_grid` data on a shared ray. Use `--difference` only when ray and coordinates agree. Angle-free radial profiles plot at their declared radii without ray labels. |
+| CleanBench 6 harmonic and sensitivity bundles | Potential: select `(L,M)` with `radial --quantity potential --representation harmonic_coefficients --degree L --order M`. Sensitivity: use `--quantity sensitivity_kernel` with the same selectors and repeat with `--component real` and `--component imag`. |
+| CleanBench 7–10 exact, perturbed, and unperturbed field bundles | `radial --quantity potential` overlays the available scalar radial profiles. Leave `--difference` off when mapping geometries or coordinates differ. CleanBench 7's three-column zero-radius diagnostic is plotted separately with `sweep`. |
+| Phobos potential and density angular grids | `map --quantity potential`, `density_physical`, or `density_referential`; select `--element N --side inner|outer` for an explicit modeled trace. Use each bundle's frame and rotation metadata. |
+| Phobos potential, density, and sensitivity slices | `slice --quantity potential`, `density_physical`, `density_referential`, or `sensitivity_kernel`; choose the bundle for the intended frame and workflow. |
+| Phobos sensitivity radial/angular products | `radial` or `map --quantity sensitivity_kernel`; radial harmonics require `--degree L --order M`. |
+| Phobos degree power | `power --element N --radial-node J` selects one element-local node; both interface traces are emitted. |
+| Ziheng surface radius | `topography RUN/work/Ziheng/PhobosRadius.bundle`, whose quantity is `surface_radius`. |
 
-`field_bundle.py` remains the strict reader and `run_field_bundle.py` remains the
-producer entry point. Plotting does not regenerate scientific data or alter
-saved workflow products.
-
-Legacy plot-script names identify migrated workflow roles only; this mapping
-does not assert a specific paper figure or publication provenance.
+These commands operate on schema-v1 bundles or the retained CleanBench 7 diagnostic table. They do not recreate retired `.out` files or assert publication-figure provenance.

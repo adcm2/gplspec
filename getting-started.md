@@ -13,7 +13,7 @@ Requirements are CMake 3.20 or newer, a C++23 compiler, Git, OpenMP development 
 
 The recorded Phase 2 validation used CMake 3.28.3, GNU C/C++ 13.3, Eigen 3.4.0, FFTW 3.3.10, and NetCDF 4.9.2. Those are evidence provenance, not enforced exact versions beyond the pinned source revisions.
 
-These commands describe the current working tree. Until the Phase 2 changes are published, a fresh clone of the public default branch may not contain this target-level build contract.
+Use these commands to configure and build the checkout at its current revision. For workflow settings and expected outputs, see [scientific workflows](benchmark.md); for isolated producer and plotting commands, see the [field-bundle guide](work/plots.md).
 
 ```sh
 cd /path/to/current/gplspec-checkout
@@ -54,8 +54,6 @@ target_link_libraries(my_consumer PRIVATE gplspec)
 ```
 
 CMake fetches GPLSpec's pinned sources unless compatible dependency targets/sources are already provided through the supported parent configuration. The tracked [external consumer check](tests/external_consumer/CMakeLists.txt) exercises subdirectory integration with parent-provided Eigen and checks that the target supplies language and module requirements.
-
-The old website recipe pinned immutable PR #7 commit `a77742f60fee305a1e058663e55e5ca62c2f3739`; that revision predates the current target propagation. It is historical and is not a recipe for this working tree.
 
 ## Run an example safely
 
