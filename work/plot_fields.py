@@ -76,21 +76,30 @@ def radial(args):
     ray = None
     if any(rep in {"angular_grid", "radial_profile"} for rep in reps):
         ray_sets = []
-        for (_, c), rep in zip(datasets, reps):
+        for i, rep in enumerate(reps):
+            if rep not in {"angular_grid", "radial_profile"}:
+                continue
+            _, c = datasets[i]
             mask = selected(c, rep)
-            ray_sets.append(set(zip(c["theta_rad"][mask], c["phi_rad"][mask])))
-        common_rays = set.intersection(*ray_sets)
-        if not common_rays:
-            raise ValueError("bundles have no exactly matching sampled ray")
-        requested = args.theta, args.phi
-        ray = min(common_rays, key=lambda item: (item[0]-requested[0])**2 + (item[1]-requested[1])**2)
+            angle_data = np.isfinite(c["theta_rad"][mask]) & np.isfinite(c["phi_rad"][mask])
+            if np.any(angle_data):
+                ray_sets.append(set(zip(c["theta_rad"][mask][angle_data],
+                                        c["phi_rad"][mask][angle_data])))
+        if ray_sets:
+            common_rays = set.intersection(*ray_sets)
+            if not common_rays:
+                raise ValueError("bundles have no exactly matching sampled ray")
+            requested = args.theta, args.phi
+            ray = min(common_rays, key=lambda item: (item[0]-requested[0])**2 + (item[1]-requested[1])**2)
     reference = None
     component_column = "value_real" if args.component == "real" else "value_imag"
     for dataset_index, (manifest, c) in enumerate(datasets):
         rep = reps[dataset_index]
         mask = selected(c, rep)
-        if rep in {"angular_grid", "radial_profile"}:
-            mask &= (c["theta_rad"] == ray[0]) & (c["phi_rad"] == ray[1])
+        if rep in {"angular_grid", "radial_profile"} and ray is not None:
+            has_angles = np.isfinite(c["theta_rad"]) & np.isfinite(c["phi_rad"])
+            mask &= ~has_angles | ((c["theta_rad"] == ray[0]) &
+                                  (c["phi_rad"] == ray[1]))
         elif rep == "harmonic_coefficients":
             mask &= (c["degree"] == args.degree) & (c["order"] == args.order)
         else:
@@ -140,7 +149,8 @@ def radial(args):
         radius_label = "Reference radius (m)"
     else:
         axes[0].set_ylabel(f"{args.quantity} {args.component} component ({units})")
-        axes[0].set_title(f"Ray θ={ray[0]:.6g} rad, φ={ray[1]:.6g} rad")
+        if ray is not None:
+            axes[0].set_title(f"Ray θ={ray[0]:.6g} rad, φ={ray[1]:.6g} rad")
         radius_label = "Radius (physical where available, otherwise reference; m)"
     axes[0].legend(fontsize=7)
     if compare:

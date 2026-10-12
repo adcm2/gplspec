@@ -56,6 +56,8 @@ def main():
         bundle = root / "bundle"
         rotated_bundle = root / "rotated_bundle"
         surface_bundle = root / "surface_bundle"
+        rotated_authoritative_bundle = root / "rotated_authoritative_bundle"
+        unrotated_angular_bundle = root / "unrotated_angular_bundle"
         input_file = root / "input.txt"
         input_file.write_bytes(b"verified input bytes\n")
         (root / "auxiliary.txt").write_bytes(b"another runtime input\n")
@@ -63,8 +65,10 @@ def main():
         subprocess.run([sys.executable, str(runner), "--workdir", str(root),
                         "--input", "input.txt", "--input", "auxiliary.txt",
                         "--bundle", "bundle", "--bundle", "rotated_bundle",
-                        "--bundle", "surface_bundle", "--", str(executable),
-                        str(bundle), str(rotated_bundle), str(surface_bundle)], check=True)
+                        "--bundle", "surface_bundle", "--bundle", "rotated_authoritative_bundle",
+                        "--bundle", "unrotated_angular_bundle", "--", str(executable),
+                        str(bundle), str(rotated_bundle), str(surface_bundle),
+                        str(rotated_authoritative_bundle), str(unrotated_angular_bundle)], check=True)
         manifest, rows = MODULE.open_bundle(bundle)
         data = list(rows)
         assert manifest["schema_version"] == 1
@@ -96,6 +100,13 @@ def main():
         assert all(len({row["theta_rad"] for row in rows}) > 1 and
                    len({row["phi_rad"] for row in rows}) > 1
                    for rows in grid_groups.values())
+        authoritative_manifest, authoritative_rows = MODULE.open_bundle(
+            rotated_authoritative_bundle)
+        assert authoritative_manifest["rotation"]["angles_rad"] == [0.2, 0.7, -0.1]
+        assert list(authoritative_rows)
+        unrotated_manifest, unrotated_rows = MODULE.open_bundle(unrotated_angular_bundle)
+        assert unrotated_manifest["rotation"]["angles_rad"] is None
+        assert list(unrotated_rows)
         surface_manifest, surface_rows = MODULE.open_bundle(surface_bundle)
         surface_data = list(surface_rows)
         assert surface_manifest["schema_version"] == 1

@@ -70,5 +70,52 @@ class CleanBench7SweepTests(unittest.TestCase):
                     plot_fields.load_sweep_table(self.table)
 
 
+class RadialProfileTests(unittest.TestCase):
+    @staticmethod
+    def columns(theta):
+        return {
+            "representation": np.array(["radial_profile", "radial_profile"]),
+            "element": np.array([0, 0]), "material": np.array([2, 2]),
+            "degree": np.array([-1, -1]), "order": np.array([0, 0]),
+            "radial_node": np.array([-1, -1]),
+            "reference_radius_m": np.array([1.0, 2.0]),
+            "physical_radius_m": np.array([1.1, 2.2]),
+            "theta_rad": np.array(theta), "phi_rad": np.array([0.3, 0.3]),
+            "value_real": np.array([3.0, 5.0]),
+            "value_imag": np.array([0.0, 0.0]),
+            "side": np.array(["inner", "outer"]),
+        }
+
+    def test_angle_free_profiles_plot_declared_radial_coordinates(self):
+        manifest = {"dataset": "profile", "quantity_contracts": {
+            "potential": {"unit": "m² s⁻²"}}}
+        columns = self.columns([np.nan, np.nan])
+        with patch.object(plot_fields, "load", return_value=(manifest, columns)), \
+             patch.object(plot_fields, "finish"):
+            plot_fields.radial(SimpleNamespace(
+                difference=False, bundle=["profile"], quantity="potential",
+                representation="auto", theta=0.0, phi=0.0, component="real",
+                degree=0, order=0, output=None))
+        axis = plt.gcf().axes[0]
+        self.assertEqual(len(axis.lines), 1)
+        np.testing.assert_array_equal(axis.lines[0].get_xdata(), [1.1, 2.2])
+        np.testing.assert_array_equal(axis.lines[0].get_ydata(), [3.0, 5.0])
+
+    def test_angle_dependent_profiles_still_match_requested_ray(self):
+        manifest = {"dataset": "profile", "quantity_contracts": {
+            "potential": {"unit": "m² s⁻²"}}}
+        columns = self.columns([0.1, 0.2])
+        with patch.object(plot_fields, "load", return_value=(manifest, columns)), \
+             patch.object(plot_fields, "finish"):
+            plot_fields.radial(SimpleNamespace(
+                difference=False, bundle=["profile"], quantity="potential",
+                representation="auto", theta=0.18, phi=0.3, component="real",
+                degree=0, order=0, output=None))
+        axis = plt.gcf().axes[0]
+        self.assertEqual(len(axis.lines), 1)
+        np.testing.assert_array_equal(axis.lines[0].get_xdata(), [2.2])
+        np.testing.assert_array_equal(axis.lines[0].get_ydata(), [5.0])
+
+
 if __name__ == "__main__":
     unittest.main()

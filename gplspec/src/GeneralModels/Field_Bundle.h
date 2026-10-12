@@ -313,6 +313,8 @@ inline void WriteAngular(const std::filesystem::path &directory,
                          const FieldEvaluation::Rotation *rotation = nullptr,
                          FieldEvaluation::TraceSelection traces =
                              FieldEvaluation::TraceSelection::Both) {
+   metadata.rotation = rotation ?
+       std::optional<FieldEvaluation::Rotation>(*rotation) : std::nullopt;
    Writer(directory, model, std::move(metadata)).Write([&](auto &&emit) {
       FieldEvaluation::ForEachAngularGridSample(model, solution, quantity,
                                                 std::forward<decltype(emit)>(emit),

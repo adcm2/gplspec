@@ -8,7 +8,7 @@
 #include <vector>
 
 int main(int argc, char **argv) {
-   if (argc != 4) throw std::invalid_argument("expected regular, rotated, and surface bundle directories");
+   if (argc != 6) throw std::invalid_argument("expected regular, rotated, surface, and WriteAngular bundle directories");
    using namespace GeneralEarthModels;
    const auto model = Density3D::SphericalHomogeneousPlanet(
        1.0, 1.0, 6.371e6, 3600.0, 5.972e24, 0.5, 1.2);
@@ -87,4 +87,18 @@ int main(int argc, char **argv) {
       sample.value = {sample.physical_radius_m, 0.0};
       emit(sample);
    });
+
+   const GPLSpec::FieldEvaluation::Rotation conflicting_rotation{0.4, 0.5, 0.6};
+   GPLSpec::FieldBundle::RunMetadata angular_metadata;
+   angular_metadata.workflow = "stage4c_roundtrip";
+   angular_metadata.dataset = "write_angular_rotation";
+   angular_metadata.rotation = conflicting_rotation;
+   GPLSpec::FieldBundle::WriteAngular(
+       argv[4], model, solution,
+       GPLSpec::FieldEvaluation::Quantity::Potential, angular_metadata,
+       &rotation);
+   angular_metadata.dataset = "write_angular_unrotated";
+   GPLSpec::FieldBundle::WriteAngular(
+       argv[5], model, solution,
+       GPLSpec::FieldEvaluation::Quantity::Potential, angular_metadata);
 }
