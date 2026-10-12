@@ -731,3 +731,7 @@ Updated the current getting-started/build path and consolidated benchmark settin
 
 
 5C review response: corrected the historical referential radial-harmonic product row and the two rotated-density rows to distinguish `phobos_heterogeneous` angular-grid and slice bundles. No code or numerical settings changed; affected-only independent review passed (`/tmp/gplspec-phase5/5c-luna-review.md`).
+
+## Phase 5D — final validation (2026-10-12)
+
+Frozen candidate `0d8f43a0f3bf8d9ad471408f54a9a429d1039d79` passed the fresh Release build, CTest 26/26, standalone header-link check, seven baseline/candidate workflows (14/14 exits), 31-bundle/9,145,586-row scientific comparison, and 97-file protected-hash audit. Twelve plots rendered; five representative plots received coordinator visual checks. Independent Luna 5D evidence review passed with no blockers (`/tmp/gplspec-phase5/5d-luna-review.md`), including verification of all 493 archived baseline blobs. The inherited performance binaries are byte-identical; the observed -3.7% to +3.2% timing differences are run-to-run noise, not attributable improvements or regressions. Detailed logs and manifests are under `/tmp/gplspec-phase5`; the 5D snapshot is in [the Phase 5 handoff](docs/core-cleanup/phase-5-handoff.md). Cumulative Phase 5 Sol-high review and final user acceptance remain outstanding.
