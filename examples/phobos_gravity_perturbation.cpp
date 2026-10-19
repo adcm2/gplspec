@@ -156,7 +156,7 @@ main() {
    rotated_metadata.rotation = rotation;
    GPLSpec::FieldBundle::WriteAngular(
        std::filesystem::path(pathtofolder3) / "full_rotated_grid_bundle",
-       phobos, full_result.solution,
+       phobosfull, full_result.solution,
        GPLSpec::FieldEvaluation::Quantity::Potential,
        std::move(rotated_metadata), &rotation);
    auto rotated_slice_metadata = GPLSpec::FieldBundle::WithSolve(
@@ -168,7 +168,7 @@ main() {
    rotated_slice_metadata.rotation = rotation;
    GPLSpec::FieldBundle::WriteSlice(
        std::filesystem::path(pathtofolder3) / "full_rotated_slice_bundle",
-       phobos, full_result.solution,
+       phobosfull, full_result.solution,
        GPLSpec::FieldEvaluation::Quantity::Potential, rotation,
        slice_azimuths, std::move(rotated_slice_metadata));
 

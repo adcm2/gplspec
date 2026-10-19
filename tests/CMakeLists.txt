@@ -226,5 +226,11 @@ target_link_libraries(stage4c_bundle_fixture PRIVATE gplspec)
 if(BUILD_TESTING)
   add_test(NAME stage4c_field_bundle
     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_field_bundle.py
-      $<TARGET_FILE:stage4c_bundle_fixture>)
+      $<TARGET_FILE:stage4c_bundle_fixture> ${PROJECT_SOURCE_DIR}/modeldata/TABLEA1.DAT)
+  add_test(NAME plot_fields_python
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_plot_fields.py)
+  set_tests_properties(plot_fields_python PROPERTIES
+    ENVIRONMENT "MPLBACKEND=Agg;MPLCONFIGDIR=${CMAKE_CURRENT_BINARY_DIR}/mpl-config;PYTHONDONTWRITEBYTECODE=1")
+  set_tests_properties(stage4c_field_bundle PROPERTIES
+    ENVIRONMENT "MPLBACKEND=Agg;MPLCONFIGDIR=${CMAKE_CURRENT_BINARY_DIR}/mpl-config;PYTHONDONTWRITEBYTECODE=1")
 endif()

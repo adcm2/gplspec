@@ -60,6 +60,12 @@ def radial(args):
     for directory in args.bundle:
         manifest, c = load(directory, args.quantity)
         datasets.append((manifest, c))
+    if compare:
+        frame = (datasets[0][0]["coordinates"], datasets[0][0]["rotation"])
+        if any((manifest["coordinates"], manifest["rotation"])
+               != frame for manifest, _ in datasets[1:]):
+            raise ValueError(
+                "difference requires matching coordinate and rotation frames")
     available = [set(c["representation"]) for _, c in datasets]
     if args.representation != "auto":
         reps = [args.representation] * len(datasets)
@@ -248,6 +254,27 @@ def slice_plot(args):
                              figsize=(7*len(args.bundle), 7))
     for directory, ax in zip(args.bundle, axes[0]):
         manifest, c = load(directory, args.quantity)
+        if args.quantity == "surface_radius":
+            indices = np.flatnonzero(selected(c, "rotated_slice"))
+            if args.element is not None:
+                indices = indices[c["element"][indices] == args.element]
+            if not len(indices):
+                raise ValueError("requested surface-radius slice element is absent")
+            for element in np.unique(c["element"][indices]):
+                ring = indices[c["element"][indices] == element]
+                ring = ring[np.argsort(c["phi_rad"][ring])]
+                radius = c["value_real"][ring]
+                theta, phi = c["theta_rad"][ring], c["phi_rad"][ring]
+                x = radius * np.sin(theta) * np.cos(phi)
+                y = radius * np.sin(theta) * np.sin(phi)
+                ax.plot(np.r_[x, x[0]], np.r_[y, y[0]], marker=".",
+                        label=f"element {element} surface")
+            ax.set_aspect("equal")
+            frame = _frame_label(manifest)
+            ax.set(xlabel=f"x in {frame} (m)", ylabel=f"y in {frame} (m)",
+                   title=f"{manifest['dataset']} surface-radius slice")
+            ax.legend(fontsize=7)
+            continue
         available = np.unique(c["element"][selected(c, "rotated_slice")])
         elements = available if args.element is None else np.array([args.element])
         mesh, values = _slice_mesh(c, elements)

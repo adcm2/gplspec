@@ -47,9 +47,12 @@ Current plot consumers use the field-bundle reader and `work/plot_fields.py`; th
 Build the maintained API and registered quantity gates with the normal Release configuration:
 
 ```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+  -DBUILD_TESTING=ON \
+  -DMY_PROJECT_BUILD_EXAMPLES=ON \
+  -DGPLSPEC_BUILD_BASELINE_HARNESS=ON
 cmake --build build -j2
-ctest --test-dir build --output-on-failure
+ctest --test-dir build --output-on-failure --no-tests=error
 ```
 
 CTest runs the Stage 00 two-capture scientific comparison and the Stage 05 1-D/file-backed scientific comparisons. To see those comparisons directly, run `bash tests/run_stage00.sh build/bin/stage00_reference`; run a single Stage 05 gate with `bash tests/run_stage05_scientific_reference.sh stage05_1d build/bin/stage05_operator_reference tests/reference/stage05-1d-original.csv` or the corresponding `stage05_file` executable and frozen CSV. Each runner also prints the unchanged strict comparison as a diagnostic. The Python contract checks for missing/extra keys, non-finite values, and out-of-bound field/action changes run with `python3 tests/test_scientific_reference_gate.py`.

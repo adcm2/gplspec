@@ -51,6 +51,7 @@ def edit_first_row(source, destination, edit):
 
 def main():
     executable = Path(sys.argv[1])
+    model_data = Path(sys.argv[2])
     with tempfile.TemporaryDirectory(prefix="gplspec-field-bundle-") as temp:
         root = Path(temp)
         bundle = root / "bundle"
@@ -58,6 +59,12 @@ def main():
         surface_bundle = root / "surface_bundle"
         rotated_authoritative_bundle = root / "rotated_authoritative_bundle"
         unrotated_angular_bundle = root / "unrotated_angular_bundle"
+        surface_slice_bundle = root / "surface_slice_bundle"
+        full_geometry = root / "full_geometry"
+        truncated_geometry = root / "truncated_geometry"
+        full_slice_geometry = root / "full_slice_geometry"
+        truncated_slice_geometry = root / "truncated_slice_geometry"
+        surface_equatorial_slice_bundle = root / "surface_equatorial_slice_bundle"
         input_file = root / "input.txt"
         input_file.write_bytes(b"verified input bytes\n")
         (root / "auxiliary.txt").write_bytes(b"another runtime input\n")
@@ -66,9 +73,17 @@ def main():
                         "--input", "input.txt", "--input", "auxiliary.txt",
                         "--bundle", "bundle", "--bundle", "rotated_bundle",
                         "--bundle", "surface_bundle", "--bundle", "rotated_authoritative_bundle",
-                        "--bundle", "unrotated_angular_bundle", "--", str(executable),
+                        "--bundle", "unrotated_angular_bundle",
+                        "--bundle", "surface_slice_bundle",
+                        "--bundle", "full_geometry", "--bundle", "truncated_geometry",
+                        "--bundle", "full_slice_geometry", "--bundle", "truncated_slice_geometry",
+                        "--bundle", "surface_equatorial_slice_bundle",
+                        "--", str(executable),
                         str(bundle), str(rotated_bundle), str(surface_bundle),
-                        str(rotated_authoritative_bundle), str(unrotated_angular_bundle)], check=True)
+                        str(rotated_authoritative_bundle), str(unrotated_angular_bundle),
+                        str(surface_slice_bundle), str(full_geometry), str(truncated_geometry),
+                        str(full_slice_geometry), str(truncated_slice_geometry),
+                        str(model_data), str(surface_equatorial_slice_bundle)], check=True)
         manifest, rows = MODULE.open_bundle(bundle)
         data = list(rows)
         assert manifest["schema_version"] == 1
@@ -116,6 +131,77 @@ def main():
         with (surface_bundle / "samples.csv").open(newline="", encoding="utf-8") as stream:
             serialized_surface = next(csv.DictReader(stream))
         assert serialized_surface["radial_node"] == ""
+
+        surface_slice_manifest, surface_slice_rows = MODULE.open_bundle(surface_slice_bundle)
+        surface_slice_data = list(surface_slice_rows)
+        assert surface_slice_manifest["rotation"]["angles_rad"] == [0.2, 0.7, -0.1]
+        assert surface_slice_data
+        assert {row["representation"] for row in surface_slice_data} == {"rotated_slice"}
+        assert {row["quantity"] for row in surface_slice_data} == {"surface_radius"}
+        assert len(surface_slice_data) == 12
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import numpy as np
+        sys.path.insert(0, str(ROOT / "work"))
+        import plot_fields
+        from types import SimpleNamespace
+        output = root / "surface-slice.png"
+        plot_fields.slice_plot(SimpleNamespace(
+            bundle=[str(surface_slice_bundle)], quantity="surface_radius",
+            element=None, output=str(output)))
+        assert output.is_file() and output.stat().st_size > 0
+        rendered_lines = plt.gcf().axes[0].lines
+        assert len(rendered_lines) == 2
+        for line in rendered_lines:
+            rendered_radii = np.hypot(line.get_xdata(), line.get_ydata())
+            expected = float(surface_slice_data[0]["value_real"])
+            np.testing.assert_allclose(rendered_radii, expected, rtol=1e-12, atol=1e-8)
+        plt.close("all")
+        equatorial_manifest, equatorial_rows = MODULE.open_bundle(surface_equatorial_slice_bundle)
+        assert equatorial_manifest["rotation"]["angles_rad"] is None
+        assert {row["representation"] for row in equatorial_rows} == {"rotated_slice"}
+        plot_fields.slice_plot(SimpleNamespace(
+            bundle=[str(surface_equatorial_slice_bundle)], quantity="surface_radius",
+            element=None, output=None))
+        assert "body-fixed frame" in plt.gcf().axes[0].get_xlabel()
+        plt.close("all")
+        try:
+            plot_fields.slice_plot(SimpleNamespace(
+                bundle=[str(surface_slice_bundle)], quantity="surface_radius",
+                element=999, output=None))
+        except ValueError as error:
+            assert "element is absent" in str(error)
+        else:
+            raise AssertionError("missing surface slice element was accepted")
+
+        def physical_radii(directory):
+            _, samples = MODULE.open_bundle(directory)
+            return [float(row["physical_radius_m"]) for row in samples]
+
+        for full_path, truncated_path in ((full_geometry, truncated_geometry),
+                                          (full_slice_geometry, truncated_slice_geometry)):
+            full_radii = physical_radii(full_path)
+            truncated_radii = physical_radii(truncated_path)
+            assert len(full_radii) == len(truncated_radii) and full_radii
+            assert max(abs(a - b) for a, b in zip(full_radii, truncated_radii)) > 1.0e-8
+
+        example_source = (ROOT / "examples" / "phobos_gravity_perturbation.cpp").read_text()
+        for product, writer in (("full_rotated_grid_bundle", "WriteAngular"),
+                                ("full_rotated_slice_bundle", "WriteSlice")):
+            import re
+            call = re.search(rf"{writer}\(\s*std::filesystem::path\(pathtofolder3\) / \"{product}\"(.*?)\);",
+                             example_source, re.S)
+            assert call and re.search(r"\bphobosfull\s*,\s*full_result\.solution", call.group(1))
+
+        legacy_surface = root / "legacy_surface_manifest"
+        edit_manifest(surface_bundle, legacy_surface, lambda value:
+                      value["quantity_contracts"]["surface_radius"]["representations"].pop("rotated_slice"))
+        assert list(MODULE.open_bundle(legacy_surface)[1])
+        undeclared_surface_slice = root / "undeclared_surface_slice"
+        edit_manifest(surface_slice_bundle, undeclared_surface_slice, lambda value:
+                      value["quantity_contracts"]["surface_radius"]["representations"].pop("rotated_slice"))
+        assert rejected(undeclared_surface_slice)
 
         malformed = root / "malformed"
         copy_bundle(bundle, malformed)

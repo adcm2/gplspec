@@ -114,13 +114,23 @@ reference radius. Harmonic plots label the selected real or imaginary `(l,m)`
 coefficient and reference-radius axis; use `--component real` or
 `--component imag` (the default is `real`). Profiles with recorded angles label their sampled ray in radians. Angle-free radial profiles use their declared radial coordinates and do not claim a ray. Physical radius is labeled where present. `--difference` adds an absolute-difference panel only after
 element/material, side, reference-radius, and physical-coordinate agreement is
-checked (coordinate tolerance `rtol=1e-12`, `atol=1e-14`); omit it for
-perturbation geometries that intentionally differ. `auto` can compare sampled angular grids with finite-angle radial profiles on a shared ray, or harmonic coefficients with harmonic coefficients. Angle-free radial profiles remain valid for standalone radial plots at their declared coordinates; `--difference` requires matching ray and coordinate values. Different scientific representations should be plotted in separate invocations.
+checked (coordinate tolerance `rtol=1e-12`, `atol=1e-14`); manifests must
+also have matching coordinate and rotation frames. Omit it for perturbation
+geometries that intentionally differ. `auto` can compare sampled angular grids
+with finite-angle radial profiles on a shared ray, or harmonic coefficients
+with harmonic coefficients. Angle-free radial profiles remain valid for
+standalone radial plots at their declared coordinates and do not claim a ray;
+differences still require matching bundle frames and radial coordinates.
+Different scientific representations should be plotted in separate invocations.
 
 Maps require an explicit element and trace side. They show coordinates in the
 bundle's recorded frame: a rotated output frame when rotation angles are
-present, otherwise the body-fixed frame. Slice interpolation uses only the two
-boundary rings belonging to each element, with a center fan for the central
+present, otherwise the body-fixed frame. A `surface_radius` slice draws only
+the exported surface outline in its output frame; it does not infer an interior
+mesh. The reader accepts existing angular-grid-only surface manifests; new
+manifests declare both angular-grid and slice forms. Slice interpolation for
+field quantities uses only the two boundary rings belonging to each element,
+with a center fan for the central
 element. No interpolation crosses a material interface. Axes and colorbars
 carry SI units from the bundle contract.
 

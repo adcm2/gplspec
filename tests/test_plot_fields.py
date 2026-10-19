@@ -116,6 +116,51 @@ class RadialProfileTests(unittest.TestCase):
         np.testing.assert_array_equal(axis.lines[0].get_xdata(), [2.2])
         np.testing.assert_array_equal(axis.lines[0].get_ydata(), [5.0])
 
+    def test_radial_differences_require_matching_frames(self):
+        coordinates = {"reference": "body", "physical": "mapped",
+                       "angles": "spherical", "cartesian": "right-handed"}
+        def manifest(angles):
+            return {"dataset": "profile", "coordinates": coordinates,
+                    "rotation": {"angles_rad": angles},
+                    "quantity_contracts": {"potential": {"unit": "m² s⁻²"}}}
+        columns = self.columns([np.nan, np.nan])
+        args = SimpleNamespace(
+            difference=True, bundle=["first", "second"], quantity="potential",
+            representation="auto", theta=0.0, phi=0.0, component="real",
+            degree=0, order=0, output=None)
+        mismatched_rotation_metadata = manifest([0.2, 0.7, -0.1])
+        mismatched_rotation_metadata["rotation"]["frame"] = "different frame"
+        cases = ((manifest(None), manifest([0.2, 0.7, -0.1])),
+                 (manifest([0.2, 0.7, -0.1]), manifest([0.2, 0.8, -0.1])),
+                 (manifest([0.2, 0.7, -0.1]), mismatched_rotation_metadata))
+        for first, second in cases:
+            with self.subTest(first=first["rotation"], second=second["rotation"]), \
+                 patch.object(plot_fields, "load", side_effect=[(first, columns),
+                                                                  (second, columns)]), \
+                 self.assertRaisesRegex(ValueError,
+                                        "matching coordinate and rotation frames"):
+                plot_fields.radial(args)
+
+    def test_matching_frames_allow_angle_free_profile_difference(self):
+        manifest = {"dataset": "profile",
+                    "coordinates": {"reference": "body", "physical": "mapped",
+                                    "angles": "spherical", "cartesian": "right-handed"},
+                    "rotation": {"angles_rad": None},
+                    "quantity_contracts": {"potential": {"unit": "m² s⁻²"}}}
+        first, second = self.columns([np.nan, np.nan]), self.columns([np.nan, np.nan])
+        second["value_real"] = np.array([2.0, 3.0])
+        args = SimpleNamespace(
+            difference=True, bundle=["first", "second"], quantity="potential",
+            representation="auto", theta=0.0, phi=0.0, component="real",
+            degree=0, order=0, output=None)
+        with patch.object(plot_fields, "load", side_effect=[(manifest, first),
+                                                             (manifest, second)]), \
+             patch.object(plot_fields, "finish"):
+            plot_fields.radial(args)
+        axes = plt.gcf().axes
+        self.assertEqual(len(axes[1].lines), 1)
+        np.testing.assert_array_equal(axes[1].lines[0].get_ydata(), [1.0, 2.0])
+
 
 if __name__ == "__main__":
     unittest.main()

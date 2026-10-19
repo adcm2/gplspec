@@ -18,7 +18,7 @@ CONTRACTS = {
     "density_referential": ("kg m^-3", {"angular_grid", "harmonic_coefficients", "rotated_slice"}),
     "density_physical": ("kg m^-3", {"angular_grid", "harmonic_coefficients", "rotated_slice"}),
     "power_std": ("1", {"degree_power"}),
-    "surface_radius": ("m", {"angular_grid"}),
+    "surface_radius": ("m", {"angular_grid", "rotated_slice"}),
 }
 QUANTITIES = set(CONTRACTS)
 REPRESENTATIONS = {rep for _, reps in CONTRACTS.values() for rep in reps}
@@ -67,7 +67,11 @@ def _validate_manifest(manifest):
         if not isinstance(contract.get("meaning"), str) or not contract["meaning"].strip():
             raise ValueError(f"missing quantity meaning for {quantity}")
         declared = contract.get("representations")
-        if (not isinstance(declared, dict) or set(declared) != representations or
+        valid_representation_sets = {frozenset(representations)}
+        if quantity == "surface_radius":
+            valid_representation_sets.add(frozenset({"angular_grid"}))
+        if (not isinstance(declared, dict) or
+                frozenset(declared) not in valid_representation_sets or
                 any(not isinstance(text, str) or not text.strip() for text in declared.values())):
             raise ValueError(f"invalid representation contract for {quantity}")
     if "rho_physical=rho_referential/J" not in contracts["density_physical"]["meaning"]:
@@ -208,6 +212,8 @@ def open_bundle(directory):
                     raise ValueError("unknown sample quantity or representation")
                 if representation not in COMPATIBLE[quantity]:
                     raise ValueError("quantity and representation are incompatible")
+                if representation not in manifest["quantity_contracts"][quantity]["representations"]:
+                    raise ValueError("sample representation is not declared for its quantity")
                 if row["boundary"] not in BOUNDARIES or row["side"] not in SIDES:
                     raise ValueError("unknown boundary or trace side")
                 for column in OPTIONAL_INDEX_COLUMNS:
