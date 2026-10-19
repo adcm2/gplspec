@@ -1,7 +1,7 @@
 # Field-bundle plotting
 
 `plot_fields.py` is the shared consumer for schema-version-1 field bundles. Run
-it from the repository root with `python3 work/plot_fields.py`. Each command
+it from the repository root with the test/plot virtual environment's interpreter (see [getting started](../getting-started.md) for setup), for example `build/python-test-env/bin/python work/plot_fields.py`. Each command
 accepts one or more bundle directories and writes a PNG with `--output PATH`.
 The reader validates the manifest and streams the CSV; plot payloads retain only
 the selected numeric columns.
@@ -25,19 +25,19 @@ ZIHENG_RUN=/tmp/gplspec-ziheng-bundle-run
 Examples:
 
 ```sh
-python3 work/plot_fields.py radial "$BENCH6_RUN/work/Bench6/lm/harmonic_bundle" \
+build/python-test-env/bin/python work/plot_fields.py radial "$BENCH6_RUN/work/Bench6/lm/harmonic_bundle" \
   --quantity potential --representation harmonic_coefficients --degree 0 --order 0
-python3 work/plot_fields.py radial "$BENCH6_RUN/work/Bench6/lm/sensitivity_bundle" \
+build/python-test-env/bin/python work/plot_fields.py radial "$BENCH6_RUN/work/Bench6/lm/sensitivity_bundle" \
   --quantity sensitivity_kernel --representation harmonic_coefficients --degree 1 --order 0
-python3 work/plot_fields.py map "$PHOBOS_RUN/work/Phobos/Spherical/physical_rotated_grid_bundle" \
+build/python-test-env/bin/python work/plot_fields.py map "$PHOBOS_RUN/work/Phobos/Spherical/physical_rotated_grid_bundle" \
   --quantity potential --element 9 --side inner
-python3 work/plot_fields.py slice "$PHOBOS_RUN/work/Phobos/Spherical/physical_rotated_slice_bundle" \
+build/python-test-env/bin/python work/plot_fields.py slice "$PHOBOS_RUN/work/Phobos/Spherical/physical_rotated_slice_bundle" \
   --quantity potential
-python3 work/plot_fields.py slice "$PHOBOS_RUN/work/Phobos/Spherical/rotated_density_slice_bundle" \
+build/python-test-env/bin/python work/plot_fields.py slice "$PHOBOS_RUN/work/Phobos/Spherical/rotated_density_slice_bundle" \
   --quantity density_physical
-python3 work/plot_fields.py power "$PHOBOS_RUN/work/Phobos/Spherical/field_bundle" \
+build/python-test-env/bin/python work/plot_fields.py power "$PHOBOS_RUN/work/Phobos/Spherical/field_bundle" \
   --element 10 --radial-node 0
-python3 work/plot_fields.py topography "$ZIHENG_RUN/work/Ziheng/PhobosRadius.bundle"
+build/python-test-env/bin/python work/plot_fields.py topography "$ZIHENG_RUN/work/Ziheng/PhobosRadius.bundle"
 ```
 
 For the Bench 6 harmonic and sensitivity plots, the producer requires both
@@ -71,7 +71,7 @@ ln -s "$PWD/modeldata/prem.200" "$RUN_DIR/modeldata/prem.200"
 python3 work/run_field_bundle.py --workdir "$RUN_DIR" \
   --input modeldata/prem.200 --bundle work/Bench2/field_bundle \
   --bundle work/Bench2/integral_bundle -- "$PWD/build/bin/clean_bench_2"
-python3 work/plot_fields.py radial "$RUN_DIR/work/Bench2/field_bundle" \
+build/python-test-env/bin/python work/plot_fields.py radial "$RUN_DIR/work/Bench2/field_bundle" \
   "$RUN_DIR/work/Bench2/integral_bundle" --quantity potential \
   --representation harmonic_coefficients --degree 0 --order 0 \
   --output /tmp/prem-potential.png
@@ -101,7 +101,7 @@ python3 work/run_field_bundle.py --workdir "$PHOBOS_RUN" \
   --bundle work/Phobos/Sensitivity/field_bundle \
   --bundle work/Phobos/Sensitivity/sensitivity_slice_bundle \
   -- "$PWD/build/bin/phobos_gravity"
-python3 work/plot_fields.py map \
+build/python-test-env/bin/python work/plot_fields.py map \
   "$PHOBOS_RUN/work/Phobos/Spherical/physical_rotated_grid_bundle" \
   --quantity potential --element 9 --side inner \
   --output /tmp/phobos-potential.png
@@ -155,7 +155,7 @@ printf '0.001\n' | python3 work/run_field_bundle.py --workdir "$BENCH7_RUN" \
   --bundle work/Bench7/exact/field_bundle \
   --bundle work/Bench7/perturbed/field_bundle \
   --bundle work/Bench7/unperturbed/field_bundle -- "$PWD/build/bin/clean_bench_7"
-python3 work/plot_fields.py sweep \
+build/python-test-env/bin/python work/plot_fields.py sweep \
   "$BENCH7_RUN/work/Bench7/zeroradius/MatrixSolution.out" \
   --output /tmp/bench7-zero-radius-sweep.png
 ```

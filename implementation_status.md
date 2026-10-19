@@ -1,5 +1,10 @@
 # Implementation status
 
+## PR8 CI Python prerequisites (2026-10-19; uncommitted)
+
+- Added `tests/requirements.txt` with pinned NumPy and Matplotlib versions used by field-bundle/plotting tests and `work/plot_fields.py`. CI now creates a Python 3.12 virtual environment, installs this shared file, and configures CMake with that environment's Python interpreter. The getting-started, workflow, and plotting guides mirror this setup under the ignored `build/` directory and keep the packages scoped to Python plotting/testing, outside the C++ library interface. Matplotlib 3.8.4 provides a Python 3.12 wheel.
+- Fresh-environment verification: created `/tmp/gplspec-pr8-ci-correction/venv` with Python 3.12.3 and `include-system-site-packages = false`; installed NumPy 1.26.4 and Matplotlib 3.8.4 from the shared requirements. Reconfigured the existing `/tmp/gplspec-pr8-correction/build` with `-DPYTHON_EXECUTABLE` set to the venv's absolute interpreter, reused its C++ build, and passed `stage4c_field_bundle` plus `plot_fields_python` (2/2). CMakeCache and CTest JSON both show the venv interpreter for these tests. Logs and environment inventory are under `/tmp/gplspec-pr8-ci-correction/`; no full build or scientific campaign was run.
+
 ## Stage 00 — baseline
 
 

@@ -9,7 +9,7 @@ permalink: /getting-started/
 
 ## Build examples and regression checks
 
-Requirements are CMake 3.20 or newer, a C++23 compiler, Git, OpenMP development support, FFTW3 development files (`fftw3` and `fftw3f`; `fftw3l` is used when available), NetCDF development files, Python 3, and Bash. CMake fetches the Git-pinned header dependencies. Eigen 3.4.0 is fetched unless the parent project already defines `Eigen3::Eigen`.
+Requirements are CMake 3.20 or newer, a C++23 compiler, Git, OpenMP development support, FFTW3 development files (`fftw3` and `fftw3f`; `fftw3l` is used when available), NetCDF development files, Python 3, and Bash. CMake fetches the Git-pinned header dependencies. Eigen 3.4.0 is fetched unless the parent project already defines `Eigen3::Eigen`. NumPy and Matplotlib are needed for the registered field-bundle and plotting tests and for `work/plot_fields.py`; they are Python workflow dependencies and are not linked by the header-only C++ library.
 
 The recorded Phase 2 validation used CMake 3.28.3, GNU C/C++ 13.3, Eigen 3.4.0, FFTW 3.3.10, and NetCDF 4.9.2. Those are evidence provenance, not enforced exact versions beyond the pinned source revisions.
 
@@ -21,15 +21,20 @@ cmake -S . -B build -DMY_PROJECT_BUILD_EXAMPLES=ON
 cmake --build build -j2
 ```
 
-To configure the registered test harness as well:
+To configure the registered test harness, install its plotting/test dependencies into a virtual environment and point CMake at that same interpreter. This also supplies the interpreter CMake uses for its Python-based harness scripts:
 
 ```sh
+python3.12 -m venv build/python-test-env
+build/python-test-env/bin/python -m pip install -r tests/requirements.txt
 cmake -S . -B build-tests \
   -DMY_PROJECT_BUILD_EXAMPLES=ON \
-  -DGPLSPEC_BUILD_BASELINE_HARNESS=ON
+  -DGPLSPEC_BUILD_BASELINE_HARNESS=ON \
+  -DPYTHON_EXECUTABLE="$PWD/build/python-test-env/bin/python"
 cmake --build build-tests -j2
 ctest --test-dir build-tests --output-on-failure
 ```
+
+The same Python 3.12 virtual environment can run the documented plotting commands. C++ consumers that only add GPLSpec as a CMake subdirectory and link `gplspec` do not need NumPy or Matplotlib.
 
 The Stage 00 scientific runner and standalone header-link smoke check can also be run directly:
 

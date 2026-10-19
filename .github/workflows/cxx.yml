@@ -17,16 +17,24 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install --yes ninja-build libfftw3-dev libnetcdf-dev
+      - name: Install plotting and test dependencies
+        run: |
+          python -m venv build/cxx-ci-python
+          build/cxx-ci-python/bin/python -m pip install -r tests/requirements.txt
       - name: Configure Release build
         run: >-
           cmake -S . -B build/cxx-ci -G Ninja
           -DCMAKE_BUILD_TYPE=Release
           -DMY_PROJECT_BUILD_EXAMPLES=ON
           -DGPLSPEC_BUILD_BASELINE_HARNESS=ON
+          -DPYTHON_EXECUTABLE=$PWD/build/cxx-ci-python/bin/python
       - name: Build examples and tests
         run: cmake --build build/cxx-ci -j2
       - name: Run CTest suite
