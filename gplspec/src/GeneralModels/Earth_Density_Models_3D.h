@@ -5,6 +5,7 @@
 #include "../Radial_Tools.h"
 // #include "Simple_Models.h"
 #include "../Spectral_Element_Tools.h"
+#include "../Model_Input.h"
 #include "../testtools.h"
 #include <GSHTrans/All>
 #include <GaussQuad/All>
@@ -29,10 +30,10 @@ class Density3D {
    //    requires PlanetaryModel::BasicSphericalDensityModel<model, int, double>
    // Density3D(const model &, const int, const int, double, double);
 
-   // with path to file for 1D model
+   // with parsed PREM model data for 1D model
    // Density3D(const std::string &, const int, const int, double, double);
 
-   // with path to file for 1D and tomography models
+   // with parsed PREM model data and tomography input
    // Density3D(const std::string &, const std::string &, const int, const int,
    //           double, double);
 
@@ -96,10 +97,10 @@ class Density3D {
        double imass_norm = EarthModels::EarthConstants<double>().MassNorm(),
        double maxradialstep = 0.01, double ballrad = 1.2);
 
-   // constructor for homogeneous physical planet with mapping/layers
-   // this is used for Phobos
+   // constructor for a homogeneous physical planet using owned Phobos harmonics
    inline Density3D(
-       double physicaldensity, std::string pathtofile, const int lMaxMod,
+       double physicaldensity,
+       const GPLSpec::ModelInput::PhobosHarmonics &harmonics, const int lMaxMod,
        const int npoly, const int lMax,
        double ilength_norm = EarthModels::EarthConstants<double>().LengthNorm(),
        double itime_norm = EarthModels::EarthConstants<double>().TimeNorm(),
@@ -108,7 +109,8 @@ class Density3D {
        bool randdensity = false);
 
    inline Density3D(
-       double physicaldensity, std::string pathtofile, const int npoly,
+       double physicaldensity,
+       const GPLSpec::ModelInput::PhobosHarmonics &harmonics, const int npoly,
        const int lMax,
        double ilength_norm = EarthModels::EarthConstants<double>().LengthNorm(),
        double itime_norm = EarthModels::EarthConstants<double>().TimeNorm(),
@@ -125,18 +127,15 @@ class Density3D {
    // info on nodes
    inline auto Num_Elements() const;
    inline auto Poly_Order() const;
-   inline auto Node_Information() const;
-   inline const Radial_Tools::RadialMesh &Node_InformationP() const;
+   inline const Radial_Tools::RadialMesh &Node_Information() const;
 
    // interpolation polynomial derivative
    inline auto GaussDerivative() const;
    inline auto GaussDerivative(int, int) const;
-   inline auto q() const;
-   const GaussQuad::Quadrature1D<double> &qP() const { return _q; };
+   const GaussQuad::Quadrature1D<double> &q() const { return _q; }
 
    inline auto SpectralElementInformation();
-   inline auto GSH_Grid() const;
-   inline const Grid &GSH_GridP() const;
+   inline const Grid &GSH_Grid() const;
 
    // density
    inline auto Density() const;
@@ -177,71 +176,9 @@ class Density3D {
    // converting between form of solution as single Eigen::Vector to the
    // "standard" vector of vectors
    inline auto SingleEigenVectorToGeneralFormat(const Eigen::VectorXcd &) const;
-   inline auto
-   PowerSTD(const std::vector<std::vector<std::vector<std::complex<double>>>>
-                &vec_pot) const;
    // lower triangle
    inline void SetLowerTriangle();
    //    void SetLowerTriangle() { _spectral_info.set_left_lower(); };
-
-   // rotation to output a specific slice
-   inline auto RotateSliceToEquator(
-       std::vector<double> &, std::vector<double> &,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &);
-   inline void PhysicalOutputRotated(
-       const std::string, std::vector<double> &, std::vector<double> &,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &)
-       const;
-   inline void ReferentialOutputRotated(
-       const std::string, std::vector<double> &, std::vector<double> &,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &)
-       const;
-   // output
-   // void OutputFullInformation(
-   //     const std::string,
-   //     const std::vector<std::vector<std::vector<std::complex<double>>>>
-   //     &) const;
-   inline void ReferentialOutputAtElement(
-       const std::string,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &,
-       bool) const;
-   inline void PhysicalOutputAtElement(
-       const std::string,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &,
-       bool) const;
-   inline void PhysicalOutputSlice(
-       const std::string,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &,
-       bool) const;
-   //    void SphericalHarmonicOutputAtPhysicalRadius(
-   //        const std::string,
-   //        const std::vector<std::vector<std::vector<std::complex<double>>>>
-   //        &) const;
-   inline void ReferentialOutputSlice(
-       const std::string,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &,
-       bool) const;
-   inline void OutputAtElement(
-       const std::string,
-       const std::vector<std::vector<std::complex<double>>> &) const;
-   inline void PhysicalOutputAtElement(
-       const std::string,
-       const std::vector<std::vector<std::complex<double>>> &) const;
-   inline void OutputAtElement(const std::string, const std::vector<double> &) const;
-   inline void OutputAtElement(const std::string, const std::vector<double> &,
-                        const std::vector<double> &) const;
-   inline void OutputAtElement(const std::string,
-                        const std::vector<std::vector<double>> &,
-                        const std::vector<std::vector<double>> &) const;
-   inline void CartesianOutputAtElement(
-       const std::string,
-       const std::vector<std::vector<std::complex<double>>> &) const;
-   inline void CartesianOutputAtElement(
-       const std::string,
-       const std::vector<std::vector<std::vector<std::complex<double>>>> &)
-       const;
-   inline void ModelDensityOutputRotated(const std::string, std::vector<double> &,
-                                  std::vector<double> &, bool) const;
 
    // norms
    inline double const LengthNorm() const;

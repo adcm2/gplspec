@@ -1,0 +1,12 @@
+[  0%] Built target FFTWpp
+[ 50%] Building CXX object tests/CMakeFiles/stage3b_model_input.dir/stage3b_model_input.cpp.o
+[100%] Linking CXX executable ../bin/stage3b_model_input
+[100%] Built target stage3b_model_input
+[  0%] Built target FFTWpp
+[ 50%] Building CXX object examples/CMakeFiles/OutputZiheng.dir/OutputZiheng.cpp.o
+[100%] Linking CXX executable ../bin/OutputZiheng
+[100%] Built target OutputZiheng
+[  0%] Built target FFTWpp
+[ 50%] Building CXX object tests/CMakeFiles/stage05_file_perturbation_reference.dir/stage05_file_perturbation_reference.cpp.o
+[100%] Linking CXX executable ../bin/stage05_file_perturbation_reference
+[100%] Built target stage05_file_perturbation_reference

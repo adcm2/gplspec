@@ -1,0 +1,28 @@
+{
+  "command": [
+    "/usr/bin/c++",
+    "-I/home/adcm2/Documents/Research/Projects/gplspec",
+    "-I/tmp/gplspec-phase3-resume/final-build/_deps/gaussquad-src",
+    "-I/tmp/gplspec-phase3-resume/final-build/_deps/numericconcepts-src/include",
+    "-I/tmp/gplspec-phase3-resume/final-build/_deps/gshtrans-src",
+    "-I/tmp/gplspec-phase3-resume/final-build/_deps/fftwpp-src",
+    "-I/tmp/gplspec-phase3-resume/final-build/_deps/planetarymodel-src",
+    "-I/tmp/gplspec-phase3-resume/final-build/_deps/interpolation-src",
+    "-I/tmp/gplspec-phase3-resume/final-build/_deps/tomographymodels-src",
+    "-isystem",
+    "/tmp/gplspec-phase3-resume/final-build/_deps/eigen3-src",
+    "-O3",
+    "-DNDEBUG",
+    "-std=gnu++23",
+    "-fopenmp",
+    "/tmp/gplspec-phase3-resume/public-api-performance.cpp",
+    "-o",
+    "/tmp/gplspec-phase3-resume/public-api-final",
+    "-lfftw3",
+    "-lfftw3f",
+    "-lfftw3l",
+    "-lnetcdf"
+  ],
+  "source_sha256": "e6eec9554dbc330d3fad1a07b6ed77357363981c5bf8f45bd9b0a3ecf7548ee1",
+  "exit_code": 0
+}

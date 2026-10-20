@@ -1,506 +1,160 @@
 #ifndef PERTURBATION_MODEL_3D_H
 #define PERTURBATION_MODEL_3D_H
 
-// #include "../SimpleModels"
 #include "../Radial_Tools.h"
-// #include "Simple_Models.h"
-#include "../Spectral_Element_Tools.h"
-#include "../testtools.h"
+#include "Density_Model_Return.h"
 #include "Earth_Density_Models_3D.h"
 #include "Mapping_Perturbation_Utilities.h"
-#include "Density_Model_Constructors.h"
-#include "Density_Model_Return.h"
+#include "../Model_Input.h"
 #include <GSHTrans/All>
-#include <GaussQuad/All>
-#include <Interpolation/All>
 #include <PlanetaryModel/All>
-#include <TomographyModels/All>
+#include <algorithm>
+#include <complex>
+#include <vector>
 
 namespace GeneralEarthModels {
+
 class MappingPerturbation {
+ public:
+   using TensorField = MappingPerturbationDetail::TensorField;
+
+   explicit MappingPerturbation(const Density3D &model)
+       : _delta_tensor(ZeroTensor(model)) {}
+
+   template <class Map>
+      requires PlanetaryModel::RadialMappingClass<Map>
+   MappingPerturbation(const Density3D &model, const Map &mapping)
+       : _delta_tensor(BuildRadialMapping(model, mapping)) {}
+
+   MappingPerturbation(const Density3D &model,
+                       const GPLSpec::ModelInput::PhobosHarmonics &harmonics,
+                       int lmin, int lmax)
+       : _delta_tensor(BuildFileMapping(model, harmonics, lmin, lmax)) {}
+
+   const TensorField &delta_laplace_tensor() const { return _delta_tensor; }
 
  private:
-   using vecdb = std::vector<double>;
-   using vvecdb = std::vector<vecdb>;
-   using vvvecdb = std::vector<vvecdb>;
-   using veceigvec = std::vector<Eigen::Vector3cd>;
-   using vveceigvec = std::vector<veceigvec>;
-   using vvveceigvec = std::vector<vveceigvec>;
-   using veceig = std::vector<Eigen::Matrix3cd>;
-   using vveceig = std::vector<veceig>;
-   using vvveceig = std::vector<vveceig>;
-   vvveceigvec _vec_dxi, _vec_dxilm;
-   vvveceig _vec_df, _vec_da;
-   const Density3D &_ref_model;
-
- public:
-   // no perturbation
-   inline MappingPerturbation(const Density3D &);
-
-   // radial map only
-   template <class mapclass>
-      requires PlanetaryModel::RadialMappingClass<mapclass>
-   MappingPerturbation(const Density3D &, const mapclass &);
-
-   // radial map with file input
-   inline MappingPerturbation(const Density3D &, const std::string &, const int,
-                       const int);
-
-   auto dxi() const { return _vec_dxi; };
-   auto dxilm() const { return _vec_dxilm; };
-   auto df() const { return _vec_df; };
-   auto da() const { return _vec_da; };
-   const vvveceig &ref_da() const { return _vec_da; };
-   const Density3D &ref_inp_model() const { return _ref_model; };
-};
-
-// no map constructor
-MappingPerturbation::MappingPerturbation(const Density3D &inp_model)
-    : _ref_model{inp_model} {
-   std::size_t _num_layers = inp_model.Num_Elements();
-   std::size_t spatialsize = inp_model.GSH_GridP().NumberOfCoLatitudes() *
-                             inp_model.GSH_GridP().NumberOfLongitudes();
-   std::size_t lMax = inp_model.GSH_GridP().MaxDegree();
-
-   // construct dxi = 0
-   _vec_dxi = vvveceigvec(
-       _num_layers,
-       vveceigvec(inp_model.q().N(),
-                  veceigvec(spatialsize, Eigen::Vector3cd::Zero())));
-   _vec_dxilm = vvveceigvec(
-       _num_layers,
-       vveceigvec(inp_model.q().N(), veceigvec((lMax + 1) * (lMax + 1),
-                                               Eigen::Vector3cd::Zero())));
-   // construct da = 0
-   Eigen::Matrix3cd mat_a0;
-   mat_a0 = Eigen::Matrix3cd::Zero(3, 3);
-   _vec_da = vvveceig(_num_layers,
-                      vveceig(inp_model.q().N(), veceig(spatialsize, mat_a0)));
-};
-
-// radial map only
-template <class mapclass>
-   requires PlanetaryModel::RadialMappingClass<mapclass>
-MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
-                                         const mapclass &inp_map)
-    : _ref_model{inp_model} {
-   std::size_t _num_layers = inp_model.Num_Elements();
-   std::size_t spatialsize = inp_model.GSH_GridP().NumberOfCoLatitudes() *
-                             inp_model.GSH_GridP().NumberOfLongitudes();
-   std::size_t nnode = inp_model.qP().N();
-   std::size_t lMax = inp_model.GSH_GridP().MaxDegree();
-
-   // construct dxi = 0
-   _vec_dxi = vvveceigvec(
-       _num_layers, vveceigvec(inp_model.qP().N(), veceigvec(spatialsize)));
-
-   //    std::cout << "\nCheck 1\n";
-   // now fill out dxi:
-   for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
-      int laynum = inp_model.Node_InformationP().LayerNumber(idxelem);
-      for (int idxnode = 0; idxnode < nnode; ++idxnode) {
-
-         double radr =
-             inp_model.Node_InformationP().NodeRadius(idxelem, idxnode);
-         //  auto radr = node_data.NodeRadius(idxelem, idxnode);
-         auto multfact = 1.0;
-         auto raduse = radr;
-
-         // check if within planet
-         if (radr > inp_model.Node_InformationP().PlanetRadius()) {
-            double planetrad = inp_model.Node_InformationP().PlanetRadius();
-            double outerrad = inp_model.Node_InformationP().OuterRadius();
-            raduse = planetrad;
-            multfact = (outerrad - radr) / (outerrad - planetrad);
-         }
-
-         // fill out dxi
-         std::size_t idxspatial = 0;
-         for (auto it : inp_model.GSH_GridP().CoLatitudes()) {
-            for (auto ip : inp_model.GSH_GridP().Longitudes()) {
-               Eigen::Vector3cd tmpeig = Eigen::Vector3cd::Zero();
-               tmpeig(1) =
-                   inp_map.RadialMapping(laynum)(raduse, it, ip) * multfact;
-               _vec_dxi[idxelem][idxnode][idxspatial++] = tmpeig;
-            }
-         }
-      }
+   static TensorField ZeroTensor(const Density3D &model) {
+      const auto &mesh = model.Node_Information();
+      const auto &grid = model.GSH_Grid();
+      const auto spatial = grid.NumberOfCoLatitudes() *
+                           grid.NumberOfLongitudes();
+      return TensorField(
+          mesh.NumberOfElements(),
+          std::vector<std::vector<Eigen::Matrix3cd>>(
+              mesh.NumNodesWithinElement(),
+              std::vector<Eigen::Matrix3cd>(spatial,
+                                             Eigen::Matrix3cd::Zero())));
    }
-   //    std::cout << "\nCheck 2\n";
-   // construct dxi in spherical harmonic decomposition
-   //  first step is to find the gradient of dxi
-   _vec_dxilm =
-       vvveceigvec(_num_layers, vveceigvec(inp_model.q().N(),
-                                           veceigvec((lMax + 1) * (lMax + 1))));
-   {
-      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
-      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
 
-      //   std::cout << "\nCheck 2.1\n";
-      for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
-         //   int idxpolymax = n;
-         //   if (idxelem == nelem - 1) {
-         //      idxpolymax = npoly + 1;
-         //   }
-         for (int idxpoly = 0; idxpoly < nnode; ++idxpoly) {
-            std::vector<std::complex<double>> vec_dxim(spatialsize, 0.0),
-                vec_dxi0(spatialsize, 0.0), vec_dxip(spatialsize, 0.0);
+   template <class Map>
+      requires PlanetaryModel::RadialMappingClass<Map>
+   static TensorField BuildRadialMapping(const Density3D &model,
+                                         const Map &mapping) {
+      const auto &mesh = model.Node_Information();
+      const auto &grid = model.GSH_Grid();
+      const std::size_t elements = mesh.NumberOfElements();
+      const std::size_t nodes = mesh.NumNodesWithinElement();
+      const std::size_t spatial =
+          grid.NumberOfCoLatitudes() * grid.NumberOfLongitudes();
+      MappingPerturbationDetail::SpatialDisplacement displacement(
+          elements,
+          std::vector<std::vector<Eigen::Vector3cd>>(
+              nodes, std::vector<Eigen::Vector3cd>(
+                         spatial, Eigen::Vector3cd::Zero())));
+      const double planet_radius = mesh.PlanetRadius();
+      const double outer_radius = mesh.OuterRadius();
 
-            for (int idxint = 0; idxint < spatialsize; ++idxint) {
-               vec_dxim[idxint] = _vec_dxi[idxelem][idxpoly][idxint](0);
-               vec_dxi0[idxint] = _vec_dxi[idxelem][idxpoly][idxint](1);
-               vec_dxip[idxint] = _vec_dxi[idxelem][idxpoly][idxint](2);
-            }
-
-            // transform
-            std::vector<std::complex<double>> vec_lm_dxim(_sizepm, 0.0),
-                vec_lm_dxi0(_size0, 0.0), vec_lm_dxip(_sizepm, 0.0);
-
-            inp_model.GSH_GridP().ForwardTransformation(lMax, -1, vec_dxim,
-                                                        vec_lm_dxim);
-            inp_model.GSH_GridP().ForwardTransformation(lMax, 0, vec_dxi0,
-                                                        vec_lm_dxi0);
-            inp_model.GSH_GridP().ForwardTransformation(lMax, 1, vec_dxip,
-                                                        vec_lm_dxip);
-
-            // std::cout << "\nCheck 2.2\n";
-            // fill out "storage"
-            _vec_dxilm[idxelem][idxpoly][0](1) = vec_lm_dxi0[0];
-            // std::cout << "\nCheck 2.3\n";
-            for (int idxl = 1; idxl < lMax + 1; ++idxl) {
-               for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
-                  auto idxlm = idxl * idxl + idxl + idxm;
-                  _vec_dxilm[idxelem][idxpoly][idxlm](0) =
-                      vec_lm_dxim[idxlm - 1];
-                  _vec_dxilm[idxelem][idxpoly][idxlm](1) = vec_lm_dxi0[idxlm];
-                  _vec_dxilm[idxelem][idxpoly][idxlm](2) =
-                      vec_lm_dxip[idxlm - 1];
+      for (std::size_t element = 0; element < elements; ++element) {
+         const int layer = mesh.LayerNumber(element);
+         const auto radial_map = mapping.RadialMapping(layer);
+         for (std::size_t node = 0; node < nodes; ++node) {
+            const double radius = mesh.NodeRadius(element, node);
+            const bool exterior = radius > planet_radius;
+            const double evaluation_radius =
+                exterior ? planet_radius : radius;
+            const double taper =
+                exterior ? (outer_radius - radius) /
+                              (outer_radius - planet_radius)
+                         : 1.0;
+            std::size_t point = 0;
+            for (double theta : grid.CoLatitudes()) {
+               for (double phi : grid.Longitudes()) {
+                  displacement[element][node][point++](1) =
+                      radial_map(evaluation_radius, theta, phi) * taper;
                }
             }
-            // std::cout << "\nCheck 2.4\n";
          }
       }
+      return MappingPerturbationDetail::BuildPerturbationTensor(model,
+                                                                 displacement);
    }
-   //    std::cout << "\nCheck 3\n";
-   {
-      // construct da = 0
-      Eigen::Matrix3cd mat_f0;
-      mat_f0 = Eigen::Matrix3cd::Zero(3, 3);
-      _vec_df = vvveceig(
-          _num_layers, vveceig(inp_model.q().N(), veceig(spatialsize, mat_f0)));
-      //   EARTHMATRIX3 vec_df(nelem * (npoly + 1),
-      //                       std::vector<MATRIX3cd>(intsize, mat_0));
 
-      MappingPerturbationDetail::ConstructMappingVectorGradient(
-          inp_model, _vec_dxilm, _vec_df, _num_layers, spatialsize, nnode,
-          lMax);
+   static TensorField BuildFileMapping(
+       const Density3D &model,
+       const GPLSpec::ModelInput::PhobosHarmonics &harmonics, int lmin,
+       int requested_lmax) {
+      const auto &mesh = model.Node_Information();
+      const auto &grid = model.GSH_Grid();
+      const std::size_t elements = mesh.NumberOfElements();
+      const std::size_t nodes = mesh.NumNodesWithinElement();
+      const std::size_t spatial =
+          grid.NumberOfCoLatitudes() * grid.NumberOfLongitudes();
+      const int lmax = grid.MaxDegree();
+      const std::size_t nonnegative_count =
+          GSHTrans::GSHIndices<GSHTrans::NonNegative>(lmax, lmax, 0).Size();
+      const std::size_t model_lmax = harmonics.InferredMaximumDegree();
+      const int maximum_degree = std::min(
+          {lmax, static_cast<int>(model_lmax), requested_lmax});
+
+      std::vector<std::complex<double>> coefficients(nonnegative_count,
+                                                     std::complex<double>{});
+      std::size_t coefficient = 0;
+      for (int degree = 0; degree < lmin; ++degree) {
+         coefficient += static_cast<std::size_t>(degree + 1);
+      }
+      const std::complex<double> imaginary{0.0, 1.0};
+      for (int degree = lmin; degree <= maximum_degree; ++degree) {
+         for (int order = 0; order <= degree; ++order) {
+            const double normalization = order == 0 ? 1.0 : 0.5;
+            coefficients[coefficient] =
+                normalization *
+                (harmonics.rows[coefficient].cosine -
+                 imaginary * harmonics.rows[coefficient].sine);
+            ++coefficient;
+         }
+      }
+
+      std::vector<double> surface_displacement(spatial, 0.0);
+      grid.InverseTransformation(lmax, 0, coefficients,
+                                 surface_displacement);
+      MappingPerturbationDetail::SpatialDisplacement displacement(
+          elements,
+          std::vector<std::vector<Eigen::Vector3cd>>(
+              nodes, std::vector<Eigen::Vector3cd>(
+                         spatial, Eigen::Vector3cd::Zero())));
+      const double planet_radius = mesh.PlanetRadius();
+      const double outer_radius = mesh.OuterRadius();
+      for (std::size_t element = 0; element < elements; ++element) {
+         for (std::size_t node = 0; node < nodes; ++node) {
+            const double radius = mesh.NodeRadius(element, node);
+            const double taper =
+                radius > planet_radius
+                    ? (outer_radius - radius) / (outer_radius - planet_radius)
+                    : radius / planet_radius;
+            for (std::size_t point = 0; point < spatial; ++point) {
+               displacement[element][node][point](1) =
+                   surface_displacement[point] / model.LengthNorm() * taper;
+            }
+         }
+      }
+      return MappingPerturbationDetail::BuildPerturbationTensor(model,
+                                                                 displacement);
    }
-   //    std::cout << "\nCheck 4\n";
-   // construct da = 0
-   Eigen::Matrix3cd mat_a0;
-   mat_a0 = Eigen::Matrix3cd::Zero(3, 3);
-   _vec_da = vvveceig(_num_layers,
-                      vveceig(inp_model.qP().N(), veceig(spatialsize, mat_a0)));
-   MappingPerturbationDetail::ConstructPerturbedLaplaceTensor(
-       inp_model, _vec_df, _vec_da, _num_layers, nnode, spatialsize);
+
+   TensorField _delta_tensor;
 };
 
-// radial map only
-MappingPerturbation::MappingPerturbation(const Density3D &inp_model,
-                                         const std::string &pathtofile,
-                                         const int lmin, const int lmodmax)
-    : _ref_model{inp_model} {
-   std::size_t _num_layers = inp_model.Num_Elements();
-   std::size_t spatialsize = inp_model.GSH_GridP().NumberOfCoLatitudes() *
-                             inp_model.GSH_GridP().NumberOfLongitudes();
-   std::size_t nnode = inp_model.qP().N();
-   std::size_t lMax = inp_model.GSH_GridP().MaxDegree();
-
-   // now this constructor deals with reading in Phobos data in particular
-   // find length of file
-   std::size_t num_lines = TestTools::filelength(pathtofile);
-   std::size_t model_lmax = (std::sqrt(1 + 8 * num_lines) - 3) / 2;
-   std::vector<int> vec_l(num_lines), vec_m(num_lines);
-   std::vector<double> vec_A(num_lines), vec_SA(num_lines), vec_B(num_lines),
-       vec_SB(num_lines);
-   std::fstream modelfile;
-   modelfile.open(pathtofile, std::ios::in);
-   // getting information out of file
-   if (modelfile.is_open()) {
-      // test first line
-      // getline(modelfile, modeltitle);
-      for (int idx = 0; idx < num_lines; ++idx) {
-         modelfile >> vec_l[idx] >> vec_m[idx] >> vec_A[idx] >> vec_SA[idx] >>
-             vec_B[idx] >> vec_SB[idx];
-         // move to next line
-         modelfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-      }
-
-      modelfile.close();
-   } else {
-      std::cout << "Couldn't open!" << "\n";
-      assert("Model not found!");
-   }
-   // appending to vec_A if model lmax smaller than lmax:
-   auto coefficientnumber =
-       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
-   auto coefficientnumberall =
-       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
-   std::vector<std::complex<double>> vec_lm_rad(coefficientnumber, 0.0);
-   //    // std::vector<std::complex<double>>
-   //    vec_lm_rad_full(coefficientnumberall, 0.0);
-   //    int maxmodell = std::min(lmodmax, lMax);
-   {
-      std::complex<double> imag1(0.0, 1.0);
-      std::size_t idxoverall = 0;
-      std::size_t maxl = 0, tmp_maxl = 0;
-      if (lMax > model_lmax) {
-         tmp_maxl = model_lmax;
-      } else {
-         tmp_maxl = lMax;
-      }
-      if (lmodmax > tmp_maxl) {
-         maxl = tmp_maxl;
-      } else {
-         maxl = lmodmax;
-      }
-      // maxl = std::min(lModMax, tmp_maxl);
-      for (int l = 0; l < lmin; ++l) {
-         for (int m = 0; m < l + 1; ++m) {
-            ++idxoverall;
-         }
-      }
-      for (int l = lmin; l < maxl + 1; ++l) {
-         for (int m = 0; m < l + 1; ++m) {
-            double multfact = 0.5;
-            // multfact = 1.0;
-            if (m == 0) {
-               multfact = 1.0;
-            }
-            vec_lm_rad[idxoverall] =
-                multfact * (vec_A[idxoverall] - imag1 * vec_B[idxoverall]);
-            ++idxoverall;
-         }
-      }
-   }
-
-   //    auto spatialsize = inp_model.GSH_Grid().Longitudes().Size() *
-   //                       inp_model.GSH_Grid().CoLatitudes().Size();
-   // std::cout << "Got spatialsize\n";
-   //    _vec_h = vvvecdb(_num_layers, vvecdb(inp_model.q().N(),
-   //    vecdb(spatialsize, 0.0)));
-   std::vector<double> vec_outerradius(spatialsize, 0.0);
-   // std::vector<std::complex<double>> vec_outerrad(spatialsize, 0.0);
-   // perform SH transform to get physical outer radius
-   // std::cout << "Pre-transformation\n";
-
-   inp_model.GSH_GridP().InverseTransformation(lMax, 0, vec_lm_rad,
-                                               vec_outerradius);
-   // _grid.InverseTransformation(lMax, 0, vec_lm_rad_full, vec_outerrad);
-   //    std::vector<std::complex<double>> vec_lm_check(coefficientnumberall,
-   //    0.0);
-
-   // for (int idx = 0; idx < spatialsize; ++idx) {
-   //    vec_outerradius[idx] = vec_outerrad[idx].real();
-   // }
-   // max value
-   //    double maxval =
-   //        *std::max_element(vec_outerradius.begin(), vec_outerradius.end());
-   //    double minval =
-   //        *std::min_element(vec_outerradius.begin(), vec_outerradius.end());
-   //    std::cout << "Max radius: " << maxval << ", min element: " << minval <<
-   //    "\n";
-   // for (auto &idx : vec_outerradius) {
-   //    idx *= 1.0 / length_norm;
-   // }
-   //    double physicalaverageradius = vec_A[0] / std::sqrt(4.0 * pi_db);
-   double referentialradius = inp_model.Node_InformationP().PlanetRadius();
-   std::vector<double> vec_houter(spatialsize, 0.0);
-   for (int idx = 0; idx < spatialsize; ++idx) {
-      vec_houter[idx] = vec_outerradius[idx] / inp_model.LengthNorm();
-   }
-   // _grid.ForwardTransformation(lMax,0,vec_houter,vec_lm_check);
-   // std::cout << vec_lm_check[0]/sqrt(3.1415926535*4.0)<<"\n";
-   // std::cout << vec_outerradius[0] << " " << vec_outerradius[100] << "\n";
-   //    auto _num_layers = inp_model.Node_Information().NumberOfElements();
-   // construct dxi = 0
-   _vec_dxi = vvveceigvec(
-       _num_layers, vveceigvec(inp_model.qP().N(), veceigvec(spatialsize)));
-
-   // fill out h from mapping
-   for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
-
-      int laynum = inp_model.Node_InformationP().LayerNumber(idxelem);
-
-      // looping through nodes
-      for (int idxnode = 0; idxnode < inp_model.qP().N(); ++idxnode) {
-         auto radr = inp_model.Node_InformationP().NodeRadius(idxelem, idxnode);
-         auto multfact = 1.0;
-
-         // check if within planetem = 0; idxelem < _num_layers; ++idxelem) {
-         //       int laynum =
-         //       inp_model.Node_Information().LayerNumber(idxelem); for (int
-         //       idxnode = 0; idxnode < nnode; ++idxnode) {
-
-         //          double radr =
-         //              inp_model.Node_Information().NodeRadius(idxelem,
-         //              idxnode);
-         //          //  auto radr = node_data.NodeRadius(idxelem, idxnode);
-         //          auto multfact = 1.0;
-         //          auto raduse = radr;
-
-         //          // check if within planet
-         //          if (radr > inp_model.Node_Information().PlanetRadius()) {
-         //             double planetrad =
-         //             inp_model.Node_Information().PlanetRadius(); double
-         //             outerrad = inp_model.Node_Information().OuterRadius();
-         //             raduse = planetrad;
-         //             multfact = (outerrad - radr) / (outerrad - planetrad);
-         //          }
-
-         //          // fill out dxi
-         //          std::size_t idxspatial = 0;
-         //          for (auto it : inp_model.GSH_Grid().CoLatitudes()) {
-         //             for (auto ip : inp_model.GSH_Grid().Longitudes()) {
-         //                Eigen::Vector3cd tmpeig = Eigen::Vector3cd::Zero();
-         //                tmpeig(1) = 0.0;
-         //                _vec_dxi[idxelem][idxnode][idxspatial++] = tmpeig;
-         //             }
-         //          }
-         //       }
-         //    }
-         if (radr > inp_model.Node_InformationP().PlanetRadius()) {
-            multfact = (inp_model.Node_InformationP().OuterRadius() - radr) /
-                       (inp_model.Node_InformationP().OuterRadius() -
-                        inp_model.Node_InformationP().PlanetRadius());
-         } else {
-            multfact = radr / inp_model.Node_InformationP().PlanetRadius();
-         }
-
-         // fill out h
-         int idxspatial = 0;
-         for (auto it : inp_model.GSH_GridP().CoLatitudes()) {
-            for (auto ip : inp_model.GSH_GridP().Longitudes()) {
-               Eigen::Vector3cd tmpeig = Eigen::Vector3cd::Zero();
-               tmpeig(1) = vec_houter[idxspatial] * multfact;
-               _vec_dxi[idxelem][idxnode][idxspatial] = tmpeig;
-               ++idxspatial;
-            }
-         }
-      }
-   }
-
-   //    std::cout << "\nCheck 1\n";
-   // now fill out dxi:
-   //    for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
-   //       int laynum = inp_model.Node_Information().LayerNumber(idxelem);
-   //       for (int idxnode = 0; idxnode < nnode; ++idxnode) {
-
-   //          double radr =
-   //              inp_model.Node_Information().NodeRadius(idxelem, idxnode);
-   //          //  auto radr = node_data.NodeRadius(idxelem, idxnode);
-   //          auto multfact = 1.0;
-   //          auto raduse = radr;
-
-   //          // check if within planet
-   //          if (radr > inp_model.Node_Information().PlanetRadius()) {
-   //             double planetrad =
-   //             inp_model.Node_Information().PlanetRadius(); double outerrad =
-   //             inp_model.Node_Information().OuterRadius(); raduse =
-   //             planetrad; multfact = (outerrad - radr) / (outerrad -
-   //             planetrad);
-   //          }
-
-   //          // fill out dxi
-   //          std::size_t idxspatial = 0;
-   //          for (auto it : inp_model.GSH_Grid().CoLatitudes()) {
-   //             for (auto ip : inp_model.GSH_Grid().Longitudes()) {
-   //                Eigen::Vector3cd tmpeig = Eigen::Vector3cd::Zero();
-   //                tmpeig(1) = 0.0;
-   //                _vec_dxi[idxelem][idxnode][idxspatial++] = tmpeig;
-   //             }
-   //          }
-   //       }
-   //    }
-   //    std::cout << "\nCheck 2\n";
-   // construct dxi in spherical harmonic decomposition
-   //  first step is to find the gradient of dxi
-   _vec_dxilm =
-       vvveceigvec(_num_layers, vveceigvec(inp_model.qP().N(),
-                                           veceigvec((lMax + 1) * (lMax + 1))));
-   {
-      auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
-      auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
-
-      //   std::cout << "\nCheck 2.1\n";
-      for (int idxelem = 0; idxelem < _num_layers; ++idxelem) {
-         //   int idxpolymax = n;
-         //   if (idxelem == nelem - 1) {
-         //      idxpolymax = npoly + 1;
-         //   }
-         for (int idxpoly = 0; idxpoly < nnode; ++idxpoly) {
-            std::vector<std::complex<double>> vec_dxim(spatialsize, 0.0),
-                vec_dxi0(spatialsize, 0.0), vec_dxip(spatialsize, 0.0);
-
-            for (int idxint = 0; idxint < spatialsize; ++idxint) {
-               vec_dxim[idxint] = _vec_dxi[idxelem][idxpoly][idxint](0);
-               vec_dxi0[idxint] = _vec_dxi[idxelem][idxpoly][idxint](1);
-               vec_dxip[idxint] = _vec_dxi[idxelem][idxpoly][idxint](2);
-            }
-
-            // transform
-            std::vector<std::complex<double>> vec_lm_dxim(_sizepm, 0.0),
-                vec_lm_dxi0(_size0, 0.0), vec_lm_dxip(_sizepm, 0.0);
-
-            inp_model.GSH_GridP().ForwardTransformation(lMax, -1, vec_dxim,
-                                                        vec_lm_dxim);
-            inp_model.GSH_GridP().ForwardTransformation(lMax, 0, vec_dxi0,
-                                                        vec_lm_dxi0);
-            inp_model.GSH_GridP().ForwardTransformation(lMax, 1, vec_dxip,
-                                                        vec_lm_dxip);
-
-            // std::cout << "\nCheck 2.2\n";
-            // fill out "storage"
-            _vec_dxilm[idxelem][idxpoly][0](1) = vec_lm_dxi0[0];
-            // std::cout << "\nCheck 2.3\n";
-            for (int idxl = 1; idxl < lMax + 1; ++idxl) {
-               for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
-                  auto idxlm = idxl * idxl + idxl + idxm;
-                  _vec_dxilm[idxelem][idxpoly][idxlm](0) =
-                      vec_lm_dxim[idxlm - 1];
-                  _vec_dxilm[idxelem][idxpoly][idxlm](1) = vec_lm_dxi0[idxlm];
-                  _vec_dxilm[idxelem][idxpoly][idxlm](2) =
-                      vec_lm_dxip[idxlm - 1];
-               }
-            }
-            // std::cout << "\nCheck 2.4\n";
-         }
-      }
-   }
-   //    std::cout << "\nCheck 3\n";
-   {
-      // construct da = 0
-      Eigen::Matrix3cd mat_f0;
-      mat_f0 = Eigen::Matrix3cd::Zero(3, 3);
-      _vec_df = vvveceig(
-          _num_layers, vveceig(inp_model.q().N(), veceig(spatialsize, mat_f0)));
-      //   EARTHMATRIX3 vec_df(nelem * (npoly + 1),
-      //                       std::vector<MATRIX3cd>(intsize, mat_0));
-
-      MappingPerturbationDetail::ConstructMappingVectorGradient(
-          inp_model, _vec_dxilm, _vec_df, _num_layers, spatialsize, nnode,
-          lMax);
-   }
-   //    std::cout << "\nCheck 4\n";
-   // construct da = 0
-   Eigen::Matrix3cd mat_a0;
-   mat_a0 = Eigen::Matrix3cd::Zero(3, 3);
-   _vec_da = vvveceig(_num_layers,
-                      vveceig(inp_model.qP().N(), veceig(spatialsize, mat_a0)));
-   MappingPerturbationDetail::ConstructPerturbedLaplaceTensor(
-       inp_model, _vec_df, _vec_da, _num_layers, nnode, spatialsize);
-};
-
-}   // namespace GeneralEarthModels
+}  // namespace GeneralEarthModels
 
 #endif

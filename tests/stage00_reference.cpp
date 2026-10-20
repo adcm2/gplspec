@@ -27,7 +27,30 @@ void emit(std::ostream& out, const std::string& path, const T& value) {
 }
 
 template<class Model>
-auto capture(std::ostream& out, const std::string& name, Model& model) {
+void write_legacy_referential_field(
+    const std::filesystem::path &path, const Model &model,
+    const Eigen::VectorXcd &solution) {
+  std::ofstream file(path);
+  const auto last_element = static_cast<std::size_t>(model.Num_Elements() - 1);
+  GPLSpec::FieldEvaluation::ForEachRadialHarmonicSample(
+      model, solution, GPLSpec::FieldEvaluation::Quantity::Potential,
+      [&](const GPLSpec::FieldEvaluation::Sample &sample) {
+        if (sample.radial_node != 0 &&
+            !(sample.element == last_element &&
+              sample.radial_node == model.Poly_Order())) return;
+        if (sample.degree == 0 && sample.order == 0)
+          file << std::setprecision(16) << sample.reference_radius_m;
+        file << ';' << std::setprecision(16) << sample.value.real()
+             << ';' << sample.value.imag();
+        if (sample.degree == model.GSH_Grid().MaxDegree() &&
+            sample.order == sample.degree)
+          file << '\n';
+      });
+}
+
+template<class Model>
+auto capture(std::ostream& out, const std::string& name, Model& model,
+             const std::filesystem::path &output_dir) {
   emit(out, name + "/density", model.Density());
   emit(out, name + "/mapping", model.Mapping());
   emit(out, name + "/jacobian", model.Jacobian());
@@ -40,27 +63,40 @@ auto capture(std::ostream& out, const std::string& name, Model& model) {
     x(i) = {0.125 * (i + 1), -0.0625 * (i + 2)};
   emit(out, name + "/operator_x", x);
   emit(out, name + "/operator_y", op * x);
-  auto solution = Gravity_Tools::FindGravitationalPotential(model, 1e-6);
-  emit(out, name + "/solution", solution);
-  return solution;
+  auto result = Gravity_Tools::SolvePotential(model, 1e-6);
+  auto field = Gravity_Tools::ToHarmonicField(model, result);
+  emit(out, name + "/solution", field);
+  auto metadata = GPLSpec::FieldBundle::WithSolve(
+      result, "stage00_reference", name, "CG", 1e-6);
+  metadata.parameters = {{"length_norm_m", std::to_string(model.LengthNorm())},
+      {"mass_norm_kg", std::to_string(model.MassNorm())},
+      {"time_norm_s", std::to_string(model.TimeNorm())}};
+  GPLSpec::FieldBundle::WriteAngular(
+      output_dir / "field_bundles" / name, model, result.solution,
+      GPLSpec::FieldEvaluation::Quantity::Potential, std::move(metadata));
+  return result.solution;
 }
 
 template<class Model, class Map>
 void capture_perturbation(std::ostream& out, const std::string& name,
-                          Model& model, const Map& mapping) {
+                          Model& model, const Map& mapping,
+                          const std::filesystem::path &output_dir) {
   GeneralEarthModels::MappingPerturbation perturbation(model, mapping);
-  emit(out, name + "/dxi", perturbation.dxi());
-  emit(out, name + "/dxilm", perturbation.dxilm());
-  emit(out, name + "/df", perturbation.df());
-  emit(out, name + "/da", perturbation.da());
+  emit(out, name + "/da", perturbation.delta_laplace_tensor());
   MatrixReplacement3D<std::complex<double>> op(model, perturbation);
   Eigen::VectorXcd x(op.cols());
   for (Eigen::Index i = 0; i < x.size(); ++i)
     x(i) = {0.125 * (i + 1), -0.0625 * (i + 2)};
   emit(out, name + "/operator_x", x);
   emit(out, name + "/operator_y", op * x);
-  emit(out, name + "/solution",
-       Gravity_Tools::FindGravitationalPotentialPerturbation(model, perturbation, 1e-6));
+  const auto result = Gravity_Tools::SolveMappingPerturbation(
+      model, perturbation, 1e-6);
+  emit(out, name + "/solution", Gravity_Tools::ToHarmonicField(model, result));
+  auto metadata = GPLSpec::FieldBundle::WithSolve(
+      result, "stage00_reference", name, "CG", 1e-6);
+  GPLSpec::FieldBundle::WriteAngular(
+      output_dir / "field_bundles" / name, model, result.solution,
+      GPLSpec::FieldEvaluation::Quantity::Potential, std::move(metadata));
 }
 
 struct SmoothMapping {
@@ -85,14 +121,16 @@ int main(int argc, char** argv) {
   const double length = 6371000.0, time = 3600.0, mass = 5.972e24;
   auto sphere = Density3D::SphericalHomogeneousPlanet(1.0, 1.0, length, time,
                                                        mass, 0.5, 1.2);
-  auto sphere_solution = capture(out, "homogeneous", sphere);
+  auto sphere_solution = capture(out, "homogeneous", sphere, argv[1]);
   const std::string output_dir = std::string(argv[1]) + "/homogeneous";
   std::filesystem::create_directories(output_dir);
-  sphere.ReferentialOutputAtElement(output_dir, sphere_solution);
+  write_legacy_referential_field(
+      std::filesystem::path(output_dir) / "MatrixSolution.out", sphere,
+      sphere_solution);
 
   auto layered = Density3D::SphericalLayeredPlanet({0.5, 1.0}, {2.0, 1.0},
                                                     length, time, mass, 0.5, 1.2);
-  capture(out, "layered", layered);
+  capture(out, "layered", layered, argv[1]);
 
   std::vector<double> depths{0.0, 6371.0}, longitudes{0.0, 90.0, 180.0, 270.0},
       latitudes{-90.0, 0.0, 90.0}, values;
@@ -106,12 +144,12 @@ int main(int argc, char** argv) {
       1.0, 1.0, length, time, mass);
   struct ZeroMapping { auto RadialMapping(int) const { return [](double, double, double) { return 0.0; }; } } zero;
   Density3D lateral(base, lateral_density, zero, 3, 2, 0.5, 1.2);
-  capture(out, "lateral_density", lateral);
+  capture(out, "lateral_density", lateral, argv[1]);
 
   SmoothMapping smooth;
   Density3D mapped(base, PlanetaryModel::TomographyZeroModel(), smooth,
                    3, 2, 0.5, 1.2);
-  capture(out, "smooth_mapping", mapped);
-  capture_perturbation(out, "mapping_perturbation", mapped, smooth);
+  capture(out, "smooth_mapping", mapped, argv[1]);
+  capture_perturbation(out, "mapping_perturbation", mapped, smooth, argv[1]);
   return out.good() ? 0 : 4;
 }

@@ -1,0 +1,12 @@
+{
+  "mapped": {
+    "baseline_median_seconds": 0.013893254,
+    "candidate_median_seconds": 0.014026253499999999,
+    "ratio": 1.0095729553350135
+  },
+  "file_backed": {
+    "baseline_median_seconds": 0.333042666,
+    "candidate_median_seconds": 0.342357401,
+    "ratio": 1.0279685936696172
+  }
+}

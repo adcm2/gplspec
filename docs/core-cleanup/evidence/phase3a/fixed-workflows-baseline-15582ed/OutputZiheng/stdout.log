@@ -1,0 +1,15 @@
+# layers: 15
+Max radius: 13931.9, min element: 8196.69
+
+Max radius grid: 13935.3, min radius grid: 8194.78 8196.69
+
+Time to construct: 14.911 seconds
+Force declared
+Preconditioner done
+Number of iterations: 47
+Requested tolerance: 1e-12
+Time for gravity: 55.2724 seconds
+Size of stdvec_potsol: 15 6 10201
+Volume: 5741.48km^3
+Density: 1.86 g/cm^3
+Outermost radius: 16490.1 m

@@ -13,17 +13,19 @@ This tutorial demonstrates how to construct a model of Phobos. Phobos' density v
 The model data is taken from Willner 2014. The surface radius is given in terms of a real spherical harmonic decomposition. The constructor used here assumes that the model data is in this format. The constructor needs the density, a path to the file and some more parameters. 
 
 ### Rotation
-We also introduce the rotational functionality. The way that this is implemented is one specifies two points which are rotated onto the equator, with the first situated at the prime meridian. The potential can be outputted either in the original orientation or in a rotated manner. 
+The compiled `phobos_gravity` workflow also writes original and rotated products;
+the isolated producer and plotting commands are documented in `work/plots.md`.
+The self-contained source below writes its original-frame potential and degree-power bundle.
 
 ### Source code
-Build and run this example from the repository root so `modeldata/TABLEA1.DAT`
-resolves and the output paths are created under `work/Phobos/`.
+Run this example from an isolated working directory containing
+`modeldata/TABLEA1.DAT`; it writes schema-v1 bundles under `work/Phobos/`.
 
 ```cpp
 #include <cmath>
 #include <filesystem>
 #include <string>
-#include <vector>
+#include <utility>
 #include <gplspec/All>
 
 int
@@ -42,58 +44,39 @@ main() {
    int npoly = 5;
 
    // constructing model
-   Density3D phobos(scaledensity, pathtofile, npoly, lMax, lengthnorm, timenorm,
+   const auto phobos_data =
+       GPLSpec::ModelInput::ReadPhobosHarmonics(pathtofile);
+   Density3D phobos(scaledensity, phobos_data, npoly, lMax, lengthnorm, timenorm,
                     massnorm, 0.1, 1.5);
 
    // get gravitational field
-   auto stdvec_potsol =
-       FindGravitationalPotential(phobos, std::pow(10.0, -12.0));
-
-   auto stdvec_potsol2 =
-       FindGravitationalPotential(phobos, std::pow(10.0, -3.0));
+   auto solve_result = SolvePotential(phobos, std::pow(10.0, -12.0));
+   auto field_metadata = GPLSpec::FieldBundle::WithSolve(
+       solve_result, "phobos_gravity", "potential", "CG",
+       solve_result.final_solve().requested_tolerance);
+   field_metadata.inputs.push_back(
+       GPLSpec::FieldBundle::InputPath(pathtofile));
+   field_metadata.parameters = {{"density_kg_m-3", GPLSpec::FieldBundle::ParameterNumber(physdensity)},
+       {"length_norm_m", GPLSpec::FieldBundle::ParameterNumber(lengthnorm)},
+       {"mass_norm_kg", GPLSpec::FieldBundle::ParameterNumber(massnorm)},
+       {"time_norm_s", GPLSpec::FieldBundle::ParameterNumber(timenorm)},
+       {"polynomial_order", std::to_string(npoly)}, {"degree_max", std::to_string(lMax)},
+       {"max_step_norm", "0.1"}, {"exterior_radius_norm", "1.5"}};
+   const std::filesystem::path output{"work/Phobos/Spherical"};
+   GPLSpec::FieldBundle::Writer(output / "field_bundle", phobos,
+       field_metadata).Write([&](auto &&emit) {
+      GPLSpec::FieldEvaluation::ForEachAngularGridSample(
+          phobos, solve_result.solution,
+          GPLSpec::FieldEvaluation::Quantity::Potential, emit);
+      GPLSpec::FieldEvaluation::ForEachRadialHarmonicSample(
+          phobos, solve_result.solution,
+          GPLSpec::FieldEvaluation::Quantity::DegreePower, emit);
+   });
        
  
-   // coordinates for rotation
-   double theta1 = 1.2, theta2 = 1.2;
-   double phi1 = 0.2, phi2 = 2.0;
-
-   // vectors containing theta,phi information
-   std::vector<double> vec_ang1{theta1, phi1}, vec_ang2{theta2, phi2};
-
-   //////////////////////////////////////////////////////////////////
-   //////////////////////////////////////////////////////////////////
-
-   // output test
-   std::string pathtofolder1 = "./work/Phobos/Cartesian";
-   std::string pathtofolder2 = "./work/Phobos/Spherical";
-   std::string pathtofolder3 = "./work/Phobos/Referential";
-   std::string pathtofile1 =
-       pathtofolder2 + "/MatrixSolutionReferentialRotated.out";
-   std::string pathtofile2 = pathtofolder2 + "/MatrixSolutionPhysical.out";
-   std::string pathtofile3 = pathtofolder2 + "/MatrixSolutionRotated.out";
-   std::string pathtofile4 =
-       pathtofolder2 + "/PhysicalDensitySolutionRotated.out";
-   std::string pathtofile5 =
-       pathtofolder2 + "/ReferentialDensitySolutionRotated.out";
-
-   std::filesystem::create_directories(pathtofolder1);
-   std::filesystem::create_directories(pathtofolder2);
-   std::filesystem::create_directories(pathtofolder3);
-
-   phobos.CartesianOutputAtElement(pathtofolder1, stdvec_potsol);
-   phobos.PhysicalOutputAtElement(pathtofolder2, stdvec_potsol);
-   phobos.ReferentialOutputAtElement(pathtofolder3, stdvec_potsol);
-   phobos.ReferentialOutputSlice(pathtofolder3, stdvec_potsol);
-   phobos.PhysicalOutputSlice(pathtofolder2, stdvec_potsol);
-   phobos.ReferentialOutputRotated(pathtofile1, vec_ang1, vec_ang2,
-                                   stdvec_potsol);
-   phobos.PhysicalOutputRotated(pathtofile2, vec_ang1, vec_ang2,
-                                stdvec_potsol);
-
    return 0;
 }
 
 
 ```
-
 

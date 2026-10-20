@@ -1,0 +1,82 @@
+[
+  {
+    "file": "work/Bench6/IntegralSolution.out",
+    "shape": [
+      34,
+      4200
+    ],
+    "max_abs": 1.043081283569336e-07,
+    "changed": 34179,
+    "tolerance_failures": 26595,
+    "max_at": [
+      1,
+      63
+    ],
+    "baseline_at_max": -111597318.3368828,
+    "candidate_at_max": -111597318.3368829
+  },
+  {
+    "file": "work/Bench6/MatrixSolution.out",
+    "shape": [
+      34,
+      4200
+    ],
+    "max_abs": 1.043081283569336e-07,
+    "changed": 44565,
+    "tolerance_failures": 28440,
+    "max_at": [
+      1,
+      63
+    ],
+    "baseline_at_max": -111597318.3368879,
+    "candidate_at_max": -111597318.336888
+  },
+  {
+    "file": "work/Bench6/lm/IntegralSolution.out",
+    "shape": [
+      34,
+      883
+    ],
+    "max_abs": 9.094947017729282e-11,
+    "changed": 18049,
+    "tolerance_failures": 723,
+    "max_at": [
+      23,
+      5
+    ],
+    "baseline_at_max": -21824.21314258694,
+    "candidate_at_max": -21824.21314258685
+  },
+  {
+    "file": "work/Bench6/lm/MatrixSolution.out",
+    "shape": [
+      34,
+      883
+    ],
+    "max_abs": 2.384185791015625e-07,
+    "changed": 29750,
+    "tolerance_failures": 17716,
+    "max_at": [
+      1,
+      1
+    ],
+    "baseline_at_max": -395598898.2571357,
+    "candidate_at_max": -395598898.2571359
+  },
+  {
+    "file": "work/Bench6/lm/SensitivityKernel.out",
+    "shape": [
+      34,
+      883
+    ],
+    "max_abs": 0.0,
+    "changed": 0,
+    "tolerance_failures": 0,
+    "max_at": [
+      0,
+      0
+    ],
+    "baseline_at_max": 0.0,
+    "candidate_at_max": 0.0
+  }
+]

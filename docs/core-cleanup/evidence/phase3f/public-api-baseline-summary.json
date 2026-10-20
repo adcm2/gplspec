@@ -1,0 +1,60 @@
+{
+  "mapped": {
+    "processes": [
+      {
+        "process": 1,
+        "repeats": 35,
+        "minimum": 0.013300942,
+        "median": 0.013893254,
+        "maximum": 0.020032079,
+        "relative_residual": 2.0798443098823916e-12
+      },
+      {
+        "process": 2,
+        "repeats": 37,
+        "minimum": 0.013266344,
+        "median": 0.013769763,
+        "maximum": 0.013952145,
+        "relative_residual": 2.0798443098823916e-12
+      },
+      {
+        "process": 3,
+        "repeats": 36,
+        "minimum": 0.013745302,
+        "median": 0.01399634,
+        "maximum": 0.015516588,
+        "relative_residual": 2.0798443098823916e-12
+      }
+    ],
+    "median_of_process_medians": 0.013893254
+  },
+  "file_backed": {
+    "processes": [
+      {
+        "process": 1,
+        "repeats": 3,
+        "minimum": 0.328645008,
+        "median": 0.333042666,
+        "maximum": 0.339617831,
+        "relative_residual": 5.484400429509354e-10
+      },
+      {
+        "process": 2,
+        "repeats": 3,
+        "minimum": 0.331449495,
+        "median": 0.338055299,
+        "maximum": 0.341827158,
+        "relative_residual": 7.309215256389266e-10
+      },
+      {
+        "process": 3,
+        "repeats": 3,
+        "minimum": 0.321612667,
+        "median": 0.322746383,
+        "maximum": 0.325613377,
+        "relative_residual": 5.484400429509354e-10
+      }
+    ],
+    "median_of_process_medians": 0.333042666
+  }
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "file": "work/Ziheng/PHOBOS_POTENTIAL_OUTER.out",
+    "max_abs": 1.0658141036401503e-14,
+    "changed": 43,
+    "tolerance_failures": 0,
+    "max_baseline": 100.0
+  },
+  {
+    "file": "work/Ziheng/PREM200.NO.INTEGRAL.out",
+    "max_abs": 0.0,
+    "changed": 0,
+    "tolerance_failures": 0,
+    "max_baseline": 126.48676350501435
+  },
+  {
+    "file": "work/Ziheng/PhobosRadius.out",
+    "max_abs": 3.2741809263825417e-11,
+    "changed": 232911,
+    "tolerance_failures": 0,
+    "max_baseline": 13935.312571908638
+  }
+]

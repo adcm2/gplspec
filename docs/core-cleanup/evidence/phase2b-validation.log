@@ -1,0 +1,237 @@
+Phase 2B build validation — 2026-10-08
+
+Source: /home/adcm2/Documents/Research/Projects/gplspec, branch refactor/core-cleanup.
+Build: /tmp/gplspec-phase2-build; Release; copied pinned FetchContent sources in this build's own _deps directory; no dependency source override from outside the repository.
+Toolchain: CMake 3.28.3; GNU C++ 13.3.0; OpenMP 4.5; FFTW found under /usr/include; NetCDF 4.9.2.
+
+The clean_bench_1 compile flags were identical to the pre-Stage-2B Release build:
+  -O3 -DNDEBUG -std=gnu++23 -fopenmp
+The embedded consumer compile command, configured without a parent CMAKE_MODULE_PATH addition or target CXX feature, was:
+  /usr/bin/c++  -I/home/adcm2/Documents/Research/Projects/gplspec -I/tmp/gplspec-phase2-build/tests/external-consumer-build/_deps/gaussquad-src -I/tmp/gplspec-phase2-build/tests/external-consumer-build/_deps/numericconcepts-src/include -I/tmp/gplspec-phase2-build/tests/external-consumer-build/_deps/gshtrans-src -I/tmp/gplspec-phase2-build/tests/external-consumer-build/_deps/fftwpp-src -I/tmp/gplspec-phase2-build/tests/external-consumer-build/_deps/planetarymodel-src -I/tmp/gplspec-phase2-build/tests/external-consumer-build/_deps/interpolation-src -I/tmp/gplspec-phase2-build/tests/external-consumer-build/_deps/tomographymodels-src -isystem /tmp/gplspec-phase2-build/_deps/eigen3-src -O3 -DNDEBUG -std=gnu++23 -fopenmp -MD -MT CMakeFiles/external_consumer.dir/main.cpp.o -MF CMakeFiles/external_consumer.dir/main.cpp.o.d -o CMakeFiles/external_consumer.dir/main.cpp.o -c /home/adcm2/Documents/Research/Projects/gplspec/tests/external_consumer/main.cpp
+
+Configure output:
+-- The CXX compiler identification is GNU 13.3.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found PkgConfig: /usr/bin/pkg-config (found version "1.8.1")
+-- Found FFTW: /usr/include
+-- The C compiler identification is GNU 13.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Found OpenMP_CXX: -fopenmp (found version "4.5")
+-- Found OpenMP: TRUE (found version "4.5")
+-- Found NetCDF: /usr/include (found version "4.9.2")
+CMake Warning (dev) at tests/CMakeLists.txt:1 (find_package):
+  Policy CMP0148 is not set: The FindPythonInterp and FindPythonLibs modules
+  are removed.  Run "cmake --help-policy CMP0148" for policy details.  Use
+  the cmake_policy command to set the policy and suppress this warning.
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+-- Found PythonInterp: /usr/bin/python3 (found suitable version "3.12.3", minimum required is "3")
+-- Configuring done (1.3s)
+-- Generating done (0.1s)
+-- Build files have been written to: /tmp/gplspec-phase2-build
+
+Full fresh build output:
+[  0%] Built target FFTWpp
+[  1%] Building CXX object tests/CMakeFiles/stage00_reference.dir/stage00_reference.cpp.o
+[  2%] Building CXX object tests/CMakeFiles/stage1c_file_tomography_solver.dir/stage1c_file_tomography_solver.cpp.o
+[  4%] Linking CXX executable ../bin/stage00_reference
+[  4%] Built target stage00_reference
+[  5%] Building CXX object tests/CMakeFiles/phase1_performance.dir/phase1_performance.cpp.o
+[  7%] Linking CXX executable ../bin/stage1c_file_tomography_solver
+[  7%] Built target stage1c_file_tomography_solver
+[  8%] Building CXX object tests/CMakeFiles/stage02_core_smoke.dir/stage02_core_smoke.cpp.o
+[  8%] Built target stage02_core_smoke
+[ 10%] Building CXX object tests/CMakeFiles/stage02_generalmodels_smoke.dir/stage02_generalmodels_smoke.cpp.o
+[ 10%] Built target stage02_generalmodels_smoke
+[ 11%] Building CXX object tests/CMakeFiles/stage02_simplemodels_smoke.dir/stage02_simplemodels_smoke.cpp.o
+[ 11%] Built target stage02_simplemodels_smoke
+[ 12%] Building CXX object tests/CMakeFiles/stage02_all_smoke.dir/stage02_all_smoke.cpp.o
+[ 14%] Linking CXX executable ../bin/phase1_performance
+[ 14%] Built target phase1_performance
+[ 15%] Building CXX object tests/CMakeFiles/stage02_test_smoke.dir/stage02_test_smoke.cpp.o
+[ 15%] Built target stage02_all_smoke
+[ 17%] Building CXX object tests/CMakeFiles/stage02_timer_smoke.dir/stage02_timer_smoke.cpp.o
+[ 17%] Built target stage02_timer_smoke
+[ 18%] Building CXX object tests/CMakeFiles/stage02_header_link.dir/stage02_header_main.cpp.o
+[ 18%] Built target stage02_test_smoke
+[ 20%] Building CXX object tests/CMakeFiles/stage03_utilities.dir/stage03_utilities.cpp.o
+[ 21%] Building CXX object tests/CMakeFiles/stage02_header_link.dir/stage02_header_peer.cpp.o
+[ 22%] Linking CXX executable ../bin/stage02_header_link
+[ 22%] Built target stage02_header_link
+[ 24%] Building CXX object tests/CMakeFiles/stage04_construction_storage.dir/stage04_construction_storage.cpp.o
+[ 25%] Linking CXX executable ../bin/stage03_utilities
+[ 25%] Built target stage03_utilities
+[ 27%] Building CXX object tests/CMakeFiles/stage04_mapping_geometry.dir/stage04_mapping_geometry.cpp.o
+[ 28%] Linking CXX executable ../bin/stage04_mapping_geometry
+[ 28%] Built target stage04_mapping_geometry
+[ 30%] Building CXX object tests/CMakeFiles/stage04_density_sampling.dir/stage04_density_sampling.cpp.o
+[ 31%] Linking CXX executable ../bin/stage04_construction_storage
+[ 31%] Built target stage04_construction_storage
+[ 32%] Building CXX object tests/CMakeFiles/stage04_discretization_setup.dir/stage04_discretization_setup.cpp.o
+[ 34%] Linking CXX executable ../bin/stage04_density_sampling
+[ 34%] Built target stage04_density_sampling
+[ 35%] Building CXX object tests/CMakeFiles/stage05_operator_reference.dir/stage05_operator_reference.cpp.o
+[ 37%] Linking CXX executable ../bin/stage04_discretization_setup
+[ 37%] Built target stage04_discretization_setup
+[ 38%] Building CXX object tests/CMakeFiles/stage05_tensor_contraction.dir/stage05_tensor_contraction.cpp.o
+[ 40%] Linking CXX executable ../bin/stage05_tensor_contraction
+[ 40%] Built target stage05_tensor_contraction
+[ 41%] Building CXX object tests/CMakeFiles/stage06_output_helpers.dir/stage06_output_helpers.cpp.o
+[ 42%] Linking CXX executable ../bin/stage05_operator_reference
+[ 42%] Built target stage05_operator_reference
+[ 44%] Building CXX object tests/CMakeFiles/stage06_output_reference.dir/stage06_output_reference.cpp.o
+[ 45%] Linking CXX executable ../bin/stage06_output_helpers
+[ 45%] Built target stage06_output_helpers
+[ 47%] Building CXX object tests/CMakeFiles/stage05_file_perturbation_reference.dir/stage05_file_perturbation_reference.cpp.o
+[ 48%] Linking CXX executable ../bin/stage06_output_reference
+[ 48%] Built target stage06_output_reference
+[ 50%] Building CXX object tests/CMakeFiles/pr07_rotated_output.dir/pr07_rotated_output.cpp.o
+[ 51%] Linking CXX executable ../bin/stage05_file_perturbation_reference
+[ 51%] Built target stage05_file_perturbation_reference
+[ 52%] Generating tutorial5_phobos.cpp
+[ 54%] Building CXX object tests/CMakeFiles/tutorial5_phobos_compile.dir/tutorial5_phobos.cpp.o
+[ 55%] Linking CXX executable ../bin/pr07_rotated_output
+[ 55%] Built target pr07_rotated_output
+[ 57%] Building CXX object examples/CMakeFiles/clean_bench_1.dir/clean_bench_1.cpp.o
+[ 58%] Linking CXX executable ../bin/tutorial5_phobos_compile
+[ 58%] Built target tutorial5_phobos_compile
+[ 60%] Building CXX object examples/CMakeFiles/clean_bench_2.dir/clean_bench_2.cpp.o
+[ 61%] Linking CXX executable ../bin/clean_bench_1
+[ 61%] Built target clean_bench_1
+[ 62%] Building CXX object examples/CMakeFiles/clean_bench_3.dir/clean_bench_3.cpp.o
+[ 64%] Linking CXX executable ../bin/clean_bench_2
+[ 64%] Built target clean_bench_2
+[ 65%] Building CXX object examples/CMakeFiles/clean_bench_4.dir/clean_bench_4.cpp.o
+[ 67%] Linking CXX executable ../bin/clean_bench_3
+[ 67%] Built target clean_bench_3
+[ 68%] Building CXX object examples/CMakeFiles/clean_bench_5.dir/clean_bench_5.cpp.o
+[ 70%] Linking CXX executable ../bin/clean_bench_4
+[ 70%] Built target clean_bench_4
+[ 71%] Building CXX object examples/CMakeFiles/clean_bench_6.dir/clean_bench_6.cpp.o
+[ 72%] Linking CXX executable ../bin/clean_bench_5
+[ 72%] Built target clean_bench_5
+[ 74%] Building CXX object examples/CMakeFiles/clean_bench_7.dir/clean_bench_7.cpp.o
+[ 75%] Linking CXX executable ../bin/clean_bench_6
+[ 75%] Built target clean_bench_6
+[ 77%] Building CXX object examples/CMakeFiles/clean_bench_8.dir/clean_bench_8.cpp.o
+[ 78%] Linking CXX executable ../bin/clean_bench_7
+[ 78%] Built target clean_bench_7
+[ 80%] Building CXX object examples/CMakeFiles/clean_bench_9.dir/clean_bench_9.cpp.o
+[ 81%] Linking CXX executable ../bin/clean_bench_8
+[ 81%] Built target clean_bench_8
+[ 82%] Building CXX object examples/CMakeFiles/clean_bench_10.dir/clean_bench_10.cpp.o
+[ 84%] Linking CXX executable ../bin/clean_bench_9
+[ 84%] Built target clean_bench_9
+[ 85%] Building CXX object examples/CMakeFiles/phobos_gravity.dir/phobos_gravity.cpp.o
+[ 87%] Linking CXX executable ../bin/clean_bench_10
+[ 87%] Built target clean_bench_10
+[ 88%] Building CXX object examples/CMakeFiles/phobos_gravity_perturbation.dir/phobos_gravity_perturbation.cpp.o
+[ 90%] Linking CXX executable ../bin/phobos_gravity
+[ 90%] Built target phobos_gravity
+[ 91%] Building CXX object examples/CMakeFiles/phobos_heterogeneous.dir/phobos_heterogeneous.cpp.o
+[ 92%] Linking CXX executable ../bin/phobos_gravity_perturbation
+[ 92%] Built target phobos_gravity_perturbation
+[ 94%] Building CXX object examples/CMakeFiles/wignertest.dir/wignertest.cpp.o
+[ 95%] Linking CXX executable ../bin/wignertest
+[ 95%] Built target wignertest
+[ 97%] Building CXX object examples/CMakeFiles/OutputZiheng.dir/OutputZiheng.cpp.o
+[ 98%] Linking CXX executable ../bin/phobos_heterogeneous
+[ 98%] Built target phobos_heterogeneous
+[100%] Linking CXX executable ../bin/OutputZiheng
+[100%] Built target OutputZiheng
+
+Incremental build after removing redundant stage00 link dependencies:
+[  0%] Built target FFTWpp
+[  2%] Built target stage1c_file_tomography_solver
+[  5%] Built target stage00_reference
+[  8%] Built target phase1_performance
+[ 10%] Built target stage02_core_smoke
+[ 11%] Built target stage02_generalmodels_smoke
+[ 12%] Built target stage02_simplemodels_smoke
+[ 14%] Built target stage02_test_smoke
+[ 15%] Built target stage02_all_smoke
+[ 17%] Built target stage02_timer_smoke
+[ 21%] Built target stage02_header_link
+[ 27%] Built target stage03_utilities
+[ 27%] Built target stage04_construction_storage
+[ 30%] Built target stage04_density_sampling
+[ 32%] Built target stage04_mapping_geometry
+[ 38%] Built target stage05_operator_reference
+[ 38%] Built target stage04_discretization_setup
+[ 42%] Built target stage05_tensor_contraction
+[ 44%] Built target stage06_output_helpers
+[ 50%] Built target stage06_output_reference
+[ 47%] Built target stage05_file_perturbation_reference
+[ 54%] Built target pr07_rotated_output
+[ 57%] Built target tutorial5_phobos_compile
+[ 62%] Built target clean_bench_2
+[ 62%] Built target clean_bench_1
+[ 65%] Built target clean_bench_4
+[ 68%] Built target clean_bench_3
+[ 71%] Built target clean_bench_6
+[ 74%] Built target clean_bench_5
+[ 80%] Built target clean_bench_8
+[ 80%] Built target clean_bench_7
+[ 85%] Built target clean_bench_10
+[ 85%] Built target clean_bench_9
+[ 88%] Built target phobos_gravity
+[ 91%] Built target phobos_gravity_perturbation
+[ 95%] Built target phobos_heterogeneous
+[ 97%] Built target wignertest
+[100%] Built target OutputZiheng
+
+CTest output:
+Internal ctest changing into directory: /tmp/gplspec-phase2-build
+Test project /tmp/gplspec-phase2-build
+      Start  1: stage1c_file_tomography_solver
+ 1/14 Test  #1: stage1c_file_tomography_solver .................   Passed    0.30 sec
+      Start  2: stage1c_external_consumer
+ 2/14 Test  #2: stage1c_external_consumer ......................   Passed   20.09 sec
+      Start  3: stage02_patch_application
+ 3/14 Test  #3: stage02_patch_application ......................   Passed    0.22 sec
+      Start  4: stage03_utilities
+ 4/14 Test  #4: stage03_utilities ..............................   Passed    0.01 sec
+      Start  5: stage04_construction_storage
+ 5/14 Test  #5: stage04_construction_storage ...................   Passed    0.01 sec
+      Start  6: stage04_mapping_geometry
+ 6/14 Test  #6: stage04_mapping_geometry .......................   Passed    0.00 sec
+      Start  7: stage04_density_sampling
+ 7/14 Test  #7: stage04_density_sampling .......................   Passed    0.00 sec
+      Start  8: stage04_discretization_setup
+ 8/14 Test  #8: stage04_discretization_setup ...................   Passed    0.01 sec
+      Start  9: stage05_tensor_contraction
+ 9/14 Test  #9: stage05_tensor_contraction .....................   Passed    0.01 sec
+      Start 10: stage06_output_helpers
+10/14 Test #10: stage06_output_helpers .........................   Passed    0.01 sec
+      Start 11: stage06_output_original_reference
+11/14 Test #11: stage06_output_original_reference ..............   Passed    0.08 sec
+      Start 12: stage05_1d_original_reference
+12/14 Test #12: stage05_1d_original_reference ..................   Passed    0.03 sec
+      Start 13: stage05_file_perturbation_original_reference
+13/14 Test #13: stage05_file_perturbation_original_reference ...   Passed    0.04 sec
+      Start 14: pr07_rotated_output
+14/14 Test #14: pr07_rotated_output ............................   Passed    0.01 sec
+
+100% tests passed, 0 tests failed out of 14
+
+Total Test time (real) =  20.83 sec
+
+Frozen Stage 00 output:
+PASS: 20700 records; changed components=0; max_abs=0; max_scaled=0; rtol=1e-13; atol=1e-15
+PASS: 20700 records; changed components=0; max_abs=0; max_scaled=0; rtol=1e-13; atol=1e-15
+PASS: 20700 records; changed components=0; max_abs=0; max_scaled=0; rtol=1e-13; atol=1e-15
+PASS: representative MatrixSolution.out is byte-identical to the frozen baseline
+
+Additional checks: stage02_header_link exited 0. git diff --check passed. Hashes of all tracked gplspec production files and 129 tracked clean_bench/Phobos/work/modeldata/reference/ellipticity files match their pre-Stage-2B/Phase-2A starting hashes; benchfigures remains clean. No model inputs, frozen references, experimental files, numerical sources, or example source/parameters changed.
+
+
+Reviewer audit note — Stage 2B independent Luna PASS. Of the 132 paths in the original protected-file manifest, three CMake files (root, examples, tests) were intentionally changed in this stage; hashes for the other 129 protected workflow/input/reference/experimental files match. All tracked production `gplspec/` hashes match and `benchfigures/` remains clean. This is a count clarification; the validation transcript above is unchanged.

@@ -6,875 +6,540 @@
 #include "../Radial_Tools.h"
 #include "../Shared_Utilities.h"
 #include "Earth_General_Models_1D.h"
+#include "../SphericalGeometryPreconditioner.h"
+#include <Eigen/IterativeLinearSolvers>
+#include <Eigen/SparseCore>
 #include <GSHTrans/All>
 #include <GaussQuad/All>
 #include <Interpolation/All>
+#include <algorithm>
 #include <cmath>
-#include "../Timer_Class.h"
+#include <limits>
+#include <stdexcept>
+#include <vector>
 
 namespace Gravity_Tools {
 
-// function for finding the force vector:
-inline Eigen::VectorXcd
-FindForce(GeneralEarthModels::spherical_1D &inp_model, const int &lMax) {
-   // auto intsize = grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();
-   // lambda to use in mapping [-1,1] to [idxelem]
-   std::vector<double> vec_noderadii =
-       inp_model.Node_Information().ElementNodes();
-   auto rscale = [&vec_noderadii](int idxelem, double x) {
-      return (x + (vec_noderadii[idxelem + 1] + vec_noderadii[idxelem]) /
-                      (vec_noderadii[idxelem + 1] - vec_noderadii[idxelem]));
-   };
-
-   auto q = inp_model.q();
-   std::size_t nelem = vec_noderadii.size() - 1;
-   int nnode = q.N() - 1;
-   int matlen = nelem * nnode + 1;   // size of matrix
-   Eigen::VectorXcd vec_fullforce =
-       Eigen::VectorXcd::Zero(std::pow(lMax + 1, 2) * matlen);
-   int laynum = 0;   // layer number
-   // constants
-   const double pi_db = 3.1415926535;
-   double multfact = 4.0 * pi_db * inp_model.GravitationalConstant();
-
-   // looping over elements
-   for (int idxelem = 0; idxelem < nelem; ++idxelem) {
-
-      // looping over quadrature nodes
-      for (int idxnode = 0; idxnode < nnode + 1; ++idxnode) {
-         // looping over l,m values
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
-
-               std::size_t mynewidx =
-                   std::pow(idxl, 2) + idxl + idxm +
-                   (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-
-               if (idxl == 0 && idxm == 0) {
-                  vec_fullforce(mynewidx) +=
-                      multfact * q.W(idxnode) *
-                      std::pow(0.5 * (vec_noderadii[idxelem + 1] -
-                                      vec_noderadii[idxelem]),
-                               3.0) *
-                      std::pow(rscale(idxelem, q.X(idxnode)), 2.0) *
-                      inp_model.Density(idxelem, idxnode) *
-                      std::sqrt(4.0 * pi_db);
-               }
-            }
-         }
-      };
-   };
-
-   // correcting at zero radius
-   for (int idxl = 1; idxl < lMax + 1; ++idxl) {
-      for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
-         std::size_t mynewidx = std::pow(idxl, 2) + idxl + idxm;
-         vec_fullforce(mynewidx) *= 0;
-      }
-   }
-   std::size_t idxmaxval = std::pow(lMax + 1, 2) * matlen;
-   // for (auto idx1 = 0; idx1 < idxmaxval; ++idx1) {
-   //    vec_fullforce(idx1) *= inp_model.DensityNorm() * std::sqrt(4.0 *
-   //    pi_db);
-   // }
-
-   return vec_fullforce;
+struct SolveDiagnostics {
+   Eigen::ComputationInfo status = Eigen::InvalidInput;
+   Eigen::Index iterations = 0;
+   double requested_tolerance = 0.0;
+   double recursive_error = std::numeric_limits<double>::quiet_NaN();
+   double residual_norm = std::numeric_limits<double>::quiet_NaN();
+   double relative_residual = std::numeric_limits<double>::quiet_NaN();
 };
 
-// function for finding the force vector:
+struct SolveResult {
+   Eigen::VectorXcd solution;
+   // Composite operations preserve each base/correction solve in order.
+   std::vector<SolveDiagnostics> solves;
+
+   const SolveDiagnostics &final_solve() const {
+      if (solves.empty()) {
+         throw std::logic_error("solve result has no solve diagnostics");
+      }
+      return solves.back();
+   }
+};
+
+namespace detail {
+
+inline void ValidateSolverTolerance(double tolerance) {
+   if (!std::isfinite(tolerance) || tolerance <= 0.0) {
+      throw std::invalid_argument(
+          "solver tolerance must be finite and positive");
+   }
+}
+
 inline Eigen::VectorXcd
-FindForce(GeneralEarthModels::Density3D &inp_model) {
-   // auto intsize = grid.NumberOfLongitudes() * grid.NumberOfCoLatitudes();
-   // lambda to use in mapping [-1,1] to [idxelem]
-   auto rscale = [&inp_model](int idxelem, double x) {
-      return (x + (inp_model.Node_Information().ElementUpperRadius(idxelem) +
-                   inp_model.Node_Information().ElementLowerRadius(idxelem)) /
-                      inp_model.Node_Information().ElementWidth(idxelem));
-   };
+SensitivitySelectorRhs(const GeneralEarthModels::Density3D &model,
+                       const std::vector<int> &degrees,
+                       const std::vector<int> &orders,
+                       const std::vector<double> &multipliers) {
+   if (degrees.size() != orders.size() || degrees.size() != multipliers.size()) {
+      throw std::invalid_argument(
+          "sensitivity selector degrees, orders, and weights must have equal lengths");
+   }
 
-   auto q = inp_model.q();
-   std::size_t nelem = inp_model.Node_Information().NumberOfElements();
-   int nnode = q.N() - 1;
-   int matlen = nelem * nnode + 1;   // size of matrix
-   int lMax = inp_model.GSH_Grid().MaxDegree();
-   Eigen::VectorXcd vec_fullforce =
-       Eigen::VectorXcd::Zero(std::pow(lMax + 1, 2) * matlen);
-   int laynum = 0;   // layer number
+   const int lmax = model.GSH_Grid().MaxDegree();
+   const std::size_t stride =
+       static_cast<std::size_t>(lmax + 1) * (lmax + 1);
+   const auto &mesh = model.Node_Information();
+   const std::size_t radial_count = mesh.NumberOfGlobalRadialNodes();
+   if (radial_count == 0 ||
+       radial_count > static_cast<std::size_t>(
+                          std::numeric_limits<Eigen::Index>::max()) /
+                          stride) {
+      throw std::length_error("sensitivity RHS dimensions are not representable");
+   }
 
-   // length of coefficients for YLM
-   auto coefficientnumber =
+   Eigen::VectorXcd rhs = Eigen::VectorXcd::Zero(
+       static_cast<Eigen::Index>(radial_count * stride));
+   const std::size_t outer_index = (radial_count - 1) * stride;
+   constexpr double legacy_pi = 3.1415926535;
+   const double prefactor = 4.0 * legacy_pi * model.GravitationalConstant();
+   for (std::size_t i = 0; i < degrees.size(); ++i) {
+      const int degree = degrees[i];
+      const int order = orders[i];
+      if (degree < 0 || degree > lmax || order < -degree || order > degree) {
+         throw std::out_of_range("sensitivity harmonic selector is out of range");
+      }
+      if (!std::isfinite(multipliers[i])) {
+         throw std::invalid_argument("sensitivity selector weight must be finite");
+      }
+      const std::size_t harmonic = static_cast<std::size_t>(
+          degree * degree + degree - order);
+      const double phase = order % 2 == 0 ? 1.0 : -1.0;
+      // Assignment preserves the established last-value-wins behavior for duplicates.
+      rhs[static_cast<Eigen::Index>(outer_index + harmonic)] =
+          prefactor * phase * multipliers[i];
+   }
+   return rhs;
+}
+
+template <class Model>
+Eigen::SparseMatrix<std::complex<double>>
+SphericalPreconditionerMatrix(Model &model, int lmax) {
+   Eigen::SparseMatrix<std::complex<double>> matrix =
+       -model.SpectralElementInformation().template fullmatrix<std::complex<double>>(
+           model.Node_Information(), 0, lmax);
+   matrix.makeCompressed();
+   return matrix;
+}
+
+template <class Solver, class Operator>
+class PreparedSolver {
+ public:
+   // The action is borrowed and must outlive this prepared solver.
+   PreparedSolver(const Operator &op,
+                  const Eigen::SparseMatrix<std::complex<double>> &preconditioner)
+       : _operator(&op) {
+      _solver.compute(op);
+      _solver.preconditioner().addmatrix(preconditioner);
+   }
+   PreparedSolver(Operator &&,
+                  const Eigen::SparseMatrix<std::complex<double>> &) = delete;
+   PreparedSolver(const Operator &&,
+                  const Eigen::SparseMatrix<std::complex<double>> &) = delete;
+
+   Gravity_Tools::SolveResult Solve(const Eigen::VectorXcd &rhs,
+                                    double tolerance,
+                                    bool use_preconditioned_guess,
+                                    bool calculate_residual = true) {
+      ValidateSolverTolerance(tolerance);
+      _solver.setTolerance(tolerance);
+      Gravity_Tools::SolveResult result;
+      SolveDiagnostics diagnostics;
+      diagnostics.requested_tolerance = tolerance;
+      if (use_preconditioned_guess) {
+         const Eigen::VectorXcd guess = _solver.preconditioner().solve(rhs);
+         result.solution = _solver.solveWithGuess(rhs, guess);
+      } else {
+         result.solution = _solver.solve(rhs);
+      }
+      diagnostics.status = _solver.info();
+      diagnostics.iterations = _solver.iterations();
+      diagnostics.recursive_error = _solver.error();
+      if (calculate_residual) {
+         const Eigen::VectorXcd residual = rhs - (*_operator * result.solution);
+         diagnostics.residual_norm = residual.norm();
+         const double rhs_norm = rhs.norm();
+         diagnostics.relative_residual =
+             rhs_norm == 0.0
+                 ? (diagnostics.residual_norm == 0.0
+                        ? 0.0
+                        : std::numeric_limits<double>::infinity())
+                 : diagnostics.residual_norm / rhs_norm;
+      }
+      result.solves.push_back(diagnostics);
+      return result;
+   }
+
+ private:
+   const Operator *_operator;
+   Solver _solver;
+};
+
+inline double RadialSourceWeight(const Radial_Tools::RadialMesh &mesh,
+                                const GaussQuad::Quadrature1D<double> &q,
+                                std::size_t element, std::size_t node) {
+   const double radius = mesh.NodeRadius(element, node);
+   return q.W(node) * 0.5 * mesh.ElementWidth(element) * radius * radius;
+}
+
+}  // namespace detail
+
+// The spherical model has only the monopole density coefficient.
+inline Eigen::VectorXcd
+FindForce(GeneralEarthModels::spherical_1D &model, const int &lMax) {
+   const auto &mesh = model.Node_Information();
+   const auto q = model.q();
+   const std::size_t stride = static_cast<std::size_t>(lMax + 1) * (lMax + 1);
+   Eigen::VectorXcd source = Eigen::VectorXcd::Zero(
+       mesh.NumberOfGlobalRadialNodes() * stride);
+
+   constexpr double pi = 3.1415926535;
+   const double monopole_scale =
+       4.0 * pi * model.GravitationalConstant() * std::sqrt(4.0 * pi);
+   for (std::size_t element = 0; element < mesh.NumberOfElements(); ++element) {
+      for (std::size_t node = 0; node < mesh.NumNodesWithinElement(); ++node) {
+         const auto radial = mesh.GlobalNodeIndex(element, node);
+         source(radial * stride) +=
+             monopole_scale * detail::RadialSourceWeight(mesh, q, element, node) *
+             model.Density(element, node);
+      }
+   }
+   return source;
+}
+
+// The mapped model transforms each local density sample to scalar harmonics.
+inline Eigen::VectorXcd
+FindForce(GeneralEarthModels::Density3D &model) {
+   using Complex = std::complex<double>;
+   const auto &mesh = model.Node_Information();
+   const auto &grid = model.GSH_Grid();
+   const auto &q = model.q();
+   const int lMax = grid.MaxDegree();
+   const std::size_t stride = static_cast<std::size_t>(lMax + 1) * (lMax + 1);
+   const std::size_t radial_nodes = mesh.NumberOfGlobalRadialNodes();
+   Eigen::VectorXcd source = Eigen::VectorXcd::Zero(radial_nodes * stride);
+
+   const auto nonnegative_count =
        GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
+   std::vector<Complex> nonnegative(nonnegative_count);
+   std::vector<Complex> full(stride);
+   constexpr double pi = 3.1415926535897932;
+   const double source_scale = 4.0 * pi * model.GravitationalConstant();
 
-   // constants
-   const double pi_db = 3.1415926535897932;
-   double multfact = 4.0 * pi_db * inp_model.GravitationalConstant();
-   auto indexreal = &GPLSpec::detail::NonNegativeHarmonicIndex;
-   // looping over elements
-   for (int idxelem = 0; idxelem < nelem; ++idxelem) {
-
-      // looping over quadrature nodes
-      for (int idxnode = 0; idxnode < nnode + 1; ++idxnode) {
-
-         // density on the spatial grid
-         auto rho_spatial = inp_model.DensityAtRadialNode(idxelem, idxnode);
-
-         // transform from spatial to spherical harmonic basis
-         auto rho_ylm =
-             std::vector<std::complex<double>>(coefficientnumber, 0.0);
-         inp_model.GSH_Grid().ForwardTransformation(lMax, 0, rho_spatial,
-                                                    rho_ylm);
-
-         // multiplication factor for force calculation:
-         double integralmult = std::pow(rscale(idxelem, q.X(idxnode)), 2.0);
-         integralmult *= std::pow(
-             0.5 * inp_model.Node_Information().ElementWidth(idxelem), 3.0);
-         integralmult *= multfact * q.W(idxnode);
-
-         // looping over l,m values
-         std::size_t mycheckidx =
-             (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            // deal with -ve m:
-            for (int idxm = -idxl; idxm < 0; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               std::complex<double> densitydecompvalue;
-               if (std::abs(idxm) % 2 == 0) {
-                  densitydecompvalue = std::conj(rho_ylm[idxlm]);
-               } else {
-                  densitydecompvalue = -1.0 * std::conj(rho_ylm[idxlm]);
-               };
-
-               // fill out force
-               densitydecompvalue *= integralmult;
-               vec_fullforce(mycheckidx) += densitydecompvalue;
-
-               // increment
-               ++mycheckidx;
-            }
-
-            //+ve m:
-            for (int idxm = 0; idxm < idxl + 1; ++idxm) {
-               int idxlm = indexreal(idxl, idxm);
-               std::complex<double> densitydecompvalue = rho_ylm[idxlm];
-               densitydecompvalue *= integralmult;
-               vec_fullforce(mycheckidx) += densitydecompvalue;
-
-               // increment
-               ++mycheckidx;
-            }
+   for (std::size_t element = 0; element < mesh.NumberOfElements(); ++element) {
+      for (std::size_t node = 0; node < mesh.NumNodesWithinElement(); ++node) {
+         std::fill(nonnegative.begin(), nonnegative.end(), Complex{});
+         grid.ForwardTransformation(lMax, 0,
+                                    model.DensityAtRadialNode(element, node),
+                                    nonnegative);
+         GPLSpec::detail::ExpandRealScalarCoefficients(lMax, nonnegative, full);
+         const double weight = source_scale *
+                               detail::RadialSourceWeight(mesh, q, element, node);
+         const Eigen::Index base = mesh.GlobalNodeIndex(element, node) * stride;
+         for (std::size_t harmonic = 0; harmonic < stride; ++harmonic) {
+            source(base + harmonic) += weight * full[harmonic];
          }
-      };
-   };
-
-   // correcting at zero radius
-   for (int idxl = 1; idxl < lMax + 1; ++idxl) {
-      for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
-         std::size_t mynewidx = std::pow(idxl, 2) + idxl + idxm;
-         vec_fullforce(mynewidx) *= 0;
       }
    }
 
-   // correcting (l,|m|=l) to zero so that GSPH works:
-   // looping over elements
-   for (int idxelem = 0; idxelem < nelem; ++idxelem) {
-
-      // looping over quadrature nodes
-      for (int idxnode = 0; idxnode < nnode + 1;
-           ++idxnode) {   // looping over l,m values
-         std::size_t mycheckidx =
-             (idxnode + nnode * idxelem) * std::pow(lMax + 1, 2);
-         std::size_t idxn = mycheckidx + lMax * lMax;
-         std::size_t idxu = mycheckidx + lMax * lMax + 2 * lMax;
-
-         vec_fullforce(idxn) *= 0;
-         vec_fullforce(idxu) *= 0;
+   // Preserve the source domain: non-monopole center terms and both highest-
+   // degree endpoint orders are zero, even though the operator has ambient
+   // output slots for them.
+   for (int degree = 1; degree <= lMax; ++degree) {
+      for (int order = -degree; order <= degree; ++order) {
+         source(degree * degree + degree + order) = 0.0;
       }
    }
-
-   return vec_fullforce;
-};
+   const std::size_t negative_endpoint = static_cast<std::size_t>(lMax * lMax);
+   const std::size_t positive_endpoint = negative_endpoint + 2 * lMax;
+   for (std::size_t radial = 0; radial < radial_nodes; ++radial) {
+      const Eigen::Index base = radial * stride;
+      source(base + negative_endpoint) = 0.0;
+      source(base + positive_endpoint) = 0.0;
+   }
+   return source;
+}
 
 // function for finding the force vector:
 template <class mapclass>
    requires PlanetaryModel::RadialMappingClass<mapclass>
 inline Eigen::VectorXcd
-FindBoundaryPerturbationForce(GeneralEarthModels::Density3D &inp_model,
-                              mapclass &inp_map) {
-   using Real = double;
-   using Complex = std::complex<Real>;
-   std::size_t nelem = inp_model.Num_Elements();
-   int npoly = inp_model.q().N() - 1;
-   int matlen = nelem * npoly + 1;   // size of matrix
-   int lMax = inp_model.GSH_Grid().MaxDegree();
+FindBoundaryPerturbationForce(GeneralEarthModels::Density3D &model,
+                              mapclass &mapping) {
+   using Complex = std::complex<double>;
+   const auto &mesh = model.Node_Information();
+   const auto &grid = model.GSH_Grid();
+   const std::size_t element_count = model.Num_Elements();
+   const int order = model.q().N() - 1;
+   const int degree = grid.MaxDegree();
+   const std::size_t stride =
+       GSHTrans::GSHIndices<GSHTrans::All>(degree, degree, 0).Size();
+   const std::size_t node_count = element_count * order + 1;
+   constexpr double pi = 3.141592653589793238462643383279502884;
+   const double scale = -4.0 * pi * model.GravitationalConstant();
+   Eigen::VectorXcd force = Eigen::VectorXcd::Zero(node_count * stride);
+   std::vector<Complex> spatial(grid.NumberOfCoLatitudes() *
+                                    grid.NumberOfLongitudes(), Complex{});
+   std::vector<Complex> coefficients(stride, Complex{});
 
-   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
-   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
-   auto rphys = [&inp_model](int idxelem, double x) {
-      return Radial_Tools::StandardIntervalMap(
-          x, inp_model.Node_Information().ElementLowerRadius(idxelem),
-          inp_model.Node_Information().ElementUpperRadius(idxelem));
-   };
-
-   //    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> _mat_gaussderiv;
-   // finding \rho \mathbf{s} in canonical components spatially
-   // firstly we need to have the background model density and the perturbation
-   // from the perturbing model:
-   // go through all layers, find what s is, as we currently just have radial,
-   // that should be fairly simple
-   int totnum = inp_model.GSH_Grid().NumberOfCoLatitudes() *
-                inp_model.GSH_Grid().NumberOfLongitudes();
-
-   int laynum = 0;
-
-   auto myidxfunc = [npoly, lMax](int idxelem, int idxpoly, int idxl,
-                                  int idxm) {
-      return static_cast<std::size_t>(std::pow(idxl, 2) + idxl + idxm +
-                                      (idxpoly + npoly * idxelem) *
-                                          std::pow(lMax + 1, 2));
-   };
-   using VECTOR = Eigen::Vector<Complex, Eigen::Dynamic>;
-   VECTOR vec_output2 = VECTOR::Zero(matlen * _size0);
-   std::vector<double> gaussquadweights, gaussquadpoints;
-   auto elemwidth = [&inp_model](int idxelem) {
-      return inp_model.Node_Information().ElementWidth(idxelem);
-   };
-   for (int idx = 0; idx < inp_model.q().Points().size(); ++idx) {
-      gaussquadpoints.push_back(inp_model.q().X(idx));
-      gaussquadweights.push_back(inp_model.q().W(idx));
-   }
-   for (int idxelem = 0; idxelem < nelem; ++idxelem) {
-      double inv2 = 2.0 / elemwidth(idxelem);
-      // if (laynum < backgroundmodel.NumberOfLayers()) {
-      //    if (!(vec_noderadii[idxelem] < backgroundmodel.UpperRadius(laynum)))
-      //    {
-      //       laynum += 1;
-      //       std::cout << "laynum: " << laynum << ", idxelem: " << idxelem
-      //                 << std::endl;
-      //    };
-      // }
-
-      int laynum = inp_model.Node_Information().LayerNumber(idxelem);
-      // looping over quadrature nodes
-      int idxpolymax = npoly + 1;
-      for (int idxpoly = 0; idxpoly < idxpolymax; ++idxpoly) {
-
-         // auto rval = GravityFunctions::StandardIntervalMap(
-         //     gaussquadpoints[idxpoly],
-         //     inp_model.Node_Information().ElementLowerRadius(idxelem),
-         //     inp_model.Node_Information().ElementUpperRadius(idxelem));
-         auto rval = inp_model.Node_Information().NodeRadius(idxelem, idxpoly);
-         auto invr = 1 / rval;
-         auto rval2 = rval * rval;
-
-         /////////////////////////////////////////////////////////////
-
-         // finding spatial q0, qp, qm
-         std::vector<Complex> spatial_q0(totnum, 0.0), spatial_qm(totnum, 0.0),
-             spatial_qp(totnum, 0.0);
-
-         // auto raddensity = inp_model.Density;
-         {
-            std::size_t idxspatial = 0;
-            std::size_t totnum = inp_model.Node_Information().NumberOfLayers();
-            double ballrad = inp_model.Node_Information().OuterRadius();
-            double planetrad = inp_model.Node_Information().PlanetRadius();
-
-            // loop through spatial indices
-            for (auto it : inp_model.GSH_Grid().CoLatitudes()) {
-               for (auto ip : inp_model.GSH_Grid().Longitudes()) {
-                  auto raddensity =
-                      inp_model.Density_Point(idxelem, idxpoly, idxspatial);
-                  if (laynum < totnum - 1) {
-                     spatial_q0[idxspatial] =
-                         inp_map.RadialMapping(laynum)(rval, it, ip) *
-                         raddensity;
-                  } else {
-                     spatial_q0[idxspatial] =
-                         inp_map.RadialMapping(laynum)(planetrad, it, ip) *
-                         (ballrad - rval) / (ballrad - planetrad) * raddensity;
-                  }
-                  ++idxspatial;
-               }
+   for (std::size_t element = 0; element < element_count; ++element) {
+      const std::size_t layer = mesh.LayerNumber(element);
+      for (int j = 0; j <= order; ++j) {
+         const double radius = mesh.NodeRadius(element, j);
+         const double mapped_radius =
+             layer + 1 < mesh.NumberOfLayers() ? radius : mesh.PlanetRadius();
+         std::size_t point = 0;
+         for (const double theta : grid.CoLatitudes()) {
+            for (const double phi : grid.Longitudes()) {
+               const double taper =
+                   layer + 1 < mesh.NumberOfLayers()
+                       ? 1.0
+                       : (mesh.OuterRadius() - radius) /
+                             (mesh.OuterRadius() - mesh.PlanetRadius());
+               const auto displacement =
+                   mapping.RadialMapping(layer)(mapped_radius, theta, phi) *
+                   taper;
+               spatial[point] =
+                   model.Density_Point(element, j, point) * displacement;
+               ++point;
             }
          }
+         std::fill(coefficients.begin(), coefficients.end(), Complex{});
+         grid.ForwardTransformation(degree, 0, spatial, coefficients);
 
-         /////////////////////////////////////////////////////////////
-         // step 4: transforming s from spatial to spherical harmonic
-         // basis
-         //  transformation for q^{-1}
-         std::vector<Complex> gsph_q0(_size0, 0.0), gsph_qp1(_sizepm, 0.0),
-             gsph_qm1(_sizepm, 0.0);   // declaration of GSPH vectors
-         {
-            // transformation for q^{-1}
-            inp_model.GSH_Grid().ForwardTransformation(lMax, -1, spatial_qm,
-                                                       gsph_qm1);
-            inp_model.GSH_Grid().ForwardTransformation(lMax, 0, spatial_q0,
-                                                       gsph_q0);
-            inp_model.GSH_Grid().ForwardTransformation(lMax, +1, spatial_qp,
-                                                       gsph_qp1);
-         }
-
-         // step 5: evaluating radial integrals to give Ax
-
-         // 0 component term
-         {
-            // multiplication factor and index
-            std::size_t idx2 = myidxfunc(idxelem, 0, 0, 0);
-            // std::size_t idx2 = idxelem * npoly;
-            auto mult1 = gaussquadweights[idxpoly] * rval2;
-
-            // loop over radii
-            for (int idxn = 0; idxn < npoly + 1; ++idxn) {
-
-               // index and multiplication factor
-               std::size_t idx3 = 0;
-               auto multfact = inp_model.GaussDerivative(idxn, idxpoly) * mult1;
-
-               // loop over l and m
-               for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-                  for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
-                     // increment global
-                     vec_output2(idx2) -= gsph_q0[idx3] * multfact;
-
-                     // increment indices
-                     ++idx2;
-                     ++idx3;
-                  }
-               }
-            }
-         }
-
-         // pm component
-         {
-            std::size_t idx1 = myidxfunc(idxelem, idxpoly, 1, -1);
-            std::size_t idx3 = 0;
-            auto mult1 =
-                elemwidth(idxelem) * 0.5 * gaussquadweights[idxpoly] * rval;
-            for (int idxl = 1; idxl < lMax + 1; ++idxl) {
-
-               // multiplication factors
-               double omegal0 = std::sqrt(static_cast<double>(idxl) *
-                                          (static_cast<double>(idxl + 1)) *
-                                          0.5);   // omega_l^0
-               auto multfact = omegal0 * mult1;
-
-               // loop over m
-               for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
-
-                  vec_output2(idx1) -=
-                      multfact *
-                      (gsph_qm1[idx3] + gsph_qp1[idx3]);   // global increment
-
-                  // increment indices
-                  ++idx1;
-                  ++idx3;
-               }
-            }
+         // GaussDerivative is with respect to the reference coordinate. Its
+         // 2/Delta-r factor cancels the element map's Delta-r/2 quadrature.
+         const double radial_weight = model.q().W(j) * radius * radius;
+         for (int i = 0; i <= order; ++i) {
+            const double weak_weight =
+                scale * model.GaussDerivative(i, j) * radial_weight;
+            const std::size_t global_node = element * order + i;
+            force.segment(global_node * stride, stride).noalias() +=
+                weak_weight * Eigen::Map<const Eigen::VectorXcd>(
+                                  coefficients.data(),
+                                  static_cast<Eigen::Index>(stride));
          }
       }
    }
-   // const double bigg_db = 6.6743 * std::pow(10.0, -11.0);
-   const double pi_db = 3.1415926535;
-   double multcomp = 4.0 * pi_db * inp_model.GravitationalConstant();
-   // std::size_t idxmaxval = std::pow(lMax + 1, 2) * matlen;
-   for (auto idx1 = 0; idx1 < matlen * _size0; ++idx1) {
-      vec_output2(idx1) *= multcomp;
-   }
+   return force;
+}
 
-   return vec_output2;
-};
-
-// function for finding the result of advecting the solution of a problem with
-// the mapping defined by inp_map
+// Pull the radial displacement back against the radial derivative of a field.
 template <class mapclass>
    requires PlanetaryModel::RadialMappingClass<mapclass>
 inline Eigen::VectorXcd
-AdvectiveBoundaryPerturbation(GeneralEarthModels::Density3D &inp_model,
-                              mapclass &inp_map,
-                              const Eigen::VectorXcd &vec_phi) {
-   using Real = double;
-   using Complex = std::complex<Real>;
-   std::size_t nelem = inp_model.Num_Elements();
-   int npoly = inp_model.q().N() - 1;
-   int matlen = nelem * npoly + 1;   // size of matrix
-   int lMax = inp_model.GSH_Grid().MaxDegree();
+AdvectiveBoundaryPerturbation(GeneralEarthModels::Density3D &model,
+                              mapclass &mapping,
+                              const Eigen::VectorXcd &potential) {
+   using Complex = std::complex<double>;
+   const auto &mesh = model.Node_Information();
+   const auto &grid = model.GSH_Grid();
+   const std::size_t element_count = model.Num_Elements();
+   const int order = model.q().N() - 1;
+   const int degree = grid.MaxDegree();
+   const std::size_t stride =
+       GSHTrans::GSHIndices<GSHTrans::All>(degree, degree, 0).Size();
+   const std::size_t node_count = element_count * order + 1;
+   Eigen::VectorXcd advected = Eigen::VectorXcd::Zero(node_count * stride);
+   const std::size_t spatial_size =
+       grid.NumberOfCoLatitudes() * grid.NumberOfLongitudes();
+   std::vector<Complex> derivative_coefficients(stride, Complex{});
+   std::vector<Complex> spatial_derivative(spatial_size, Complex{});
+   std::vector<Complex> spatial_displacement(spatial_size, Complex{});
+   std::vector<Complex> spatial_product(spatial_size, Complex{});
+   std::vector<Complex> product_coefficients(stride, Complex{});
 
-   auto _size0 = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
-   auto _sizepm = GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 1).Size();
-   auto rphys = [&inp_model](int idxelem, double x) {
-      return Radial_Tools::StandardIntervalMap(
-          x, inp_model.Node_Information().ElementLowerRadius(idxelem),
-          inp_model.Node_Information().ElementUpperRadius(idxelem));
-   };
-
-   //    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> _mat_gaussderiv;
-   // finding \rho \mathbf{s} in canonical components spatially
-   // firstly we need to have the background model density and the perturbation
-   // from the perturbing model:
-   // go through all layers, find what s is, as we currently just have radial,
-   // that should be fairly simple
-   int totnum = inp_model.GSH_Grid().NumberOfCoLatitudes() *
-                inp_model.GSH_Grid().NumberOfLongitudes();
-
-   int laynum = 0;
-
-   auto myidxfunc = [npoly, lMax](int idxelem, int idxpoly, int idxl,
-                                  int idxm) {
-      return static_cast<std::size_t>(std::pow(idxl, 2) + idxl + idxm +
-                                      (idxpoly + npoly * idxelem) *
-                                          std::pow(lMax + 1, 2));
-   };
-   using VECTOR = Eigen::Vector<Complex, Eigen::Dynamic>;
-   VECTOR vec_output2 = VECTOR::Zero(matlen * _size0);
-   std::vector<double> gaussquadweights, gaussquadpoints;
-   auto elemwidth = [&inp_model](int idxelem) {
-      return inp_model.Node_Information().ElementWidth(idxelem);
-   };
-   for (int idx = 0; idx < inp_model.q().Points().size(); ++idx) {
-      gaussquadpoints.push_back(inp_model.q().X(idx));
-      gaussquadweights.push_back(inp_model.q().W(idx));
-   }
-
-   for (int idxelem = 0; idxelem < nelem; ++idxelem) {
-      double inv2 = 2.0 / elemwidth(idxelem);
-      // std::cout << "inv2: " << inv2 << std::endl;
-      // looping over quadrature nodes
-      int idxpolymax = npoly + 1;
-      int idxpolymin = 0;
-      if (idxelem < nelem - 1) {
-         idxpolymax = npoly;
-      }
-      if (idxelem == 0) {
-         idxpolymin = 1;
-      }
-      std::size_t laynum = inp_model.Node_Information().LayerNumber(idxelem);
-      for (int idxpoly = idxpolymin; idxpoly < idxpolymax; ++idxpoly) {
-         // radius, inverse and squared
-         auto rval = inp_model.Node_Information().NodeRadius(idxelem, idxpoly);
-         auto invr = 1 / rval;
-         auto rval2 = rval * rval;
-
-         ///////////////////////////////////////
-         // step 1: finding nabla zeta
-         std::vector<std::complex<double>> gsph_nz0(_size0, 0.0),
-             gsph_nzp1(_sizepm, 0.0),
-             gsph_nzm1(_sizepm, 0.0);   //                  declaration
-
-         // looping over l,m values
-         {
-
-            // cache friendly trial
-            //  getting first index
-            std::size_t idx1 = myidxfunc(idxelem, 0, 0, 0);
-
-            // looping over radii
-            for (int idxn = 0; idxn < npoly + 1; ++idxn) {
-               std::size_t idx2 = 0;
-               auto multfact = inp_model.GaussDerivative(idxn, idxpoly);
-
-               // looping over l and m
-               for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-                  for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
-
-                     // increment local temporary
-                     gsph_nz0[idx2] += vec_phi(idx1) * multfact;
-
-                     // increment indices
-                     ++idx1;
-                     ++idx2;
-                  }
-               }
-            }
-            for (auto &idx : gsph_nz0) {
-               idx *= inv2;
+   for (std::size_t element = 0; element < element_count; ++element) {
+      const std::size_t layer = mesh.LayerNumber(element);
+      const double inverse_width = 2.0 / mesh.ElementWidth(element);
+      const int first_node = element == 0 ? 1 : 0;
+      const int end_node = element + 1 == element_count ? order + 1 : order;
+      for (int j = first_node; j < end_node; ++j) {
+         std::fill(derivative_coefficients.begin(),
+                   derivative_coefficients.end(), Complex{});
+         for (int k = 0; k <= order; ++k) {
+            const std::size_t global_node = element * order + k;
+            for (std::size_t coefficient = 0; coefficient < stride;
+                 ++coefficient) {
+               derivative_coefficients[coefficient] +=
+                   model.GaussDerivative(k, j) *
+                   potential[global_node * stride + coefficient];
             }
          }
+         for (auto &value : derivative_coefficients) value *= inverse_width;
+         std::fill(spatial_derivative.begin(), spatial_derivative.end(), Complex{});
+         grid.InverseTransformation(degree, 0, derivative_coefficients,
+                                    spatial_derivative);
 
-         // only do the pm if not at the zero radius
-         // if (tcount > 0) {
-         {
-            std::size_t idx1 = 0;
-            std::size_t idx2 = myidxfunc(idxelem, idxpoly, 1, -1);
-            for (int idxl = 1; idxl < lMax + 1; ++idxl) {
-               // omega_l^0
-               double Omegal0 = std::sqrt(static_cast<double>(idxl) *
-                                          static_cast<double>(idxl + 1) / 2.0);
-               auto multfact = Omegal0 * invr;
-               for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
-
-                  auto tmp = vec_phi(idx2) * multfact;
-                  gsph_nzp1[idx1] += tmp;
-                  gsph_nzm1[idx1] += tmp;
-
-                  // increment
-                  ++idx1;
-                  ++idx2;
-               }
+         const double radius = mesh.NodeRadius(element, j);
+         const double mapped_radius =
+             layer + 1 < mesh.NumberOfLayers() ? radius : mesh.PlanetRadius();
+         std::size_t point = 0;
+         for (const double theta : grid.CoLatitudes()) {
+            for (const double phi : grid.Longitudes()) {
+               const double taper =
+                   layer + 1 < mesh.NumberOfLayers()
+                       ? 1.0
+                       : (mesh.OuterRadius() - radius) /
+                             (mesh.OuterRadius() - mesh.PlanetRadius());
+               spatial_displacement[point] =
+                   mapping.RadialMapping(layer)(mapped_radius, theta, phi) *
+                   taper;
+               spatial_product[point] =
+                   spatial_displacement[point] * spatial_derivative[point];
+               ++point;
             }
          }
-         //       // std::cout << "invr: " << invr << std::endl;
-         //       // }
-
-         ///////////////////////////////////////////////////////////////////////////
-         // step 2: transforming (\nabla \zeta) into spatial domain
-         FFTWpp::vector<Complex> spatial_nzm1(totnum, 0.0),
-             spatial_nzp1(totnum, 0.0),
-             spatial_nz0(totnum, 0.0);   // declaration
-
-         // GSPH transforms:
-         // lhs.gridused().InverseTransformation(lhs.lMax(), 0, gsph_nz0,
-         //                                      spatial_nz0);   // 0th order
-         inp_model.GSH_Grid().InverseTransformation(lMax, 0, gsph_nz0,
-                                                    spatial_nz0);   // 0th order
-         inp_model.GSH_Grid().InverseTransformation(lMax, 1, gsph_nzp1,
-                                                    spatial_nzp1);   //+1 order
-         inp_model.GSH_Grid().InverseTransformation(lMax, -1, gsph_nzm1,
-                                                    spatial_nzm1);   //-1 order
-
-         ///////////////////////////////////////////////////////////////////////////
-         // finding s in canonical components spatially
-         std::vector<Complex> spatial_q0(totnum, 0.0), spatial_qm(totnum, 0.0),
-             spatial_qp(totnum, 0.0);
-
-         {
-            std::size_t idxspatial = 0;
-            std::size_t totlaynum =
-                inp_model.Node_Information().NumberOfLayers();
-            double ballrad = inp_model.Node_Information().OuterRadius();
-            double planetrad = inp_model.Node_Information().PlanetRadius();
-
-            // loop through spatial indices
-            for (auto it : inp_model.GSH_Grid().CoLatitudes()) {
-               for (auto ip : inp_model.GSH_Grid().Longitudes()) {
-                  // auto idxuse = idxt * grid.NumberOfLongitudes() + idxp;
-                  // double radscalval;
-                  if (laynum < totlaynum - 1) {
-                     spatial_q0[idxspatial] =
-                         inp_map.RadialMapping(laynum)(rval, it, ip);
-                  } else {
-                     spatial_q0[idxspatial] =
-                         inp_map.RadialMapping(laynum)(planetrad, it, ip) *
-                         (ballrad - rval) / (ballrad - planetrad);
-                  }
-                  ++idxspatial;
-               }
-            }
-         }
-
-         ///////////////////////////////////////////////////////////////////////////
-         // finding the multiple of the two
-         std::vector<Complex> spatial_multtot(totnum, 0.0);
-         // for (int idxt = 0; idxt < grid.NumberOfCoLatitudes(); ++idxt) {
-         //    for (int idxp = 0; idxp < grid.NumberOfLongitudes(); ++idxp) {
-         {
-            std::size_t idxuse = 0;
-            for (auto it : inp_model.GSH_Grid().CoLatitudes()) {
-               for (auto ip : inp_model.GSH_Grid().Longitudes()) {
-                  // auto idxuse = idxt * grid.NumberOfLongitudes() + idxp;
-                  spatial_multtot[idxuse] -=
-                      spatial_qm[idxuse] * spatial_nzp1[idxuse];
-                  spatial_multtot[idxuse] +=
-                      spatial_q0[idxuse] * spatial_nz0[idxuse];
-                  spatial_multtot[idxuse] -=
-                      spatial_qp[idxuse] * spatial_nzm1[idxuse];
-                  ++idxuse;
-               }
-            }
-         }
-
-         ///////////////////////////////////////////////////////////////////////////
-         // converting back into spherical harmonics
-         std::vector<std::complex<double>> gsph_multtot(_size0, 0.0);
-         inp_model.GSH_Grid().ForwardTransformation(lMax, 0, spatial_multtot,
-                                                    gsph_multtot);
-         std::size_t idx1 = myidxfunc(idxelem, idxpoly, 0, 0);
-         std::size_t idx3 = 0;
-         for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-            // loop over m
-            for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
-               vec_output2(idx1) = gsph_multtot[idx3];   // global
-
-               // increment indices
-               ++idx1;
-               ++idx3;
-            }
+         std::fill(product_coefficients.begin(), product_coefficients.end(),
+                   Complex{});
+         grid.ForwardTransformation(degree, 0, spatial_product,
+                                    product_coefficients);
+         const std::size_t global_node = element * order + j;
+         for (std::size_t coefficient = 0; coefficient < stride; ++coefficient) {
+            advected[global_node * stride + coefficient] =
+                product_coefficients[coefficient];
          }
       }
    }
+   return advected;
+}
 
-   return vec_output2;
-};
-
-// find potential
 template <class Grid>
-inline auto
-FindGravitationalPotential(GeneralEarthModels::spherical_1D &inp_model,
-                           Grid &grid, double relerr = std::pow(10.0, -6.0)) {
+inline SolveResult
+SolvePotential(GeneralEarthModels::spherical_1D &inp_model, Grid &grid,
+               double relerr = std::pow(10.0, -6.0)) {
    using Complex = std::complex<double>;
    using BICGSTAB =
        Eigen::BiCGSTAB<MatrixReplacement<std::complex<double>>,
                        Eigen::SphericalGeometryPreconditioner<Complex>>;
-
-   // preconditioning matrix
-   Eigen::SparseMatrix<std::complex<double>> testmat =
-       -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           0, grid.MaxDegree());
-   testmat.makeCompressed();
-
-   // pseudospectral matrix replacement
    MatrixReplacement<std::complex<double>> mymatrix(inp_model, grid);
-
-   // get force vector
    Eigen::VectorXcd vec_fullforce =
        Gravity_Tools::FindForce(inp_model, grid.MaxDegree());
-
-   // solve using BICGSTAB
-   BICGSTAB solver;
-   solver.compute(mymatrix);
-   solver.preconditioner().addmatrix(testmat);
-   solver.setTolerance(relerr);
-   Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
-
-   // add dimension:
-   // for (int idx = 0; idx < testsol.size(); ++idx) {
-   //    testsol(idx) *= inp_model.PotentialNorm();
-   // }
-   return testsol;
-};
+   const auto preconditioner =
+       detail::SphericalPreconditionerMatrix(inp_model, grid.MaxDegree());
+   detail::PreparedSolver<BICGSTAB, decltype(mymatrix)> solver(mymatrix,
+                                                               preconditioner);
+   return solver.Solve(vec_fullforce, relerr, false);
+}
 
 // 3D solver
-inline auto
-FindGravitationalPotential(GeneralEarthModels::Density3D &inp_model,
-                           double relerr = std::pow(10.0, -6.0)) {
+inline SolveResult
+SolvePotential(GeneralEarthModels::Density3D &inp_model,
+               double relerr = std::pow(10.0, -6.0)) {
    using Complex = std::complex<double>;
-   using BICGSTAB =
-       Eigen::BiCGSTAB<MatrixReplacement3D<std::complex<double>>,
-                       Eigen::SphericalGeometryPreconditioner<Complex>>;
    using CONJG = Eigen::ConjugateGradient<
        MatrixReplacement3D<Complex>, Eigen::Lower | Eigen::Upper,
        Eigen::SphericalGeometryPreconditioner<Complex>>;
-   // preconditioning matrix
-   Eigen::SparseMatrix<std::complex<double>> testmat =
-       -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           0, inp_model.GSH_Grid().MaxDegree());
-   testmat.makeCompressed();
-
-   // pseudospectral matrix replacement
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
-
-   // get force vector
    Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);
-   // Eigen::VectorXcd vec_ff2 = vec_fullforce * 0.0;
-   // std::cout << vec_ff2.size() << "\n";
-   // Eigen::VectorXcd vec_ff2 =
-   //     Eigen::VectorXcd::Constant(vec_fullforce.size(), 1.0);
+   const auto preconditioner = detail::SphericalPreconditionerMatrix(
+       inp_model, inp_model.GSH_Grid().MaxDegree());
+   detail::PreparedSolver<CONJG, decltype(mymatrix)> solver(mymatrix,
+                                                            preconditioner);
+   return solver.Solve(vec_fullforce, relerr, true);
+}
 
-   // solve using BICGSTAB
-   std::cout << "Force declared\n";
-   // BICGSTAB solver;
-   CONJG solver;
-   solver.compute(mymatrix);
-   solver.preconditioner().addmatrix(testmat);
-   solver.setTolerance(relerr);
-   // solver.setMaxIterations(10);
-   Eigen::VectorXcd vecguess = solver.preconditioner().solve(vec_fullforce);
-   std::cout << "Preconditioner done\n";
-   Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
-   // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
-   std::cout << "Number of iterations: " << solver.iterations() << "\n";
-   std::cout << "Requested tolerance: " << solver.tolerance() << "\n";
-   // for (int idx = 0; idx < testsol.size(); ++idx) {
-   //    testsol(idx) *= inp_model.PotentialNorm();
-   // }
-   auto retsol = inp_model.SingleEigenVectorToGeneralFormat(testsol);
-   return retsol;
-};
+inline auto ToHarmonicField(const GeneralEarthModels::Density3D &model,
+                            const SolveResult &result) {
+   if (result.solves.empty()) {
+      throw std::invalid_argument("cannot convert a result without solve diagnostics");
+   }
+   for (const auto &solve : result.solves) {
+      if (solve.status != Eigen::Success) {
+         throw std::runtime_error("cannot convert a failed gravitational solve");
+      }
+   }
+   const auto &mesh = model.Node_Information();
+   const auto &grid = model.GSH_Grid();
+   const std::size_t stride = static_cast<std::size_t>(grid.MaxDegree() + 1) *
+                              static_cast<std::size_t>(grid.MaxDegree() + 1);
+   const std::size_t radial_count = mesh.NumberOfGlobalRadialNodes();
+   if (radial_count == 0 || stride == 0 ||
+       radial_count > static_cast<std::size_t>(
+                          std::numeric_limits<Eigen::Index>::max()) /
+                          stride ||
+       result.solution.size() !=
+           static_cast<Eigen::Index>(radial_count * stride) ||
+       !result.solution.allFinite()) {
+      throw std::invalid_argument("harmonic solve result has invalid dimensions or values");
+   }
+   return model.SingleEigenVectorToGeneralFormat(result.solution);
+}
 
 // 3D solver
-inline auto
-SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
-                                   int l, int m,
-                                   double relerr = std::pow(10.0, -6.0)) {
+inline SolveResult
+SolveSensitivityKernel(GeneralEarthModels::Density3D &inp_model, int l, int m,
+                       double relerr = std::pow(10.0, -6.0)) {
+   detail::ValidateSolverTolerance(relerr);
    using Complex = std::complex<double>;
-   using BICGSTAB =
-       Eigen::BiCGSTAB<MatrixReplacement3D<std::complex<double>>,
-                       Eigen::SphericalGeometryPreconditioner<Complex>>;
    using CONJG = Eigen::ConjugateGradient<
        MatrixReplacement3D<Complex>, Eigen::Lower | Eigen::Upper,
        Eigen::SphericalGeometryPreconditioner<Complex>>;
 
-   // preconditioning matrix
-   Eigen::SparseMatrix<std::complex<double>> testmat =
-       -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           0, inp_model.GSH_GridP().MaxDegree());
-   testmat.makeCompressed();
-
-   // pseudospectral matrix replacement
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
 
-   // Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);
-   // force vector is simply a minus one in the lm component on the boundary. We
-   // simply need to find its index.
-   int npoly = inp_model.q().N() - 1;
-   int lMax = inp_model.GSH_GridP().MaxDegree();
-   int nelem = inp_model.Node_InformationP().NumberOfElements();
-   int matlen = nelem * npoly + 1;   // size of matrix
-   Eigen::VectorXcd vec_fullforce =
-       Eigen::VectorXcd::Zero(std::pow(lMax + 1, 2) * matlen);
-   std::size_t lmidx = (npoly + npoly * (nelem - 1)) * std::pow(lMax + 1, 2);
-   lmidx += l * l + l - m;
-   double pi_db = 3.1415926535;
-   double ballrad = inp_model.Node_InformationP().OuterRadius();
-   vec_fullforce(lmidx) =
-       4.0 * pi_db * inp_model.GravitationalConstant() * std::pow(-1.0, m);
+   const Eigen::VectorXcd vec_fullforce = detail::SensitivitySelectorRhs(
+       inp_model, std::vector<int>{l}, std::vector<int>{m},
+       std::vector<double>{1.0});
 
-   // solve using BICGSTAB
-   std::cout << "Force declared\n";
-   CONJG solver;
-   solver.compute(mymatrix);
-   solver.preconditioner().addmatrix(testmat);
-   solver.setTolerance(relerr);
-   Eigen::VectorXcd vecguess = solver.preconditioner().solve(vec_fullforce);
-   Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
-   // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
-   std::cout << "Number of iterations: " << solver.iterations() << "\n";
-   // for (int idx = 0; idx < testsol.size(); ++idx) {
-   //    testsol(idx) *= inp_model.PotentialNorm();
-   // }
-   auto retsol = inp_model.SingleEigenVectorToGeneralFormat(testsol);
-   return retsol;
+   const auto preconditioner = detail::SphericalPreconditionerMatrix(
+       inp_model, inp_model.GSH_Grid().MaxDegree());
+   detail::PreparedSolver<CONJG, decltype(mymatrix)> solver(mymatrix,
+                                                            preconditioner);
+   const auto result = solver.Solve(vec_fullforce, relerr, true);
+   return result;
 };
 
 // 3D solver
-inline auto
-SphericalHarmonicSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
-                                   std::vector<int> l, std::vector<int> m,
-                                   std::vector<double> multval,
-                                   double relerr = std::pow(10.0, -6.0)) {
-   assert(l.size() == m.size() && "Need same size for l and m");
-   assert(multval.size() == m.size() && "Need same size for l and m");
+inline SolveResult
+SolveSensitivityKernel(GeneralEarthModels::Density3D &inp_model,
+                       std::vector<int> l, std::vector<int> m,
+                       std::vector<double> multval,
+                       double relerr = std::pow(10.0, -6.0)) {
+   detail::ValidateSolverTolerance(relerr);
    using Complex = std::complex<double>;
    using BICGSTAB =
        Eigen::BiCGSTAB<MatrixReplacement3D<std::complex<double>>,
                        Eigen::SphericalGeometryPreconditioner<Complex>>;
-
-   // preconditioning matrix
-   Eigen::SparseMatrix<std::complex<double>> testmat =
-       -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           0, inp_model.GSH_Grid().MaxDegree());
-   testmat.makeCompressed();
-
-   // pseudospectral matrix replacement
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
 
-   // Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);
-   // force vector is simply a minus one in the lm component on the boundary. We
-   // simply need to find its index.
-   int npoly = inp_model.q().N() - 1;
-   int lMax = inp_model.GSH_Grid().MaxDegree();
-   int nelem = inp_model.Node_Information().NumberOfElements();
-   int matlen = nelem * npoly + 1;   // size of matrix
-   Eigen::VectorXcd vec_fullforce =
-       Eigen::VectorXcd::Zero(std::pow(lMax + 1, 2) * matlen);
-   std::size_t lmidx = (npoly + npoly * (nelem - 1)) * std::pow(lMax + 1, 2);
-   for (int i = 0; i < l.size(); ++i) {
-      auto lidx = lmidx + l[i] * l[i] + l[i] - m[i];
-      double pi_db = 3.1415926535;
-      double ballrad = inp_model.Node_Information().OuterRadius();
-      vec_fullforce(lidx) = 4.0 * pi_db * inp_model.GravitationalConstant() *
-                            std::pow(-1.0, m[i]) * multval[i];
-   }
+   const Eigen::VectorXcd vec_fullforce = detail::SensitivitySelectorRhs(
+       inp_model, l, m, multval);
 
-   // solve using BICGSTAB
-   std::cout << "Force declared\n";
-   BICGSTAB solver;
-   solver.compute(mymatrix);
-   solver.preconditioner().addmatrix(testmat);
-   solver.setTolerance(relerr);
-   Eigen::VectorXcd vecguess = solver.preconditioner().solve(vec_fullforce);
-   Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
-   // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
-   std::cout << "Number of iterations: " << solver.iterations() << "\n";
-   // for (int idx = 0; idx < testsol.size(); ++idx) {
-   //    testsol(idx) *= inp_model.PotentialNorm();
-   // }
-   auto retsol = inp_model.SingleEigenVectorToGeneralFormat(testsol);
-   return retsol;
+   const auto preconditioner = detail::SphericalPreconditionerMatrix(
+       inp_model, inp_model.GSH_Grid().MaxDegree());
+   detail::PreparedSolver<BICGSTAB, decltype(mymatrix)> solver(mymatrix,
+                                                               preconditioner);
+   const auto result = solver.Solve(vec_fullforce, relerr, true);
+   return result;
 };
 
 // 3D solver
-inline auto
-FindGravitationalPotentialPerturbation(
+inline SolveResult
+SolveMappingPerturbation(
     GeneralEarthModels::Density3D &inp_model,
     GeneralEarthModels::MappingPerturbation &inp_map,
     double relerr1 = std::pow(10.0, -6.0),
-    double relerr2 = std::pow(10.0, -2.0)) {
+   double relerr2 = std::pow(10.0, -2.0)) {
    using Complex = std::complex<double>;
-   using BICGSTAB =
-       Eigen::BiCGSTAB<MatrixReplacement3D<std::complex<double>>,
-                       Eigen::SphericalGeometryPreconditioner<Complex>>;
    using CONJG = Eigen::ConjugateGradient<
        MatrixReplacement3D<Complex>, Eigen::Lower | Eigen::Upper,
        Eigen::SphericalGeometryPreconditioner<Complex>>;
-   Timer _timer;
-   // preconditioning matrix
-   Eigen::SparseMatrix<std::complex<double>> testmat =
-       -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           0, inp_model.GSH_Grid().MaxDegree());
-   testmat.makeCompressed();
-
    // pseudospectral matrix replacement
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
-   MatrixReplacement3D<std::complex<double>> matrixpert(inp_model, inp_map);
-   matrixpert.NoBoundary();
+   MatrixReplacement3D<std::complex<double>> matrixpert(
+       inp_model, inp_map, false);
 
    // get force vector
    Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);
-   // Eigen::VectorXcd vec_ff2 = vec_fullforce * 0.0;
-   // std::cout << vec_ff2.size() << "\n";
-   // Eigen::VectorXcd vec_ff2 =
-   //     Eigen::VectorXcd::Constant(vec_fullforce.size(), 1.0);
 
-   // solve using BICGSTAB
-   std::cout << "Force declared\n";
-   // BICGSTAB solver;
-   CONJG solver;
-   _timer.start();
-   solver.compute(mymatrix);
-   solver.preconditioner().addmatrix(testmat);
-   solver.setTolerance(relerr1);
-   Eigen::VectorXcd vecguess = solver.preconditioner().solve(vec_fullforce);
-   Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
-   _timer.stop("Time for base solution");
-   // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
-   std::cout << "Number of iterations: " << solver.iterations() << "\n";
+   const auto preconditioner = detail::SphericalPreconditionerMatrix(
+       inp_model, inp_model.GSH_Grid().MaxDegree());
+   detail::PreparedSolver<CONJG, decltype(mymatrix)> solver(mymatrix,
+                                                            preconditioner);
+   const auto base_result = solver.Solve(vec_fullforce, relerr1, true);
+   Eigen::VectorXcd vec_pertforce = -(matrixpert * base_result.solution);
 
-   Eigen::VectorXcd vec_pertforce = -(matrixpert * testsol);
-
-   std::cout << "Square norm: " << vec_pertforce.squaredNorm() << "\n";
-
-   _timer.start();
-   Eigen::VectorXcd vecguess2 = solver.preconditioner().solve(vec_pertforce);
-   solver.setTolerance(relerr2);
-   Eigen::VectorXcd vecpertsol =
-       solver.solveWithGuess(vec_pertforce, vecguess2);
-   // Eigen::VectorXcd vecpertsol = solver2.solve(vec_pertforce);
-   std::cout << "Number of iterations for perturbation solution: "
-             << solver.iterations() << "\n";
-   _timer.stop("Time for perturbation solution");
-   Eigen::VectorXcd fullsol = testsol + vecpertsol;
-   // for (int idx = 0; idx < testsol.size(); ++idx) {
-   //    testsol(idx) *= inp_model.PotentialNorm();
-   // }
-   auto retsol = inp_model.SingleEigenVectorToGeneralFormat(fullsol);
-   return retsol;
+   const auto perturbation_result =
+       solver.Solve(vec_pertforce, relerr2, true);
+   SolveResult result;
+   result.solution = base_result.solution + perturbation_result.solution;
+   result.solves = base_result.solves;
+   result.solves.insert(result.solves.end(), perturbation_result.solves.begin(),
+                        perturbation_result.solves.end());
+   return result;
 };
 
 // 3D solver
 template <class mapclass>
    requires PlanetaryModel::RadialMappingClass<mapclass>
-inline auto
-FindGravitationalPotentialClassicalPerturbation(
+inline SolveResult
+SolveClassicalMappedPerturbation(
     GeneralEarthModels::Density3D &inp_model, mapclass &inp_map,
     double relerr = std::pow(10.0, -6.0)) {
    using Complex = std::complex<double>;
@@ -882,288 +547,191 @@ FindGravitationalPotentialClassicalPerturbation(
        Eigen::BiCGSTAB<MatrixReplacement3D<std::complex<double>>,
                        Eigen::SphericalGeometryPreconditioner<Complex>>;
 
-   // preconditioning matrix
-   Eigen::SparseMatrix<std::complex<double>> testmat =
-       -inp_model.SpectralElementInformation().fullmatrix<std::complex<double>>(
-           0, inp_model.GSH_Grid().MaxDegree());
-   testmat.makeCompressed();
-
-   // pseudospectral matrix replacement
    MatrixReplacement3D<std::complex<double>> mymatrix(inp_model);
-   // MatrixReplacement3D<std::complex<double>> matrixpert(inp_model, inp_map);
-   // matrixpert.NoBoundary();
 
    // get force vector
    Eigen::VectorXcd vec_fullforce = Gravity_Tools::FindForce(inp_model);
-   // Eigen::VectorXcd vec_ff2 = vec_fullforce * 0.0;
-   // std::cout << vec_ff2.size() << "\n";
-   // Eigen::VectorXcd vec_ff2 =
-   //     Eigen::VectorXcd::Constant(vec_fullforce.size(), 1.0);
 
-   // solve using BICGSTAB
-   std::cout << "Force declared\n";
-   BICGSTAB solver;
-   solver.compute(mymatrix);
-   solver.preconditioner().addmatrix(testmat);
-   solver.setTolerance(relerr);
-   Eigen::VectorXcd vecguess = solver.preconditioner().solve(vec_fullforce);
-   Eigen::VectorXcd testsol = solver.solveWithGuess(vec_fullforce, vecguess);
-   // Eigen::VectorXcd testsol = solver.solve(vec_fullforce);
-   std::cout << "Number of iterations: " << solver.iterations() << "\n";
+   const auto preconditioner = detail::SphericalPreconditionerMatrix(
+       inp_model, inp_model.GSH_Grid().MaxDegree());
+   detail::PreparedSolver<BICGSTAB, decltype(mymatrix)> solver(mymatrix,
+                                                               preconditioner);
+   const auto base_result = solver.Solve(vec_fullforce, relerr, true);
 
    Eigen::VectorXcd testforce =
        FindBoundaryPerturbationForce(inp_model, inp_map);
-
-   // Eigen::VectorXcd vec_pertforce = -(matrixpert * testsol);
-   // BICGSTAB solver2;
-   // solver2.compute(mymatrix);
-   // solver2.preconditioner().addmatrix(testmat);
-   // solver2.setTolerance(relerr);
-   Eigen::VectorXcd vecguess2 = solver.preconditioner().solve(testforce);
-   Eigen::VectorXcd vecpertsol = solver.solveWithGuess(testforce, vecguess2);
-   // Eigen::VectorXcd vecpertsol = solver2.solve(testforce);
-   std::cout << "Number of iterations for boundary perturbation solution: "
-             << solver.iterations() << "\n";
+   const auto perturbation_result = solver.Solve(testforce, relerr, true);
    Eigen::VectorXcd advectpert =
-       AdvectiveBoundaryPerturbation(inp_model, inp_map, testsol);
+       AdvectiveBoundaryPerturbation(inp_model, inp_map, base_result.solution);
 
-   Eigen::VectorXcd fullsol = testsol + advectpert - vecpertsol;
-   // for (int idx = 0; idx < testsol.size(); ++idx) {
-   //    testsol(idx) *= inp_model.PotentialNorm();
-   // }
-   auto retsol = inp_model.SingleEigenVectorToGeneralFormat(fullsol);
-   return retsol;
+   SolveResult result;
+   result.solution = base_result.solution + advectpert -
+                     perturbation_result.solution;
+   result.solves = base_result.solves;
+   result.solves.insert(result.solves.end(), perturbation_result.solves.begin(),
+                        perturbation_result.solves.end());
+   return result;
 };
 
-// integral solver for spherical model
+// The normalized radial Green function is evaluated as two cumulative moments.
+// Scaling each moment at its current boundary keeps the powers bounded by one.
 inline auto
-GravitationalSphericalIntegral(GeneralEarthModels::Density3D &inp_model) {
-   std::size_t nelem = inp_model.Num_Elements();
-   int npoly = inp_model.Poly_Order();
-   int lMax = inp_model.GSH_Grid().MaxDegree();
+GravitationalSphericalIntegral(const GeneralEarthModels::Density3D &model) {
+   using Complex = std::complex<double>;
+   constexpr double pi = 3.141592653589793238462643383279502884;
 
-   double phi_0;
-   phi_0 = 0.0;
+   const auto &mesh = model.Node_Information();
+   const auto &quadrature = model.q();
+   const auto &grid = model.GSH_Grid();
+   const std::size_t elements = mesh.NumberOfElements();
+   const std::size_t nodes_per_element = mesh.NumNodesWithinElement();
+   const int lmax = grid.MaxDegree();
+   const std::size_t stride = static_cast<std::size_t>(lmax + 1) * (lmax + 1);
+   const std::size_t spatial_size = grid.NumberOfLongitudes() *
+                                    grid.NumberOfCoLatitudes();
 
-   // length of coefficients for YLM
-   auto coefficientnumber =
-       GSHTrans::GSHIndices<GSHTrans::NonNegative>(lMax, lMax, 0).Size();
-   auto coefficientnumber2 =
-       GSHTrans::GSHIndices<GSHTrans::All>(lMax, lMax, 0).Size();
-   auto numspatial = inp_model.GSH_Grid().NumberOfLongitudes() *
-                     inp_model.GSH_Grid().NumberOfCoLatitudes();
-   // int laynum = 0;
-   // double rad_scale = mymodel.LengthNorm();
-   // double scdiff = rad_scale / mymodel.OuterRadius();
-   // vector that will contain results
-   std::vector<std::vector<std::complex<double>>> vec_output(
-       nelem + 1,
-       std::vector<std::complex<double>>((lMax + 1) * (lMax + 1), 0.0));
-
-   auto rphys = [&inp_model](int idxelem, double x) {
-      return Radial_Tools::StandardIntervalMap(
-          x, inp_model.Node_Information().ElementLowerRadius(idxelem),
-          inp_model.Node_Information().ElementUpperRadius(idxelem));
-   };
-   auto rscale = [&inp_model](int idxelem, double x) {
-      return GPLSpec::detail::ScaledRadialNodeMap(
-          x, inp_model.Node_Information().ElementLowerRadius(idxelem) /
-                 inp_model.Node_Information().ElementUpperRadius(idxelem));
-   };
-   const double bigg_db = inp_model.GravitationalConstant();
-   const double pi_db = 3.1415926535897932;
-   // return 1.2;
-   std::vector<std::complex<double>> vec_g(nelem + 1, 0.0);
-   auto indexcomp = [](int l, int m) { return l * l + l + m; };
-
-   // vector of vectors of vectors to hold information on density
-   // std::vector<std::vector<std::vector<std::complex<double>>>> vec_rho_ylm(
-   //     nelem, std::vector<std::vector<std::complex<double>>>(
-   //                npoly + 1,
-   //                std::vector<std::complex<double>>(coefficientnumber,
-   //                0.0)));
-   std::vector<std::vector<std::vector<std::complex<double>>>> vec_rho_ylm(
-       nelem, std::vector<std::vector<std::complex<double>>>(
-                  npoly + 1,
-                  std::vector<std::complex<double>>(coefficientnumber2, 0.0)));
-   for (int idxelem = 0; idxelem < nelem; ++idxelem) {
-      for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
-         // density on the spatial grid
-         // auto rho_spatial = inp_model.DensityAtRadialNode(idxelem, idxnode);
-         std::vector<std::complex<double>> rho_spatial(numspatial);
-         for (int idx = 0; idx < numspatial; ++idx) {
-            rho_spatial[idx] = inp_model.Density_Point(idxelem, idxnode, idx);
-         };
-
-         // inp_model.GSH_Grid().ForwardTransformation(
-         //     lMax, 0, rho_spatial, vec_rho_ylm[idxelem][idxnode]);
-         inp_model.GSH_Grid().ForwardTransformation(
-             lMax, 0, rho_spatial, vec_rho_ylm[idxelem][idxnode]);
+   // Transform each element-local density sample once. Shared interface nodes
+   // intentionally occur in both adjacent elements with their own material.
+   std::vector<Complex> density_coefficients(elements * nodes_per_element * stride);
+   std::vector<Complex> density_on_grid(spatial_size);
+   std::vector<Complex> coefficients(stride);
+   for (std::size_t element = 0; element < elements; ++element) {
+      for (std::size_t node = 0; node < nodes_per_element; ++node) {
+         for (std::size_t spatial = 0; spatial < spatial_size; ++spatial) {
+            density_on_grid[spatial] =
+                Complex{model.Density_Point(element, node, spatial), 0.0};
+         }
+         std::fill(coefficients.begin(), coefficients.end(), Complex{});
+         grid.ForwardTransformation(lmax, 0, density_on_grid, coefficients);
+         const std::size_t sample = (element * nodes_per_element + node) * stride;
+         std::copy(coefficients.begin(), coefficients.end(),
+                   density_coefficients.begin() + sample);
       }
    }
 
-   // finding integral
-   for (int idxl = 0; idxl < lMax + 1; ++idxl) {
-      for (int idxm = -idxl; idxm < idxl + 1; ++idxm) {
-         std::vector<std::complex<double>> vec_f(nelem + 1, 0.0),
-             vec_g(nelem + 1, 0.0);
-         // auto idxlm = indexreal(idxl, idxm);
-         auto idxlm = indexcomp(idxl, idxm);
-         // auto idxlm = idxl * idxl + idxl + idxm;
+   std::vector<std::vector<Complex>> potential(
+       elements + 1, std::vector<Complex>(stride, Complex{}));
+   std::vector<Complex> inward(elements + 1, Complex{});
+   std::vector<Complex> outward(elements + 1, Complex{});
 
-         // use Gaussian quadrature to find the integral from
-         // vec_noderadii[idxelem-1] to vec_noderadii[idxelem]
-         for (int idxelem = 0; idxelem < nelem; ++idxelem) {
-            auto myratio =
-                inp_model.Node_Information().ElementLowerRadius(idxelem) /
-                inp_model.Node_Information().ElementUpperRadius(idxelem);
-            auto rscaleint = [&myratio](double x) {
-               return GPLSpec::detail::ScaledRadialNodeMap(x, myratio);
-            };
-            for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
-               vec_f[idxelem + 1] +=
-                   inp_model.q().W(idxnode) *
-                   vec_rho_ylm[idxelem][idxnode][idxlm] *
-                   std::pow(rscaleint(inp_model.q().X(idxnode)),
-                            2.0 + static_cast<double>(idxl));
+   for (int degree = 0; degree <= lmax; ++degree) {
+      for (int order = -degree; order <= degree; ++order) {
+         const std::size_t harmonic =
+             static_cast<std::size_t>(degree * degree + degree + order);
+         std::fill(inward.begin(), inward.end(), Complex{});
+         std::fill(outward.begin(), outward.end(), Complex{});
+
+         // inward[e] = r_e^(-l-1) * integral_0^r_e rho_lm(s) s^(l+2) ds.
+         for (std::size_t element = 0; element < elements; ++element) {
+            const double lower = mesh.ElementLowerRadius(element);
+            const double upper = mesh.ElementUpperRadius(element);
+            const double ratio = lower / upper;
+            Complex segment{};
+            for (std::size_t node = 0; node < nodes_per_element; ++node) {
+               const std::size_t sample =
+                   (element * nodes_per_element + node) * stride + harmonic;
+               const double radius = mesh.NodeRadius(element, node);
+               segment += quadrature.W(node) * density_coefficients[sample] *
+                          std::pow(radius / upper, degree + 2);
             }
-            auto intfact = 0.5 * (1.0 - myratio);
-            vec_f[idxelem + 1] *= intfact;
-            vec_f[idxelem + 1] *=
-                inp_model.Node_Information().ElementUpperRadius(idxelem) *
-                inp_model.Node_Information().ElementUpperRadius(idxelem);
-
-            vec_f[idxelem + 1] +=
-                vec_f[idxelem] *
-                std::pow(myratio, 1.0 + static_cast<double>(idxl));
+            inward[element + 1] =
+                inward[element] * std::pow(ratio, degree + 1) +
+                (0.5 * upper * (upper - lower)) * segment;
          }
 
-         // filling out g
-         for (int idxelem = nelem - 1; idxelem > 0; --idxelem) {
-
-            auto myratio =
-                inp_model.Node_Information().ElementLowerRadius(idxelem) /
-                inp_model.Node_Information().ElementUpperRadius(idxelem);
-            auto myratio2 = 1.0 / myratio;
-            auto rscaleint = [&myratio2](double x) {
-               return ((myratio2 - 1.0) * x + (myratio2 + 1.0)) * 0.5;
-            };
-
-            for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
-               vec_g[idxelem] += inp_model.q().W(idxnode) *
-                                 vec_rho_ylm[idxelem][idxnode][idxlm] *
-                                 std::pow(rscaleint(inp_model.q().X(idxnode)),
-                                          1.0 - static_cast<double>(idxl));
+         // outward[e] = r_e^l * integral_r_e^R rho_lm(s) s^(1-l) ds.
+         // Only the monopole has a nonzero contribution at the origin.
+         for (std::size_t element = elements; element-- > 1;) {
+            const double lower = mesh.ElementLowerRadius(element);
+            const double upper = mesh.ElementUpperRadius(element);
+            Complex segment{};
+            for (std::size_t node = 0; node < nodes_per_element; ++node) {
+               const std::size_t sample =
+                   (element * nodes_per_element + node) * stride + harmonic;
+               const double scaled_radius =
+                   mesh.NodeRadius(element, node) / lower;
+               segment += quadrature.W(node) * density_coefficients[sample] *
+                          std::pow(scaled_radius, 1 - degree);
             }
-            auto intfact = 0.5 * (myratio2 - 1.0);
-            vec_g[idxelem] *= intfact;
-            vec_g[idxelem] *=
-                inp_model.Node_Information().ElementLowerRadius(idxelem) *
-                inp_model.Node_Information().ElementLowerRadius(idxelem);
-            vec_g[idxelem] += vec_g[idxelem + 1] *
-                              std::pow(myratio, static_cast<double>(idxl));
-         }
-         if (idxl == 0) {
-            auto rscaleint = [&inp_model](double x) {
-               return Radial_Tools::StandardIntervalMap(
-                   x, inp_model.Node_Information().ElementLowerRadius(0),
-                   inp_model.Node_Information().ElementUpperRadius(0));
-            };
-            for (int idxnode = 0; idxnode < npoly + 1; ++idxnode) {
-               vec_g[0] += inp_model.q().W(idxnode) *
-                           vec_rho_ylm[0][idxnode][0] *
-                           rscaleint(inp_model.q().X(idxnode));
-            }
-            auto intfact = 0.5 * inp_model.Node_Information().ElementWidth(0);
-            vec_g[0] *= intfact;
-            vec_g[0] += vec_g[1];
+            segment *= 0.5 * lower *
+                       (upper - lower);
+            const double ratio = lower / upper;
+            outward[element] =
+                segment + outward[element + 1] * std::pow(ratio, degree);
          }
 
-         // store result
-         for (int idxelem = 0; idxelem < nelem + 1; ++idxelem) {
-            auto idxuse = indexcomp(idxl, idxm);
-            vec_output[idxelem][idxuse] = vec_f[idxelem] + vec_g[idxelem];
-            vec_output[idxelem][idxuse] *=
-                -4.0 * pi_db * bigg_db /
-                (2.0 * static_cast<double>(idxl) + 1.0);
-            if (idxl == lMax && std::abs(idxm) == idxl) {
-               vec_output[idxelem][idxuse] *= 0;
+         if (degree == 0) {
+            const double lower = mesh.ElementLowerRadius(0);
+            const double upper = mesh.ElementUpperRadius(0);
+            Complex center_segment{};
+            for (std::size_t node = 0; node < nodes_per_element; ++node) {
+               const std::size_t sample = harmonic + node * stride;
+               center_segment += quadrature.W(node) *
+                                 density_coefficients[sample] *
+                                 mesh.NodeRadius(0, node);
+            }
+            outward[0] = outward[1] +
+                         0.5 * (upper - lower) * center_segment;
+         }
+
+         const double green_scale = -4.0 * pi * model.GravitationalConstant() /
+                                    (2.0 * degree + 1.0);
+         for (std::size_t radial = 0; radial <= elements; ++radial) {
+            potential[radial][harmonic] =
+                green_scale * (inward[radial] + outward[radial]);
+            if (lmax > 0 && degree == lmax && std::abs(order) == degree) {
+               // Preserve both reserved highest-order coefficients.
+               potential[radial][harmonic] = Complex{};
             }
          }
       }
    }
 
-   return vec_output;
+   return potential;
 }
 
+namespace detail {
+inline double HomogeneousSphereScalarPotential(
+    const GeneralEarthModels::Density3D &model, double radius) {
+   constexpr double pi = 3.141592653589793238462643383279502884;
+   const double body_radius = model.Node_Information().PlanetRadius();
+   const double density = model.Density_Point(0, 0, 0);
+   const double scale = 2.0 * pi * model.GravitationalConstant() * density / 3.0;
+   if (radius <= body_radius) {
+      return scale * (radius * radius - 3.0 * body_radius * body_radius);
+   }
+   return -2.0 * scale * std::pow(body_radius, 3.0) / radius;
+}
+}  // namespace detail
+
+// Mesh-boundary values are the spherical-harmonic Y00 coefficient.
 inline auto
-HomogeneousSphereIntegral(
-    GeneralEarthModels::Density3D &inp_model) {   // exact solution:
-   std::vector<double> vec_exactsol(inp_model.Num_Elements() + 1);
-
-   // define constants
-   double bigg_db = 6.6743015 * std::pow(10.0, -11.0) /
-                    inp_model.GravitationalConstantNorm();
-   double pi_db = 3.1415926535897932;
-   double multfact = 2.0 * pi_db * std::pow(4.0 * pi_db, 0.5) * bigg_db *
-                     inp_model.Density_Point(0, 0, 0) / 3.0;
-   double planetradius = inp_model.Node_InformationP().PlanetRadius();
-
-   // fill out exact integral
-   for (int idx = 0; idx < inp_model.Num_Elements(); ++idx) {
-      double currentrad = inp_model.Node_InformationP().ElementLowerRadius(idx);
-
-      // if inside planet
-      if (currentrad < planetradius) {
-         vec_exactsol[idx] = multfact * (currentrad * currentrad -
-                                         3.0 * planetradius * planetradius);
-      } else {
-         vec_exactsol[idx] = -2.0 * multfact * planetradius / currentrad;
-      }
+HomogeneousSphereIntegral(const GeneralEarthModels::Density3D &model) {
+   constexpr double sqrt_four_pi = 3.544907701811032054596334966682290366;
+   const auto &mesh = model.Node_Information();
+   std::vector<double> coefficient(mesh.NumberOfElements() + 1);
+   for (std::size_t element = 0; element < mesh.NumberOfElements(); ++element) {
+      coefficient[element] =
+          sqrt_four_pi * detail::HomogeneousSphereScalarPotential(
+                             model, mesh.ElementLowerRadius(element));
    }
-   // final point
-   {
-      double currentrad = inp_model.Node_InformationP().OuterRadius();
-      vec_exactsol.back() =
-          -2.0 * multfact * std::pow(planetradius, 3.0) / currentrad;
-   }
+   coefficient.back() =
+       sqrt_four_pi * detail::HomogeneousSphereScalarPotential(
+                          model, mesh.OuterRadius());
+   return coefficient;
+}
 
-   return vec_exactsol;
-};
-
+// Arbitrary-radius values are scalar potentials, as used by spatial outputs.
 inline auto
-HomogeneousSphereIntegral(GeneralEarthModels::Density3D &inp_model,
-                          std::vector<double> &inp_radii) {   // exact solution:
-   std::vector<double> vec_exactsol(inp_radii.size());
-
-   // define constants
-   double bigg_db = 6.6743015 * std::pow(10.0, -11.0) /
-                    inp_model.GravitationalConstantNorm();
-   double pi_db = 3.1415926535897932;
-   double multfact =
-       2.0 * pi_db * bigg_db * inp_model.Density_Point(0, 0, 0) / 3.0;
-   double planetradius = inp_model.Node_Information().PlanetRadius();
-
-   // fill out exact integral
-   // for (int idx = 0; idx < inp_radii.size() ; ++idx) {
-   for (int idx = 0; idx < inp_radii.size(); ++idx) {
-      double r = inp_radii[idx];
-      // if inside planet
-      if (inp_radii[idx] < planetradius) {
-         vec_exactsol[idx] =
-             multfact * (r * r - 3.0 * planetradius * planetradius);
-      } else {
-         vec_exactsol[idx] = -2.0 * multfact * std::pow(planetradius, 3.0) / r;
-      }
+HomogeneousSphereIntegral(const GeneralEarthModels::Density3D &model,
+                          const std::vector<double> &radii) {
+   std::vector<double> potential(radii.size());
+   for (std::size_t index = 0; index < radii.size(); ++index) {
+      potential[index] =
+          detail::HomogeneousSphereScalarPotential(model, radii[index]);
    }
-   // // final point
-   // {
-   //    double currentrad = inp_model.Node_Information().OuterRadius();
-   //    vec_exactsol.back() = -2.0 * multfact * planetradius / currentrad;
-   // }
-
-   return vec_exactsol;
-};
+   return potential;
+}
 
 }   // namespace Gravity_Tools
 

@@ -1,0 +1,8 @@
+{
+  "potential": "max pointwise error (or harmonic addition-theorem bound) <= (1e-8+1e-12)*minimum reference magnitude lower bound. This stronger sufficient condition implies the physical weighted RMS gate for any positive weights; a failure requires the full declared gate or explicit scientific attribution.",
+  "kernel": "relative unweighted L2 representation difference <= 1e-8; kernel units preserved, not potential. Independent density contraction is validated by stage3e_sensitivity.",
+  "density": "pointwise 1e-12 relative + 1e-14*1342 kg/m3 physical density scale",
+  "power": "max difference of sqrt(P_l/P_0) <= 1e-8; monopole-normalized degree amplitude, including near-zero degrees, bounded by the 1e-8 physical field-relative criterion",
+  "geometry": "radius data 1e-12 relative + 1e-14*10000 metres; sample coordinates and indices exact",
+  "known_exception": "clean_bench_10/work/Bench10/perturbed/MatrixSolution.out: inspect against recorded 3D grid-view lifetime attribution; preserve failed comparison rather than pretending baseline parity."
+}

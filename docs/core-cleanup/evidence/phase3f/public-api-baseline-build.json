@@ -1,0 +1,30 @@
+{
+  "command": [
+    "/usr/bin/c++",
+    "-DORIGINAL_API",
+    "-I/tmp/gplspec-phase3-resume/baseline",
+    "-I/tmp/gplspec-phase3-resume/baseline-build/_deps/gaussquad-src",
+    "-I/tmp/gplspec-phase3-resume/baseline-build/_deps/numericconcepts-src/include",
+    "-I/tmp/gplspec-phase3-resume/baseline-build/_deps/gshtrans-src",
+    "-I/tmp/gplspec-phase3-resume/baseline-build/_deps/fftwpp-src",
+    "-I/tmp/gplspec-phase3-resume/baseline-build/_deps/planetarymodel-src",
+    "-I/tmp/gplspec-phase3-resume/baseline-build/_deps/interpolation-src",
+    "-I/tmp/gplspec-phase3-resume/baseline-build/_deps/tomographymodels-src",
+    "-isystem",
+    "/tmp/gplspec-phase3-resume/baseline-build/_deps/eigen3-src",
+    "-O3",
+    "-DNDEBUG",
+    "-std=gnu++23",
+    "-fopenmp",
+    "/tmp/gplspec-phase3-resume/public-api-performance.cpp",
+    "-o",
+    "/tmp/gplspec-phase3-resume/public-api-baseline",
+    "-lfftw3",
+    "-lfftw3f",
+    "-lfftw3l",
+    "-lnetcdf"
+  ],
+  "source_sha256": "c5d36aebc4511869f326e2eac7e7792f59df956bc5407676838a94df0385eff6",
+  "baseline": "15582edab8112dbb63e0101be5b26f5135298644",
+  "exit_code": 0
+}

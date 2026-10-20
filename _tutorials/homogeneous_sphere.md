@@ -18,6 +18,8 @@ The class which is used throughout the code base is the Density3D class. It poss
 ```cpp
 
 #include <gplspec/All>
+#include <filesystem>
+#include <utility>
 
 int
 main() {
@@ -35,7 +37,8 @@ main() {
        nrad, nrho, lengthnorm, timenorm, massnorm, maxstep, ballrad);
 
    // Find potential via the pseudospectral method
-   auto stdvec_potsol = FindGravitationalPotential(testsphere);
+   auto solve_result = SolvePotential(testsphere);
+   auto potential = ToHarmonicField(testsphere, solve_result);
 
    // Compute potential using spherical integration method
    auto vec_integral_potential = GravitationalSphericalIntegral(testsphere);
@@ -43,11 +46,21 @@ main() {
    // Compute exact solution for homogeneous sphere
    auto vec_exactsol = HomogeneousSphereIntegral(testsphere);
 
-   // Output results to files
-   std::string pathtofolder = "./work/Bench1";
-   testsphere.ReferentialOutputAtElement(pathtofolder, stdvec_potsol);
-   testsphere.OutputAtElement(pathtofolder, vec_integral_potential);
-   testsphere.OutputAtElement(pathtofolder, vec_exactsol);
+   // Write the solved field as a schema-v1 harmonic bundle.
+   auto metadata = GPLSpec::FieldBundle::WithSolve(
+       solve_result, "homogeneous_sphere", "homogeneous_sphere", "CG",
+       solve_result.final_solve().requested_tolerance);
+   metadata.parameters = {{"normalized_radius", GPLSpec::FieldBundle::ParameterNumber(nrad)},
+       {"normalized_density", GPLSpec::FieldBundle::ParameterNumber(nrho)},
+       {"length_norm_m", GPLSpec::FieldBundle::ParameterNumber(lengthnorm)},
+       {"time_norm_s", GPLSpec::FieldBundle::ParameterNumber(timenorm)},
+       {"mass_norm_kg", GPLSpec::FieldBundle::ParameterNumber(massnorm)},
+       {"max_step_norm", GPLSpec::FieldBundle::ParameterNumber(maxstep)},
+       {"exterior_radius_norm", GPLSpec::FieldBundle::ParameterNumber(ballrad)}};
+   const auto output = std::filesystem::path("work/Bench1/field_bundle");
+   GPLSpec::FieldBundle::WriteRadialHarmonics(
+       output, testsphere, solve_result.solution,
+       GPLSpec::FieldEvaluation::Quantity::Potential, std::move(metadata));
 
    return 0;
 }
@@ -56,12 +69,12 @@ main() {
 ## Results
 ### Output Files
 
-The benchmark generates several output files in the `./work/Bench1/` directory:
+Run this program with its working directory set to an isolated run directory.
+It writes a schema-v1 `work/Bench1/field_bundle` containing the solved
+potential's radial harmonic coefficients. The integral and exact calculations
+above are computed in memory; this short example does not serialize them.
 
-- **3D Solution**: Spectral element method results
-- **Integral Solution**: Spherical integration method results  
-- **Exact Solution**: Analytical homogeneous sphere solution
-
+- **Field bundle**: Spectral element potential coefficients
 
 
 

@@ -1,0 +1,6 @@
+Finding a
+Force declared
+Preconditioner done
+Number of iterations: 3
+Requested tolerance: 1e-06
+rows=261 iterations=3 solver_error=1.62767e-07 absolute_residual=3.04753e-05 independent_relative_residual=1.62767e-07 public_difference=0 public_finite_values=81

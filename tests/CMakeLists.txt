@@ -1,11 +1,38 @@
 find_package(PythonInterp 3 REQUIRED)
 
 add_executable(stage00_reference stage00_reference.cpp)
-target_link_libraries(stage00_reference PRIVATE gplspec PlanetaryModel TomographyModels)
+target_link_libraries(stage00_reference PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage00_scientific_reference
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_stage00.sh
+      $<TARGET_FILE:stage00_reference>)
+  set_tests_properties(stage00_scientific_reference PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endif()
+
+add_executable(stage1c_file_tomography_solver stage1c_file_tomography_solver.cpp)
+target_link_libraries(stage1c_file_tomography_solver PRIVATE gplspec)
+
+# Opt-in Stage 1D measurement harness; intentionally not registered with CTest.
+add_executable(phase1_performance phase1_performance.cpp)
+target_link_libraries(phase1_performance PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage1c_file_tomography_solver
+    COMMAND stage1c_file_tomography_solver)
+  set_tests_properties(stage1c_file_tomography_solver PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+  add_test(NAME stage1c_external_consumer
+    COMMAND ${PYTHON_EXECUTABLE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/run_external_consumer.py
+      ${PROJECT_SOURCE_DIR}
+      ${CMAKE_CURRENT_BINARY_DIR}/external-consumer-build
+      ${CMAKE_BINARY_DIR}/_deps
+      ${CMAKE_BINARY_DIR}/_deps/eigen3-src)
+endif()
 
 # Public umbrella headers must compile independently and remain ODR-safe when
 # included by more than one translation unit.
-foreach(header IN ITEMS Core GeneralModels SimpleModels All)
+foreach(header IN ITEMS Core GeneralModels SimpleModels All Test Timer)
   string(TOLOWER "${header}" header_lower)
   add_library(stage02_${header_lower}_smoke OBJECT stage02_${header_lower}_smoke.cpp)
   target_link_libraries(stage02_${header_lower}_smoke PRIVATE gplspec)
@@ -18,6 +45,65 @@ target_link_libraries(stage02_header_link PRIVATE gplspec)
 if(BUILD_TESTING)
   add_test(NAME stage02_patch_application
     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_stage02_patch_application.py)
+  add_test(NAME scientific_reference_gate_contract
+    COMMAND ${PYTHON_EXECUTABLE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_scientific_reference_gate.py)
+endif()
+
+add_executable(stage3a_harmonic_contract stage3a_harmonic_contract.cpp)
+target_link_libraries(stage3a_harmonic_contract PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage3a_harmonic_contract COMMAND stage3a_harmonic_contract)
+endif()
+
+add_executable(stage3b_model_input stage3b_model_input.cpp)
+target_link_libraries(stage3b_model_input PRIVATE gplspec)
+target_compile_definitions(stage3b_model_input PRIVATE
+  GPLSPEC_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+if(BUILD_TESTING)
+  add_test(NAME stage3b_model_input COMMAND stage3b_model_input)
+endif()
+
+add_executable(stage3c_source_discretization stage3c_source_discretization.cpp)
+target_link_libraries(stage3c_source_discretization PRIVATE gplspec)
+target_compile_definitions(stage3c_source_discretization PRIVATE
+  GPLSPEC_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+if(BUILD_TESTING)
+  add_test(NAME stage3c_source_discretization COMMAND stage3c_source_discretization)
+endif()
+
+add_executable(stage3c_geometry_ownership stage3c_geometry_ownership.cpp)
+target_link_libraries(stage3c_geometry_ownership PRIVATE gplspec)
+target_compile_definitions(stage3c_geometry_ownership PRIVATE
+  GPLSPEC_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+if(BUILD_TESTING)
+  add_test(NAME stage3c_geometry_ownership COMMAND stage3c_geometry_ownership)
+endif()
+
+add_executable(stage3e_radial_integral stage3e_radial_integral.cpp)
+target_link_libraries(stage3e_radial_integral PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage3e_radial_integral COMMAND stage3e_radial_integral)
+endif()
+
+add_executable(stage3e_mapping_perturbation stage3e_mapping_perturbation.cpp)
+target_link_libraries(stage3e_mapping_perturbation PRIVATE gplspec)
+target_compile_definitions(stage3e_mapping_perturbation PRIVATE
+  GPLSPEC_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+if(BUILD_TESTING)
+  add_test(NAME stage3e_mapping_perturbation
+    COMMAND stage3e_mapping_perturbation)
+  set_tests_properties(stage3e_mapping_perturbation PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endif()
+
+add_executable(stage3e_classical_perturbation stage3e_classical_perturbation.cpp)
+target_link_libraries(stage3e_classical_perturbation PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage3e_classical_perturbation
+    COMMAND stage3e_classical_perturbation)
+  set_tests_properties(stage3e_classical_perturbation PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endif()
 
 add_executable(stage03_utilities stage03_utilities.cpp)
@@ -51,7 +137,7 @@ if(BUILD_TESTING)
 endif()
 
 add_executable(stage05_operator_reference stage05_operator_reference.cpp)
-target_link_libraries(stage05_operator_reference PRIVATE gplspec PlanetaryModel TomographyModels Interpolation GaussQuad)
+target_link_libraries(stage05_operator_reference PRIVATE gplspec Interpolation)
 target_compile_definitions(stage05_operator_reference PRIVATE
   GPLSPEC_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 
@@ -67,34 +153,28 @@ if(BUILD_TESTING)
   add_test(NAME stage06_output_helpers COMMAND stage06_output_helpers)
 endif()
 
-add_executable(stage06_output_reference stage06_output_reference.cpp)
-target_link_libraries(stage06_output_reference PRIVATE gplspec)
 if(BUILD_TESTING)
-  add_test(NAME stage06_output_original_reference
-    COMMAND ${PYTHON_EXECUTABLE}
-      ${CMAKE_CURRENT_SOURCE_DIR}/run_stage06_output_reference.py
-      $<TARGET_FILE:stage06_output_reference>
-      ${CMAKE_CURRENT_SOURCE_DIR}/reference/stage06-output-baseline.sha256)
-endif()
-
-if(BUILD_TESTING)
-  add_test(NAME stage05_1d_original_reference
-    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_stage05_1d_reference.sh
-      $<TARGET_FILE:stage05_operator_reference>
+  add_test(NAME stage05_1d_scientific_reference
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_stage05_scientific_reference.sh
+      stage05_1d $<TARGET_FILE:stage05_operator_reference>
       ${CMAKE_CURRENT_SOURCE_DIR}/reference/stage05-1d-original.csv)
+  set_tests_properties(stage05_1d_scientific_reference PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endif()
 
 add_executable(stage05_file_perturbation_reference
   stage05_file_perturbation_reference.cpp)
 target_link_libraries(stage05_file_perturbation_reference PRIVATE
-  gplspec PlanetaryModel TomographyModels Interpolation GaussQuad)
+  gplspec Interpolation)
 target_compile_definitions(stage05_file_perturbation_reference PRIVATE
   GPLSPEC_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 if(BUILD_TESTING)
-  add_test(NAME stage05_file_perturbation_original_reference
-    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_stage05_file_perturbation_reference.sh
-      $<TARGET_FILE:stage05_file_perturbation_reference>
+  add_test(NAME stage05_file_perturbation_scientific_reference
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/run_stage05_scientific_reference.sh
+      stage05_file $<TARGET_FILE:stage05_file_perturbation_reference>
       ${CMAKE_CURRENT_SOURCE_DIR}/reference/stage05-file-perturbation-original.csv)
+  set_tests_properties(stage05_file_perturbation_scientific_reference PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endif()
 
 add_executable(pr07_rotated_output pr07_rotated_output.cpp)
@@ -115,3 +195,42 @@ add_custom_command(
   VERBATIM)
 add_executable(tutorial5_phobos_compile ${phobos_tutorial_source})
 target_link_libraries(tutorial5_phobos_compile PRIVATE gplspec)
+
+# Opt-in Stage 3A performance harness; invoked by the controlled Python runner.
+add_executable(phase3a_performance EXCLUDE_FROM_ALL phase3a_performance.cpp)
+target_link_libraries(phase3a_performance PRIVATE gplspec)
+
+
+add_executable(stage3c_operator_action stage3c_operator_action.cpp)
+target_link_libraries(stage3c_operator_action PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage3c_operator_action COMMAND stage3c_operator_action)
+  set_tests_properties(stage3c_operator_action PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endif()
+
+add_executable(stage3e_sensitivity stage3e_sensitivity.cpp)
+target_link_libraries(stage3e_sensitivity PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage3e_sensitivity COMMAND stage3e_sensitivity)
+endif()
+
+add_executable(stage4b_field_evaluation stage4b_field_evaluation.cpp)
+target_link_libraries(stage4b_field_evaluation PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage4b_field_evaluation COMMAND stage4b_field_evaluation)
+endif()
+
+add_executable(stage4c_bundle_fixture stage4c_bundle_fixture.cpp)
+target_link_libraries(stage4c_bundle_fixture PRIVATE gplspec)
+if(BUILD_TESTING)
+  add_test(NAME stage4c_field_bundle
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_field_bundle.py
+      $<TARGET_FILE:stage4c_bundle_fixture> ${PROJECT_SOURCE_DIR}/modeldata/TABLEA1.DAT)
+  add_test(NAME plot_fields_python
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_plot_fields.py)
+  set_tests_properties(plot_fields_python PROPERTIES
+    ENVIRONMENT "MPLBACKEND=Agg;MPLCONFIGDIR=${CMAKE_CURRENT_BINARY_DIR}/mpl-config;PYTHONDONTWRITEBYTECODE=1")
+  set_tests_properties(stage4c_field_bundle PROPERTIES
+    ENVIRONMENT "MPLBACKEND=Agg;MPLCONFIGDIR=${CMAKE_CURRENT_BINARY_DIR}/mpl-config;PYTHONDONTWRITEBYTECODE=1")
+endif()

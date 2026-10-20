@@ -1,0 +1,17 @@
+Scratch-only attribution recipe (baseline source commit 15582edab8112dbb63e0101be5b26f5135298644):
+
+1. Copy baseline/gplspec to a fresh scratch include root.
+2. Apply grid-accessor.patch to the scratch copy only.
+3. Compile classical-solver-probe.cpp with BASELINE_PROBE and the baseline build's pinned dependency include roots; use -O3 -DNDEBUG -std=gnu++23 -fopenmp, then link libfftw3, libfftw3f, libfftw3l, and netcdf.
+4. Run with OMP_NUM_THREADS=1. gridref.log is the resulting stdout. The probe source in the repository writes a CSV to /tmp; its large CSV is intentionally not archived.
+
+Compiler: GNU C++ 13.3.0. This demonstrates the temporary borrowed-view failure in the tested compiler/build; it is not a claim about every C++ standard-library implementation.
+
+SHA-256
+classical-solver-probe.cpp  8bae9654351a54ecb5d3671cef723dc5831c011fd682db0c5670eaf942c943cc
+baseline.log                45b6382421956a64dc208e188f6e6172cd00e4a5cb7a40c4e88c8cdab53b52d9
+parent.log                  02c54b9069ff1c12deb575bfad1362aa0a3009f2182ebbeac6139d489c07377a
+gridref.log                 bc9f4bb7cf7f1acff4299ce1185ef8795f80ac04fa967ec00750062613c2e1d1
+grid-accessor.patch         recorded with this evidence set
+grid-accessor.patch SHA-256 c8a55ded540a5a9d3bb17d843b54b96f7090df8aa8f8d7836c6051fa9d4c16e2
+The exact compile invocation is in compile-command.txt; only paths and the output filename need to match the scratch tree.

@@ -1,0 +1,49 @@
+{
+  "baseline": "15582edab8112dbb63e0101be5b26f5135298644",
+  "threads": 1,
+  "timing_scope": "Complete public SolvePotential lifecycle including independent residual; baseline FindGravitationalPotential lifecycle included nested field conversion. Same physical fixtures/settings and per-process warmup/batches.",
+  "runs": [
+    {
+      "scenario": "mapped",
+      "process": 1,
+      "exit_code": 0,
+      "elapsed": 0.5340699789994687,
+      "max_rss_kib": 16840
+    },
+    {
+      "scenario": "mapped",
+      "process": 2,
+      "exit_code": 0,
+      "elapsed": 0.5281190909990983,
+      "max_rss_kib": 16472
+    },
+    {
+      "scenario": "mapped",
+      "process": 3,
+      "exit_code": 0,
+      "elapsed": 0.5366289590001543,
+      "max_rss_kib": 16792
+    },
+    {
+      "scenario": "file_backed",
+      "process": 1,
+      "exit_code": 0,
+      "elapsed": 1.6758129209993058,
+      "max_rss_kib": 393060
+    },
+    {
+      "scenario": "file_backed",
+      "process": 2,
+      "exit_code": 0,
+      "elapsed": 1.6463844120007707,
+      "max_rss_kib": 393248
+    },
+    {
+      "scenario": "file_backed",
+      "process": 3,
+      "exit_code": 0,
+      "elapsed": 1.6366183789996285,
+      "max_rss_kib": 392936
+    }
+  ]
+}

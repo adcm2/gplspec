@@ -28,6 +28,8 @@ In this code we use PREM as the 1D reference model and S40RTS as the tomography 
 ```cpp
 
 #include <gplspec/All>
+#include <filesystem>
+#include <utility>
 
 int
 main() {
@@ -49,8 +51,9 @@ main() {
        pathtoprem, pathtotomo, npoly, lmax, maxstep, ballrad);
    
    // pseudospectral solution
-   auto stdvec_potsol =
-       FindGravitationalPotential(testtomo, std::pow(10.0, -14.0));
+   auto solve_result =
+       SolvePotential(testtomo, std::pow(10.0, -14.0));
+   auto potential = ToHarmonicField(testtomo, solve_result);
 
    // spherical integration
    auto vec_integral_potential = GravitationalSphericalIntegral(testtomo);
@@ -59,20 +62,39 @@ main() {
    // sensitivity kernel
    std::vector<int> vec_l{0, 1, 2, 3, 4}, vec_m{0, 0, 2, 3, 0};
    std::vector<double> multval{1.0, 3.0, 5.0, 7.0, 9.0};
-   auto stdvec_senskernel =
-       SphericalHarmonicSensitivityKernel(testtomo, vec_l, vec_m, multval);
-
-   //////////////////////////////////////////////////////////////////
-   //////////////////////////////////////////////////////////////////
-
-   // output
-   std::string pathtofolder = "./work/Bench6";
-   std::string pathtofolderlm = "./work/Bench6/lm";
-   testtomo.PhysicalOutputAtElement(pathtofolder, stdvec_potsol);
-   testtomo.PhysicalOutputAtElement(pathtofolder, vec_integral_potential);
-   testtomo.ReferentialOutputAtElement(pathtofolderlm, stdvec_potsol);
-   testtomo.OutputAtElement(pathtofolderlm, vec_integral_potential);
-   testtomo.ReferentialOutputAtElement(pathtofolderlm, stdvec_senskernel, true);
+   auto sensitivity_result =
+       SolveSensitivityKernel(testtomo, vec_l, vec_m, multval);
+   auto metadata = GPLSpec::FieldBundle::WithSolve(
+       solve_result, "clean_bench_6", "prem_s40rts", "CG",
+       solve_result.final_solve().requested_tolerance);
+   metadata.inputs.push_back(GPLSpec::FieldBundle::InputPath(pathtoprem));
+   metadata.inputs.push_back(GPLSpec::FieldBundle::InputPath(pathtotomo));
+   metadata.parameters = {{"polynomial_order", std::to_string(npoly)},
+       {"degree_max", std::to_string(lmax)},
+       {"max_step_norm", GPLSpec::FieldBundle::ParameterNumber(maxstep)},
+       {"exterior_radius_norm", GPLSpec::FieldBundle::ParameterNumber(ballrad)}};
+   metadata.selector_l = vec_l;
+   metadata.selector_m = vec_m;
+   metadata.selector_weight = multval;
+   const std::filesystem::path output{"work/Bench6"};
+   GPLSpec::FieldBundle::Writer(output / "field_bundle", testtomo,
+       metadata).Write([&](auto &&emit) {
+      GPLSpec::FieldEvaluation::ForEachAngularGridSample(
+          testtomo, solve_result.solution,
+          GPLSpec::FieldEvaluation::Quantity::Potential, emit);
+   });
+   auto sensitivity_metadata = GPLSpec::FieldBundle::WithSolve(
+       sensitivity_result, "clean_bench_6", "selected_sensitivity", "BiCGSTAB",
+       sensitivity_result.final_solve().requested_tolerance);
+   GPLSpec::FieldBundle::CopyInputProvenance(metadata, sensitivity_metadata);
+   sensitivity_metadata.selector_l = vec_l;
+   sensitivity_metadata.selector_m = vec_m;
+   sensitivity_metadata.selector_weight = multval;
+   GPLSpec::FieldBundle::WriteRadialHarmonics(
+       output / "lm/sensitivity_bundle", testtomo,
+       sensitivity_result.solution,
+       GPLSpec::FieldEvaluation::Quantity::SensitivityKernel,
+       std::move(sensitivity_metadata));
    
    return 0;
 }
@@ -82,11 +104,12 @@ main() {
 ## Results
 ### Output Files
 
-The benchmark generates several output files in the `./work/Bench6/` directory:
+Run from an isolated working directory containing unchanged `modeldata/prem.200`
+and `modeldata/S40RTS_dvs.nc`. The code writes a schema-v1 potential field
+bundle and selected sensitivity harmonic bundle under `work/Bench6/`.
 
-- **3D Solution**: Spectral element method results
-- **Integral Solution**: Spherical integration method results
-
+- **Potential field bundle**: Angular-grid potential samples
+- **Sensitivity bundle**: Selected sensitivity-kernel coefficients
 
 
 

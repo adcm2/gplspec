@@ -1,0 +1,109 @@
+{
+  "baseline_commit": "15582edab8112dbb63e0101be5b26f5135298644",
+  "candidate_parent_commit": "838de6d3736fdebc69adb21cbc91ee8f74d243f7",
+  "candidate_state": "uncommitted 3B.1 source checkpoint; docs added after independent source review",
+  "build": {
+    "directory": "/tmp/gplspec-phase3-candidate-release",
+    "type": "Release",
+    "options": [
+      "BUILD_TESTING=ON",
+      "GPLSPEC_BUILD_BASELINE_HARNESS=ON",
+      "MY_PROJECT_BUILD_EXAMPLES=ON"
+    ],
+    "command": "cmake --build /tmp/gplspec-phase3-candidate-release -j2",
+    "ctest": "16/16 passed; see ctest.log",
+    "stage00_runner": "tests/run_stage00.sh /tmp/gplspec-phase3-candidate-release/bin/stage00_reference"
+  },
+  "input_value_comparisons": {
+    "prem500": {
+      "rows": 504,
+      "old_sha256": "170ec35ed193c5b92da6e9886f9de5473b752ccfc9f3fa165cd68b22dd7fc527",
+      "new_sha256": "170ec35ed193c5b92da6e9886f9de5473b752cc9f3fa165cd68b22dd7fc527",
+      "cmp": "equal"
+    },
+    "prem200": {
+      "rows": 220,
+      "old_sha256": "5c815d823a186f826c64aa294a615772f8707e5468c0a9fa61b6c4458c7090b1",
+      "new_sha256": "5c815d823a186f826c64aa294a615772f8707e5468c0a9fa61b6c4458c7090b1",
+      "cmp": "equal"
+    },
+    "TABLEA1": {
+      "rows": 1081,
+      "inferred_degree": 45,
+      "derived_coefficients_through_degree": 20,
+      "old_sha256": "b31b3a6f49a252a52cdb320240137dd2a881e71c022d86f421f52a07b20856b7",
+      "new_sha256": "b31b3a6f49a252a52cdb320240137dd2a881e71c022d86f421f52a07b20856b7",
+      "cmp": "equal"
+    }
+  },
+  "tracked_candidate_source_sha256": {
+    "gplspec/src/Model_Input.h": "a43f0fda8ca58c33a4e915c8c167c6ef950f9b6e4f43a8cfcd6b6348e6661de4",
+    "gplspec/src/testtools.h": "a8ac385c8f6ea4c7dce3b6d1a731465fc74fc2fff993faf7a53a85072faf6d9d",
+    "gplspec/src/GeneralModels/Density_Model_Constructors.h": "e9d2a405bc2b1bd2c18f815b2c7a8ce37b35cb355f12fc15a23df4b463733b32",
+    "gplspec/src/GeneralModels/Earth_General_Models_1D.h": "14c9ceff7784e4d44dc3f77d3416ac25d577810610cf49ce87587ed4f1d167df",
+    "examples/OutputZiheng.cpp": "fc6f6e1f4b7d494bc4ed906dcaf467a548efe340cc1dc0aff603837c18fe9675",
+    "examples/phobos_gravity.cpp": "8b52448583deee0ca34ebd93dfc5799519da4b1c8d2472b6b2cac958038ac352",
+    "examples/phobos_heterogeneous.cpp": "52c7da003d8c0418ebeeadcd99ae1fdbefa70a527d04a95509b105977cb4cf4b",
+    "examples/phobos_gravity_perturbation.cpp": "85bbc13c8912dd9725d325878b9f2e9cbd36a4516e7734ae751d4ec61d9b1070",
+    "tests/stage3b_model_input.cpp": "97daa0f16cd45fd27c9e2ff0b4874505ae8595646e69ddc9c8aeffacc637bc05",
+    "tests/phase1_performance.cpp": "d0b46ba71ba9608269c5e799784cb69624b428bf2b33f324e60ecbe722b9d306",
+    "tests/CMakeLists.txt": "614203b037c3a699d1be9b0f1730114b3e23ebeaaf91c513a068f1e250e91c8d",
+    "gplspec/GeneralModels": "c3eebdae302afa7cb854b2f1d759b64840e99d200612981c86bcb95b6f748167",
+    "benchmark.md": "e71e97578c3c208ab456dbd5b363641b29eac1b60c0b09d18c87183e9ef1ac34",
+    "implementation_status.md": "91c2146953acadf722a1b37ff532f9f0980ef2941778edf3b4656fbf97ef3403",
+    "docs/core-cleanup/phase-3.md": "c613df1615f6d4b5be60b06b87f702f7aa0177d2c4bee86fcba5dc37ccb913b4",
+    "docs/core-cleanup/phase-3-reviews.md": "ff9b3364a45763e047bb5b4c83a70bd5812d513b68e1d083ea82ba7a48d9c664",
+    "docs/core-cleanup/evidence/phase3b1/README.md": "383545a4600ea37ccc983bedeb8f5eeb19847d5401548db239e5f2a76f3ae07d",
+    "docs/core-cleanup/evidence/phase3b1/run-input-comparisons.sh": "2ba55090b9217137a215af4445eea4051f43307a9acdeaed90d3c3ac9031148d"
+  },
+  "artifacts": {
+    "README.md": "383545a4600ea37ccc983bedeb8f5eeb19847d5401548db239e5f2a76f3ae07d",
+    "run-input-comparisons.sh": "2ba55090b9217137a215af4445eea4051f43307a9acdeaed90d3c3ac9031148d",
+    "prem-model-probe.cpp": "618707a9db3b2c4bef4a517efe8e6f15143466d2572415920a9388646d624df9",
+    "phobos-reader-probe.cpp": "47ebbb776b20687c9c4f14ec7e5a529403ce96e82e96dfba0d7e2b85b4b39396",
+    "prem500-baseline.csv": "170ec35ed193c5b92da6e9886f9de5473b752ccfc9f3fa165cd68b22dd7fc527",
+    "prem200-baseline.csv": "5c815d823a186f826c64aa294a615772f8707e5468c0a9fa61b6c4458c7090b1",
+    "phobos-baseline.csv": "b31b3a6f49a252a52cdb320240137dd2a881e71c022d86f421f52a07b20856b7",
+    "stage00.log": "b9bdb29ec03d626c7ba6f27b6efd4bf1fd216ec4094ec1f5b7a44009fd1096c1",
+    "ctest.log": "9a03fbf07b2483c823e2617dd878fb740fb0c88300e2e2a9eaa3df8b4266fb9e",
+    "workflow-manifest.json": "2d738db05822c8f1f7a318c25290a90b729de48f5b0f6f0e368b8aa974bbbae8",
+    "clean-bench-6-comparison.json": "2c8ad0f3052e082fc1502070a316151c017af5c5b647df48cc1b791b9476a6c6",
+    "phobos-gravity-comparison.json": "b24abc724dd1623e7e558439412591a692b72444397dfe0d99764249063e39b8",
+    "phobos-heterogeneous-comparison.json": "fa7fa9cc4d4de53720b731ae6279346e322bc118578584d190e7d24ced416913",
+    "output-ziheng-comparison.json": "eeeea879cfe6659af356a3495114683f9e84e5e390da30e28c24e8fa8485bfd9",
+    "clean-bench-6-baseline-repeat.json": "6316833c4dfe53d3bc6fd54d48ed38233411bb5df52352d0754ab2a1eb774b5d",
+    "phobos-baseline-repeat.json": "2e1ecb5bf10fddddd58a365fa15c25cdea35e42b3f371ae4197fa2acb39c97ea",
+    "input-comparison.log": "f8e5ebac954634491dc1012f76456edc4359ca1166f7b6243ffbf5a62eea8037"
+  },
+  "review": {
+    "independent_luna": "PASS; no blocking implementation findings",
+    "status": "3B.1 accepted awaiting coordinator commit",
+    "follow_up_3b2": "OutputZiheng currently reads TABLEA1 in the Density3D constructor and again for output coefficients; reuse one owned typed value without changing conversion math"
+  },
+  "protected_path_audit": {
+    "paths": 121,
+    "missing": 0,
+    "changed": 0,
+    "manifest": "/tmp/gplspec-phase3-protected.json"
+  },
+  "workflow_outcome_notes": {
+    "clean_bench_2": "exit 0; both outputs byte-identical",
+    "clean_bench_6": "exit 0; 4 outputs byte-different with strict componentwise failures; untouched repeat also varies comparably, not a blanket explanation",
+    "phobos_gravity": "exit 0; strict potential component failures; candidate spherical max_abs 1.0913936421275139e-11; untouched Cartesian repeat 1.4210854715202004e-13; physical repeat also 1.0913936421275139e-11",
+    "phobos_heterogeneous": "exit 0; strict potential component failures",
+    "OutputZiheng": "exit 0; within existing component tolerance; PREM integral byte-identical",
+    "tolerance_change": "none"
+  },
+  "ctest_log_format_delta": {
+    "raw_path": "/tmp/gplspec-phase3-candidate-release/Testing/Temporary/LastTest.log",
+    "raw_sha256": "6d6e5a1c224e3709f8bc70467716fea491666d44b9af666917113afaca7cdd0c",
+    "archived_path": "ctest.log",
+    "archived_sha256": "9a03fbf07b2483c823e2617dd878fb740fb0c88300e2e2a9eaa3df8b4266fb9e",
+    "change": "removed trailing spaces from five archived log lines only; raw log preserved",
+    "rerun": "no build or numerical test rerun"
+  },
+  "record_only_review": {
+    "independent_luna": "PASS",
+    "verified_source_and_artifact_hashes": 17
+  }
+}

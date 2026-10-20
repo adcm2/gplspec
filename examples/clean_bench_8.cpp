@@ -33,8 +33,6 @@ main() {
    double lengthnorm = EarthModels::EarthConstants<FLOAT>().LengthNorm();
    double timenorm = EarthModels::EarthConstants<FLOAT>().TimeNorm();
    double massnorm = EarthModels::EarthConstants<FLOAT>().MassNorm();
-   std::string pathtoprem = "modeldata/prem.200";
-   std::string pathtotomo = "modeldata/S40RTS_dvs.nc";
 
    Timer timer1;
 
@@ -93,10 +91,8 @@ main() {
 
    // do PSM solution
    timer1.start();
-   auto stdvec_potsol =
-       FindGravitationalPotential(testtomo, std::pow(10.0, -12.0));
-   auto stdvec_potsol_exact =
-       FindGravitationalPotential(testtomo2, std::pow(10.0, -12.0));
+   auto potential_result = SolvePotential(testtomo, std::pow(10.0, -12.0));
+   auto exact_result = SolvePotential(testtomo2, std::pow(10.0, -12.0));
    timer1.stop("Time for 3D");
 
    // solution using spherical integration method:
@@ -113,59 +109,46 @@ main() {
 
    // find perturbed solution
    MappingPerturbation testpertmap(testtomo, map0);
-   auto stdvec_potsol1 = FindGravitationalPotentialPerturbation(
-       testtomo, testpertmap, std::pow(10.0, -12.0));
-
-   // variation with h:
-   //    timer1.start();
-   //    int lenh = 100;
-   //    std::vector<double> vec_h(lenh);
-   //    std::vector<double> vec_zerosol(lenh), vec_exactsol(lenh);
-   //    for (int idx = 0; idx < lenh; ++idx) {
-   //       vec_h[idx] = 0.2 / lenh * idx;
-   //    }
-   //    {
-   //       double pi_db = 3.1415926535897932;
-   //       double nopertphi = -2.0 * testtomo.GravitationalConstant() * pi_db *
-   //                          normrho * std::pow(normrad, 2.0);
-   //       for (int idx = 0; idx < lenh; ++idx) {
-   //          inp_map mapidx(vec_h[idx], normrad);
-   //          MappingPerturbation pertmapidx(testtomo, mapidx);
-   //          auto stdvec_potsol_idx = FindGravitationalPotentialPerturbation(
-   //              testtomo, pertmapidx, std::pow(10.0, -12.0));
-   //          vec_zerosol[idx] = stdvec_potsol_idx[0][0][0].real() /
-   //                             sqrt(4.0 * pi_db) * testtomo.PotentialNorm();
-   //          vec_exactsol[idx] =
-   //              nopertphi / (1.0 + vec_h[idx]) * testtomo.PotentialNorm();
-   //       }
-   //    }
-   //    timer1.stop("Time for multiple solutions");
-
-   //////////////////////////////////////////////////////////////////
-   //////////////////////////////////////////////////////////////////
-
-   // output test
+   auto mapping_result = SolveMappingPerturbation(testtomo, testpertmap,
+                                                  std::pow(10.0, -12.0));
    std::string pathtofolder1 = "./work/Bench8/exact";
    std::string pathtofolder2 = "./work/Bench8/perturbed";
    std::string pathtofolder3 = "./work/Bench8/unperturbed";
-   testtomo.PhysicalOutputAtElement(pathtofolder1, stdvec_potsol_exact);
-   testtomo.PhysicalOutputAtElement(pathtofolder2, stdvec_potsol1);
-   testtomo.PhysicalOutputAtElement(pathtofolder3, stdvec_potsol);
-
-   //    std::string pathtofile = "./work/Bench8/zeroradius/MatrixSolution.out";
-   //    auto file2 = std::ofstream(pathtofile);
-   //    for (int idx = 0; idx < lenh; ++idx) {
-   //       file2 << vec_h[idx] << ";" << vec_zerosol[idx] << ";" <<
-   //       vec_exactsol[idx]
-   //             << std::endl;
-   //    }
-   //    file2.close();
-   // testtomo.ReferentialOutputAtElement(pathtofolderlm, stdvec_potsol);
-   // testtomo.OutputAtElement(pathtofolderlm, vec_integral_potential);
-   //  equivalent_sphere.OutputAtElement(pathtofolder, inp_radii2,
-   //  vec_exactsol2);
-
-   //    testprem.OutputAtElement(pathtofolder, vec_exactsol);
-
+   auto exact_bundle = GPLSpec::FieldBundle::WithSolve(
+       exact_result, "clean_bench_8", "exact_mapped_sphere", "CG",
+       exact_result.final_solve().requested_tolerance);
+   exact_bundle.parameters = {{"base_radial_model", "HomogeneousSphere"},
+       {"tomography_model", "TomographyZeroModel"},
+       {"sphere_radius_norm", GPLSpec::FieldBundle::ParameterNumber(normrad)},
+       {"sphere_density", GPLSpec::FieldBundle::ParameterNumber(normrho)},
+       {"polynomial_order", std::to_string(npoly)},
+       {"degree_max", std::to_string(lmax)}, {"max_step_norm", GPLSpec::FieldBundle::ParameterNumber(maxstep)},
+       {"exterior_radius_norm", GPLSpec::FieldBundle::ParameterNumber(ballrad)},
+       {"mapping_amplitude", GPLSpec::FieldBundle::ParameterNumber(h)},
+       {"length_norm_m", GPLSpec::FieldBundle::ParameterNumber(lengthnorm)},
+       {"mass_norm_kg", GPLSpec::FieldBundle::ParameterNumber(massnorm)},
+       {"time_norm_s", GPLSpec::FieldBundle::ParameterNumber(timenorm)}};
+   GPLSpec::FieldBundle::WriteAngular(
+       std::filesystem::path(pathtofolder1) / "field_bundle", testtomo2,
+       exact_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
+       exact_bundle);
+   auto map_bundle = GPLSpec::FieldBundle::WithSolve(
+       mapping_result, "clean_bench_8", "mapping_perturbation", "CG",
+       mapping_result.final_solve().requested_tolerance);
+   map_bundle.inputs = exact_bundle.inputs;
+   map_bundle.parameters = exact_bundle.parameters;
+   GPLSpec::FieldBundle::WriteAngular(
+       std::filesystem::path(pathtofolder2) / "field_bundle", testtomo,
+       mapping_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
+       std::move(map_bundle));
+   auto base_bundle = GPLSpec::FieldBundle::WithSolve(
+       potential_result, "clean_bench_8", "unperturbed", "CG",
+       potential_result.final_solve().requested_tolerance);
+   base_bundle.inputs = exact_bundle.inputs;
+   base_bundle.parameters = exact_bundle.parameters;
+   GPLSpec::FieldBundle::WriteAngular(
+       std::filesystem::path(pathtofolder3) / "field_bundle", testtomo,
+       potential_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
+       std::move(base_bundle));
    return 0;
 }

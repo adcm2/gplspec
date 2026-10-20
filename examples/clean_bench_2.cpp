@@ -69,7 +69,7 @@ main() {
 
    /// @brief Gravitational potential calculated using the 3D spectral-element
    /// method.
-   auto stdvec_potsol = FindGravitationalPotential(testprem);
+   auto potential_result = SolvePotential(testprem);
    timer1.stop("Time for 3D");
    /** @} */
 
@@ -93,9 +93,36 @@ main() {
    /// @brief Output directory for the results.
    std::string pathtofolder = "./work/Bench2";
    // Output from the 3D spectral-element method
-   testprem.ReferentialOutputAtElement(pathtofolder, stdvec_potsol);
    // Output from the spherical integration method
-   testprem.OutputAtElement(pathtofolder, vec_integral_potential);
+   auto bundle = GPLSpec::FieldBundle::WithSolve(
+       potential_result, "clean_bench_2", "prem_200", "CG",
+       potential_result.final_solve().requested_tolerance);
+   bundle.inputs.push_back(GPLSpec::FieldBundle::InputPath(pathtoprem));
+   bundle.parameters = {{"polynomial_order", std::to_string(npoly)},
+       {"degree_max", std::to_string(lmax)}, {"max_step_norm", GPLSpec::FieldBundle::ParameterNumber(maxstep)},
+       {"exterior_radius_norm", GPLSpec::FieldBundle::ParameterNumber(ballrad)}};
+   GPLSpec::FieldBundle::Writer(
+       std::filesystem::path(pathtofolder) / "field_bundle", testprem,
+       bundle).Write([&](auto &&emit) {
+      GPLSpec::FieldEvaluation::ForEachAngularGridSample(
+          testprem, potential_result.solution,
+          GPLSpec::FieldEvaluation::Quantity::Potential, emit);
+      GPLSpec::FieldEvaluation::ForEachRadialHarmonicSample(
+          testprem, potential_result.solution,
+          GPLSpec::FieldEvaluation::Quantity::Potential, emit);
+   });
+   auto integral_metadata = GPLSpec::FieldBundle::RunMetadata{};
+   integral_metadata.workflow = "clean_bench_2";
+   integral_metadata.dataset = "prem200_spherical_integral";
+   integral_metadata.inputs.push_back(GPLSpec::FieldBundle::InputPath(pathtoprem));
+   integral_metadata.parameters = bundle.parameters;
+   GPLSpec::FieldBundle::Writer(
+       std::filesystem::path(pathtofolder) / "integral_bundle", testprem,
+       std::move(integral_metadata)).Write([&](auto &&emit) {
+      GPLSpec::FieldEvaluation::ForEachElementBoundaryHarmonics(
+          testprem, vec_integral_potential,
+          GPLSpec::FieldEvaluation::Quantity::Potential, emit);
+   });
    /** @} */
 
    return 0;

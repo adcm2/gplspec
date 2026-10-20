@@ -1,0 +1,45 @@
+name: C++ build and tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cxx-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ninja-build libfftw3-dev libnetcdf-dev
+      - name: Install plotting and test dependencies
+        run: |
+          python -m venv build/cxx-ci-python
+          build/cxx-ci-python/bin/python -m pip install -r tests/requirements.txt
+      - name: Configure Release build
+        run: >-
+          cmake -S . -B build/cxx-ci -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DMY_PROJECT_BUILD_EXAMPLES=ON
+          -DGPLSPEC_BUILD_BASELINE_HARNESS=ON
+          -DPYTHON_EXECUTABLE=$PWD/build/cxx-ci-python/bin/python
+      - name: Build examples and tests
+        run: cmake --build build/cxx-ci -j2
+      - name: Run CTest suite
+        run: ctest --test-dir build/cxx-ci --output-on-failure
+      - name: Run multi-translation-unit public-header consumer
+        run: build/cxx-ci/bin/stage02_header_link
+      - name: Compare frozen Stage 00 references
+        run: tests/run_stage00.sh build/cxx-ci/bin/stage00_reference

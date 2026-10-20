@@ -1,0 +1,82 @@
+{
+  "batch_seconds": 0.25,
+  "candidate_source_changes_vs_HEAD": [
+    "docs/core-cleanup/phase-3.md",
+    "gplspec/src/GeneralModels/Gravity_Tools.h",
+    "gplspec/src/SphericalGeometryPreconditioner.h",
+    "implementation_status.md",
+    "tests/stage1c_file_tomography_solver.cpp"
+  ],
+  "environment": {
+    "MKL_NUM_THREADS": "1",
+    "OMP_DYNAMIC": "FALSE",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "executable": "/tmp/gplspec-phase3-resume/candidate-build/bin/phase3a_performance",
+  "executable_sha256": "960cb7e898dd494a628ab25fc3c792675033ca4ccaf8b4ead13a82a7e38ab11f",
+  "frozen_references": {
+    "tests/reference/stage00-baseline.csv": "ef20bd7e3016661c60903c290c74c599151fdfc0417443bcf81c4215401f105e",
+    "tests/reference/stage05-1d-original.csv": "a9e89b9ac1250f3f01b695ec5be0fcb79990a85da42e6eb80ae001f5f88a43d6",
+    "tests/reference/stage05-file-perturbation-original.csv": "08cf04f1243fa128645490c4eba13eed5f7b5fceff76b032f2f5d8141efe3263"
+  },
+  "host": {
+    "machine": "x86_64",
+    "node": "earth-dalab-01.esc.private.cam.ac.uk",
+    "processor": "x86_64",
+    "release": "7.0.0-38-generic",
+    "system": "Linux",
+    "version": "#38~24.04.4-Ubuntu SMP PREEMPT_DYNAMIC Mon Sep 14 16:37:11 UTC 2"
+  },
+  "inputs": {
+    "modeldata/S40RTS_dvs.nc": "4ebd0ca09731a593c7960ced6a8ddde0abbe03fa91e49e70cf897dd41019c73e",
+    "modeldata/prem.200": "4c3c53ca04e785ff4fd853cf211fe94e353ef70d6052a526122d0f279a3519ea"
+  },
+  "label": "phase3c3-candidate",
+  "measurements_csv_sha256": "ad3b43cfc924418b9542fed1aec370e0428ec6dad43401386279a5926aea0f41",
+  "sample_results": [
+    {
+      "exit_code": 3,
+      "rss_kb": 17232,
+      "sample": 1,
+      "scenario": "mapped"
+    },
+    {
+      "exit_code": 3,
+      "rss_kb": 17008,
+      "sample": 2,
+      "scenario": "mapped"
+    },
+    {
+      "exit_code": 3,
+      "rss_kb": 17224,
+      "sample": 3,
+      "scenario": "mapped"
+    },
+    {
+      "exit_code": 3,
+      "rss_kb": 564340,
+      "sample": 1,
+      "scenario": "file_backed"
+    },
+    {
+      "exit_code": 3,
+      "rss_kb": 564440,
+      "sample": 2,
+      "scenario": "file_backed"
+    },
+    {
+      "exit_code": 3,
+      "rss_kb": 564312,
+      "sample": 3,
+      "scenario": "file_backed"
+    }
+  ],
+  "samples_per_scenario": 3,
+  "scenarios": [
+    "mapped",
+    "file_backed"
+  ],
+  "source_commit": "472c146fdd125549dd73baeb3b345b0d29b80fcd",
+  "source_root": "/home/adcm2/Documents/Research/Projects/gplspec"
+}

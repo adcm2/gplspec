@@ -86,8 +86,10 @@ main() {
                                          map1, npoly, lmax, maxstep, ballrad);
 
    // find potential
-   auto stdvec_potsol = FindGravitationalPotential(homogeneous_sphere_with_map,
-                                                   std::pow(10.0, -12.0));
+   auto solve_result = SolvePotential(homogeneous_sphere_with_map,
+                                      std::pow(10.0, -12.0));
+   auto stdvec_potsol =
+       ToHarmonicField(homogeneous_sphere_with_map, solve_result);
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
 
@@ -106,18 +108,14 @@ main() {
    //////////////////////////////////////////////////////////////////
    //////////////////////////////////////////////////////////////////
 
-   // output test
+   // Results are saved to schema-v1 field bundles; see work/plots.md for build, run, and plotting commands.
    std::string pathtofolder = "./work/Bench3";
-   homogeneous_sphere_with_map.PhysicalOutputAtElement(pathtofolder,
-                                                       stdvec_potsol);
-   equivalent_sphere.OutputAtElement(pathtofolder, inp_radii, vec_exactsol);
 
    return 0;
 }
 
 
 ```
-
 
 
 

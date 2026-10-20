@@ -22,6 +22,8 @@ This requires a path to a radial model, as well as parameters for the mesh. Opti
 ```cpp
 
 #include <gplspec/All>
+#include <filesystem>
+#include <utility>
 
 int
 main() {
@@ -41,18 +43,42 @@ main() {
        pathtoprem, npoly, lmax, maxstep, ballrad);
 
    // Pseudospectral method
-   auto stdvec_potsol = FindGravitationalPotential(testprem);
+   auto solve_result = SolvePotential(testprem);
+   auto potential = ToHarmonicField(testprem, solve_result);
 
    // Integral method
    auto vec_integral_potential = GravitationalSphericalIntegral(testprem);
 
 
-   //////////////////////////////////////////////////////////////////
-   //////////////////////////////////////////////////////////////////
-   // outputting results
-   std::string pathtofolder = "./work/Bench2";
-   testprem.ReferentialOutputAtElement(pathtofolder, stdvec_potsol);
-   testprem.OutputAtElement(pathtofolder, vec_integral_potential);
+   auto field_metadata = GPLSpec::FieldBundle::WithSolve(
+       solve_result, "clean_bench_2", "prem_200", "CG",
+       solve_result.final_solve().requested_tolerance);
+   field_metadata.inputs.push_back(GPLSpec::FieldBundle::InputPath(pathtoprem));
+   field_metadata.parameters = {{"polynomial_order", std::to_string(npoly)},
+       {"degree_max", std::to_string(lmax)},
+       {"max_step_norm", GPLSpec::FieldBundle::ParameterNumber(maxstep)},
+       {"exterior_radius_norm", GPLSpec::FieldBundle::ParameterNumber(ballrad)}};
+   const std::filesystem::path output{"work/Bench2"};
+   GPLSpec::FieldBundle::Writer(output / "field_bundle", testprem,
+       field_metadata).Write([&](auto &&emit) {
+      GPLSpec::FieldEvaluation::ForEachAngularGridSample(
+          testprem, solve_result.solution,
+          GPLSpec::FieldEvaluation::Quantity::Potential, emit);
+      GPLSpec::FieldEvaluation::ForEachRadialHarmonicSample(
+          testprem, solve_result.solution,
+          GPLSpec::FieldEvaluation::Quantity::Potential, emit);
+   });
+   auto integral_metadata = GPLSpec::FieldBundle::RunMetadata{};
+   integral_metadata.workflow = "clean_bench_2";
+   integral_metadata.dataset = "prem200_spherical_integral";
+   integral_metadata.inputs = field_metadata.inputs;
+   integral_metadata.parameters = field_metadata.parameters;
+   GPLSpec::FieldBundle::Writer(output / "integral_bundle", testprem,
+       std::move(integral_metadata)).Write([&](auto &&emit) {
+      GPLSpec::FieldEvaluation::ForEachElementBoundaryHarmonics(
+          testprem, vec_integral_potential,
+          GPLSpec::FieldEvaluation::Quantity::Potential, emit);
+   });
 
    return 0;
 }
@@ -61,11 +87,12 @@ main() {
 ## Results
 ### Output Files
 
-The benchmark generates several output files in the `./work/Bench2/` directory:
+Run from an isolated working directory containing the unchanged input at
+`modeldata/prem.200`. The program writes schema-v1 field and integral bundles
+under `work/Bench2/`.
 
 - **3D Solution**: Spectral element method results
 - **Integral Solution**: Spherical integration method results  
-
 
 
 

@@ -1,0 +1,7 @@
+{
+  "file": "tests/scientific_reference_gate.py",
+  "change": "Post-validation independent-review correction to explanatory comments only; thresholds and executable Python AST unchanged.",
+  "validated_sha256": "718c1c926d2eeef68e8b89e6e6c54f25e25cfd57f36c75816cb54d51c105a071",
+  "current_sha256": "4565951bf5a7154905cc825f7d311b8f754344d6546a8f8589afde8ba0e56096",
+  "ast_unchanged": true
+}

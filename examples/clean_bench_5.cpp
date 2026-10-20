@@ -76,8 +76,8 @@ main() {
    Density3D testconstruct(radius, density, radius, map1, npoly, lmax2,
                            lengthnorm, timenorm, massnorm, maxstep, ballrad);
    std::cout << testconstruct.Node_Information().NumberOfLayers() << "\n";
-   auto stdvec_potsol =
-       FindGravitationalPotential(testconstruct, std::pow(10.0, -12.0));
+   auto potential_result = SolvePotential(testconstruct, std::pow(10.0, -12.0));
+   auto stdvec_potsol = ToHarmonicField(testconstruct, potential_result);
    timer1.stop("Time for 3D");
 
    //////////////////////////////////////////////////////////////////
@@ -93,8 +93,8 @@ main() {
    timer1.start();
    //  std::cout << "\n\n HELLO HELLO \n\n";
    std::vector<std::vector<double>> inp_radii2, vec_exactsol2;
-   auto maxidx = testconstruct.GSH_GridP().NumberOfCoLatitudes() *
-                 testconstruct.GSH_GridP().NumberOfLongitudes();
+   auto maxidx = testconstruct.GSH_Grid().NumberOfCoLatitudes() *
+                 testconstruct.GSH_Grid().NumberOfLongitudes();
    for (int idx = 0; idx < maxidx; ++idx) {
       auto inp_radii = testconstruct.PhysicalRadius_Line(idx);
       auto vec_exactsol =
@@ -127,10 +127,34 @@ main() {
 
    // output test
    std::string pathtofolder = "./work/Bench5";
-   testconstruct.PhysicalOutputAtElement(pathtofolder, stdvec_potsol);
-   equivalent_sphere.OutputAtElement(pathtofolder, inp_radii2, vec_exactsol2);
+   auto bundle = GPLSpec::FieldBundle::WithSolve(
+       potential_result, "clean_bench_5", "mapped_lateral_prem", "CG",
+       potential_result.final_solve().requested_tolerance);
+   bundle.parameters = {{"polynomial_order", std::to_string(npoly)},
+       {"degree_max", std::to_string(lmax)}, {"max_step_norm", GPLSpec::FieldBundle::ParameterNumber(maxstep)},
+       {"exterior_radius_norm", GPLSpec::FieldBundle::ParameterNumber(ballrad)},
+       {"mapping_amplitude", GPLSpec::FieldBundle::ParameterNumber(h)},
+       {"length_norm_m", GPLSpec::FieldBundle::ParameterNumber(lengthnorm)},
+       {"mass_norm_kg", GPLSpec::FieldBundle::ParameterNumber(massnorm)},
+       {"time_norm_s", GPLSpec::FieldBundle::ParameterNumber(timenorm)}};
+   GPLSpec::FieldBundle::WriteAngular(
+       std::filesystem::path(pathtofolder) / "field_bundle", testconstruct,
+       potential_result.solution, GPLSpec::FieldEvaluation::Quantity::Potential,
+       bundle);
+   auto exact_bundle_metadata = GPLSpec::FieldBundle::RunMetadata{};
+   exact_bundle_metadata.workflow = "clean_bench_5";
+   exact_bundle_metadata.dataset = "analytic_sphere_same_mapped_ray";
+   exact_bundle_metadata.parameters = bundle.parameters;
+   GPLSpec::FieldBundle::Writer(
+       std::filesystem::path(pathtofolder) / "exact_bundle", testconstruct,
+       std::move(exact_bundle_metadata)).Write([&](auto &&emit) {
+      for (std::size_t spatial_index = 0; spatial_index < inp_radii2.size();
+           ++spatial_index)
+         GPLSpec::FieldEvaluation::ForEachMappedRadialProfile(
+             testconstruct, inp_radii2[spatial_index],
+             vec_exactsol2[spatial_index], spatial_index, emit);
+   });
 
-   //    testprem.OutputAtElement(pathtofolder, vec_exactsol);
 
    return 0;
 }

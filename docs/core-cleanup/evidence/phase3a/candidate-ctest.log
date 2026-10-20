@@ -1,0 +1,10 @@
+Internal ctest changing into directory: /tmp/gplspec-phase3-candidate-release
+Test project /tmp/gplspec-phase3-candidate-release
+    Start 2: stage1c_external_consumer
+1/2 Test #2: stage1c_external_consumer ........   Passed   22.42 sec
+    Start 4: stage3a_harmonic_contract
+2/2 Test #4: stage3a_harmonic_contract ........   Passed    0.01 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =  22.43 sec

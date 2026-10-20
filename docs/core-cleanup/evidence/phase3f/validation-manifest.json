@@ -1,0 +1,56 @@
+[
+  {
+    "step": "configure",
+    "command": [
+      "cmake",
+      "-S",
+      "/home/adcm2/Documents/Research/Projects/gplspec",
+      "-B",
+      "/tmp/gplspec-phase3-resume/final-build",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DMY_PROJECT_BUILD_EXAMPLES=ON",
+      "-DGPLSPEC_BUILD_BASELINE_HARNESS=ON",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+      "-DFETCHCONTENT_SOURCE_DIR_EIGEN3=/tmp/gplspec-phase3-resume/final-build/_deps/eigen3-src",
+      "-DFETCHCONTENT_SOURCE_DIR_FFTWPP=/tmp/gplspec-phase3-resume/final-build/_deps/fftwpp-src",
+      "-DFETCHCONTENT_SOURCE_DIR_GAUSSQUAD=/tmp/gplspec-phase3-resume/final-build/_deps/gaussquad-src",
+      "-DFETCHCONTENT_SOURCE_DIR_GSHTRANS=/tmp/gplspec-phase3-resume/final-build/_deps/gshtrans-src",
+      "-DFETCHCONTENT_SOURCE_DIR_INTERPOLATION=/tmp/gplspec-phase3-resume/final-build/_deps/interpolation-src",
+      "-DFETCHCONTENT_SOURCE_DIR_NUMERICCONCEPTS=/tmp/gplspec-phase3-resume/final-build/_deps/numericconcepts-src",
+      "-DFETCHCONTENT_SOURCE_DIR_PLANETARYMODEL=/tmp/gplspec-phase3-resume/final-build/_deps/planetarymodel-src",
+      "-DFETCHCONTENT_SOURCE_DIR_TOMOGRAPHYMODELS=/tmp/gplspec-phase3-resume/final-build/_deps/tomographymodels-src"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.48988772200027597
+  },
+  {
+    "step": "build",
+    "command": [
+      "cmake",
+      "--build",
+      "/tmp/gplspec-phase3-resume/final-build",
+      "-j2"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 204.50563405499997
+  },
+  {
+    "step": "ctest",
+    "command": [
+      "ctest",
+      "--test-dir",
+      "/tmp/gplspec-phase3-resume/final-build",
+      "--output-on-failure"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 12.233800893998705
+  },
+  {
+    "step": "header-link",
+    "command": [
+      "/tmp/gplspec-phase3-resume/final-build/bin/stage02_header_link"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.0013119830000505317
+  }
+]

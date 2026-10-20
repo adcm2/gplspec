@@ -10,4 +10,5 @@ reference=$2
 actual=$(mktemp)
 trap 'rm -f "$actual"' EXIT
 "$exe" > "$actual"
-diff -u "$reference" "$actual"
+python3 "$(dirname "$0")/compare_stage05_file_perturbation.py" \
+  "$reference" "$actual"

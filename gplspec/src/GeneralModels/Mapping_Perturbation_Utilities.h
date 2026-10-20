@@ -42,9 +42,9 @@ inline void ConstructMappingVectorGradient(
          veccomp vec_ddxipp(_sizepp, 0.0);
          veccomp vec_ddximm(_sizepp, 0.0);
          double radr =
-             inp_model.Node_InformationP().NodeRadius(idxelem, idxpoly);
+             inp_model.Node_Information().NodeRadius(idxelem, idxpoly);
          double inv2 =
-             2.0 / inp_model.Node_InformationP().ElementWidth(idxelem);
+             2.0 / inp_model.Node_Information().ElementWidth(idxelem);
          auto idxoverall = idxelem * _num_layers + idxpoly;
          // idxoverall = 1;
          // finding \partial^0 u^{\alpha}:
@@ -151,31 +151,31 @@ inline void ConstructMappingVectorGradient(
 
          // transforming
          // 00
-         inp_model.GSH_GridP().InverseTransformation(lMax, 0, vec_ddxi0,
+         inp_model.GSH_Grid().InverseTransformation(lMax, 0, vec_ddxi0,
                                                      vec_ddxi0_spatial);
 
          // 0\pm
-         inp_model.GSH_GridP().InverseTransformation(lMax, -1, vec_ddxim,
+         inp_model.GSH_Grid().InverseTransformation(lMax, -1, vec_ddxim,
                                                      vec_ddxim_spatial);
-         inp_model.GSH_GridP().InverseTransformation(lMax, +1, vec_ddxip,
+         inp_model.GSH_Grid().InverseTransformation(lMax, +1, vec_ddxip,
                                                      vec_ddxip_spatial);
 
          //\pm 0
-         inp_model.GSH_GridP().InverseTransformation(lMax, -1, vec_ddxim0,
+         inp_model.GSH_Grid().InverseTransformation(lMax, -1, vec_ddxim0,
                                                      vec_ddxim0_spatial);
-         inp_model.GSH_GridP().InverseTransformation(lMax, +1, vec_ddxip0,
+         inp_model.GSH_Grid().InverseTransformation(lMax, +1, vec_ddxip0,
                                                      vec_ddxip0_spatial);
 
          //\pm \mp
-         inp_model.GSH_GridP().InverseTransformation(lMax, 0, vec_ddxipm,
+         inp_model.GSH_Grid().InverseTransformation(lMax, 0, vec_ddxipm,
                                                      vec_ddxipm_spatial);
-         inp_model.GSH_GridP().InverseTransformation(lMax, 0, vec_ddximp,
+         inp_model.GSH_Grid().InverseTransformation(lMax, 0, vec_ddximp,
                                                      vec_ddximp_spatial);
 
          //\pm \pm
-         inp_model.GSH_GridP().InverseTransformation(lMax, -2, vec_ddximm,
+         inp_model.GSH_Grid().InverseTransformation(lMax, -2, vec_ddximm,
                                                      vec_ddximm_spatial);
-         inp_model.GSH_GridP().InverseTransformation(lMax, +2, vec_ddxipp,
+         inp_model.GSH_Grid().InverseTransformation(lMax, +2, vec_ddxipp,
                                                      vec_ddxipp_spatial);
 
          // finding pm derivative of 0-order part
@@ -190,8 +190,8 @@ inline void ConstructMappingVectorGradient(
          // filling out dxi
          {
             std::size_t idxvec = 0;
-            for (auto it : inp_model.GSH_GridP().CoLatitudes()) {
-               for (auto ip : inp_model.GSH_GridP().Longitudes()) {
+            for (auto it : inp_model.GSH_Grid().CoLatitudes()) {
+               for (auto ip : inp_model.GSH_Grid().Longitudes()) {
                   // going along first row (and transposing)
                   _vec_df[idxelem][idxpoly][idxvec](0, 0) =
                       vec_ddximm_spatial[idxvec];
@@ -257,6 +257,80 @@ inline void ConstructPerturbedLaplaceTensor(
       }
    }
    }
+}
+
+// Build only the owned first-order Laplace tensor. Displacement harmonics and
+// their spatial gradients are construction work, not persistent model state.
+using SpatialDisplacement =
+    std::vector<std::vector<std::vector<Eigen::Vector3cd>>>;
+using HarmonicDisplacement =
+    std::vector<std::vector<std::vector<Eigen::Vector3cd>>>;
+using TensorField =
+    std::vector<std::vector<std::vector<Eigen::Matrix3cd>>>;
+
+inline TensorField BuildPerturbationTensor(const Density3D &model,
+                                            const SpatialDisplacement &dxi) {
+   const auto &mesh = model.Node_Information();
+   const auto &grid = model.GSH_Grid();
+   const std::size_t elements = mesh.NumberOfElements();
+   const std::size_t nodes = mesh.NumNodesWithinElement();
+   const std::size_t spatial = grid.NumberOfCoLatitudes() *
+                               grid.NumberOfLongitudes();
+   const int lmax = grid.MaxDegree();
+   const std::size_t harmonics =
+       static_cast<std::size_t>(lmax + 1) * (lmax + 1);
+   const auto scalar_count =
+       GSHTrans::GSHIndices<GSHTrans::All>(lmax, lmax, 0).Size();
+   const auto spin_count =
+       GSHTrans::GSHIndices<GSHTrans::All>(lmax, lmax, 1).Size();
+
+   HarmonicDisplacement displacement_harmonics(
+       elements, std::vector<std::vector<Eigen::Vector3cd>>(
+                     nodes, std::vector<Eigen::Vector3cd>(harmonics,
+                                                          Eigen::Vector3cd::Zero())));
+   for (std::size_t element = 0; element < elements; ++element) {
+      for (std::size_t node = 0; node < nodes; ++node) {
+         std::vector<std::complex<double>> minus(spatial), zero(spatial),
+             plus(spatial);
+         for (std::size_t point = 0; point < spatial; ++point) {
+            minus[point] = dxi[element][node][point](0);
+            zero[point] = dxi[element][node][point](1);
+            plus[point] = dxi[element][node][point](2);
+         }
+         std::vector<std::complex<double>> minus_coefficients(spin_count),
+             zero_coefficients(scalar_count), plus_coefficients(spin_count);
+         grid.ForwardTransformation(lmax, -1, minus, minus_coefficients);
+         grid.ForwardTransformation(lmax, 0, zero, zero_coefficients);
+         grid.ForwardTransformation(lmax, 1, plus, plus_coefficients);
+         displacement_harmonics[element][node][0](1) = zero_coefficients[0];
+         for (int degree = 1; degree <= lmax; ++degree) {
+            for (int order = -degree; order <= degree; ++order) {
+               const std::size_t harmonic =
+                   static_cast<std::size_t>(degree * degree + degree + order);
+               displacement_harmonics[element][node][harmonic](0) =
+                   minus_coefficients[harmonic - 1];
+               displacement_harmonics[element][node][harmonic](1) =
+                   zero_coefficients[harmonic];
+               displacement_harmonics[element][node][harmonic](2) =
+                   plus_coefficients[harmonic - 1];
+            }
+         }
+      }
+   }
+
+   TensorField gradient(
+       elements, std::vector<std::vector<Eigen::Matrix3cd>>(
+                     nodes, std::vector<Eigen::Matrix3cd>(
+                                spatial, Eigen::Matrix3cd::Zero())));
+   ConstructMappingVectorGradient(model, displacement_harmonics, gradient,
+                                  elements, spatial, nodes, lmax);
+   TensorField delta_tensor(
+       elements, std::vector<std::vector<Eigen::Matrix3cd>>(
+                     nodes, std::vector<Eigen::Matrix3cd>(
+                                spatial, Eigen::Matrix3cd::Zero())));
+   ConstructPerturbedLaplaceTensor(model, gradient, delta_tensor, elements,
+                                   nodes, spatial);
+   return delta_tensor;
 }
 
 }  // namespace GeneralEarthModels::MappingPerturbationDetail

@@ -1,0 +1,10 @@
+--- a/gplspec/src/GeneralModels/Earth_Density_Models_3D.h
++++ b/gplspec/src/GeneralModels/Earth_Density_Models_3D.h
+@@ -138 +138 @@
+-   inline auto GSH_Grid() const;
++   inline const Grid &GSH_Grid() const;
+--- a/gplspec/src/GeneralModels/Density_Model_Return.h
++++ b/gplspec/src/GeneralModels/Density_Model_Return.h
+@@ -136 +136 @@
+-auto
++const GSHTrans::GaussLegendreGrid<double, GSHTrans::All, GSHTrans::All> &
